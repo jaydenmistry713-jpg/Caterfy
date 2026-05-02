@@ -13,12 +13,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [catererRes, ordersRes, reviewsRes, pageRes, galleryRes] = await Promise.all([
+  const [catererRes, ordersRes, reviewsRes, pageRes, galleryRes, menuRes] = await Promise.all([
     supabase.from('caterers').select('*').eq('id', user.id).single(),
     supabase.from('orders').select('*').eq('caterer_id', user.id).order('created_at', { ascending: false }).limit(5),
     supabase.from('reviews').select('*').eq('caterer_id', user.id).order('created_at', { ascending: false }).limit(3),
     supabase.from('caterer_pages').select('*').eq('caterer_id', user.id).single(),
     supabase.from('gallery_images').select('id').eq('caterer_id', user.id),
+    supabase.from('menu_items').select('id').eq('caterer_id', user.id).limit(1),
   ])
 
   const caterer = catererRes.data
@@ -26,13 +27,14 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const recentReviews = reviewsRes.data || []
   const page = pageRes.data
   const galleryCount = galleryRes.data?.length || 0
+  const hasMenuItems = (menuRes.data?.length || 0) > 0
   const pendingOrders = recentOrders.filter((o) => o.status === 'pending').length
 
   // Build checklist
   const checklist = [
     { label: 'Basic info added', done: !!caterer?.phone || !!caterer?.location_id, href: '/settings' },
     { label: 'Branding set up', done: !!(page?.logo_url || page?.primary_color !== '#000000'), href: '/site-editor' },
-    { label: 'Menu items added', done: false, href: '/menu' },
+    { label: 'Menu items added', done: hasMenuItems, href: '/menu' },
     { label: 'Gallery photos uploaded (min 3)', done: galleryCount >= 3, href: '/gallery' },
     { label: 'Stripe Connect connected', done: !!caterer?.stripe_connect_id, href: '/payments' },
   ]
