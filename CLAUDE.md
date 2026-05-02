@@ -395,6 +395,8 @@ All phases are implemented and the app builds successfully (Next.js 16, 33 route
 - Menu/packages editor with delete for both items and packages
 - Gallery manager (Supabase Storage, `caterer-images` bucket)
 - Orders dashboard with fixed-price and quote flows
+  - "Mark as Completed" button available on all accepted orders (not gated to offline payment)
+  - Delete button available on all orders (in expanded view)
 - Quote builder dialog (send quote → customer gets email with accept link)
 - Availability/blocked dates manager
 - Reviews dashboard with caterer response

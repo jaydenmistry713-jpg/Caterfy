@@ -62,6 +62,15 @@ export default function OrdersList({ orders: initialOrders, caterererId }: Props
   const active = orders.filter((o) => ['accepted', 'awaiting_payment'].includes(o.status))
   const completed = orders.filter((o) => ['completed', 'declined', 'cancelled'].includes(o.status))
 
+  async function deleteOrder(orderId: string) {
+    const supabase = createClient()
+    const { error } = await supabase.from('orders').delete().eq('id', orderId).eq('caterer_id', caterererId)
+    if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return }
+    setOrders((prev) => prev.filter((o) => o.id !== orderId))
+    setExpanded(null)
+    toast({ title: 'Order deleted' })
+  }
+
   async function updateOrderStatus(orderId: string, status: string) {
     const supabase = createClient()
     const { error } = await supabase
@@ -193,17 +202,25 @@ export default function OrdersList({ orders: initialOrders, caterererId }: Props
                 </div>
               )}
             </div>
-            {order.status === 'accepted' && order.payment_method === 'offline' && (
-              <div className="mt-4 pt-4 border-t border-gray-200 flex gap-2">
+            <div className="mt-4 pt-4 border-t border-gray-200 flex gap-2">
+              {order.status === 'accepted' && (
                 <Button
                   size="sm"
                   onClick={() => updateOrderStatus(order.id, 'completed')}
                   className="bg-green-600 hover:bg-green-700"
                 >
-                  Mark as Paid & Completed
+                  Mark as Completed
                 </Button>
-              </div>
-            )}
+              )}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => deleteOrder(order.id)}
+                className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 ml-auto"
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1" />Delete
+              </Button>
+            </div>
           </div>
         )}
       </div>
