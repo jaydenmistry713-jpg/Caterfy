@@ -8,27 +8,60 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from '@/lib/utils/use-toast'
 import { formatDate } from '@/lib/utils'
 import { Plus, Send, CheckCircle, Trash2 } from 'lucide-react'
 
+interface Order {
+  id: string
+  reference_number: string
+  customer_name: string
+  customer_email: string
+  total: number
+  items: any
+  status: string
+  event_date: string
+}
+
 interface Props {
   caterererId: string
   businessName: string
   initialInvoices: Invoice[]
+  orders?: Order[]
 }
 
-export default function InvoicesManager({ caterererId, businessName, initialInvoices }: Props) {
+export default function InvoicesManager({ caterererId, businessName, initialInvoices, orders = [] }: Props) {
   const [invoices, setInvoices] = useState(initialInvoices)
   const [showCreate, setShowCreate] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [createMode, setCreateMode] = useState<'custom' | 'from-order'>('custom')
+  const [selectedOrderId, setSelectedOrderId] = useState<string>('')
   const [form, setForm] = useState({
     customer_name: '',
     customer_email: '',
     due_date: '',
     lineItems: [{ description: '', amount: '' }],
   })
+
+  function handleOrderSelect(orderId: string) {
+    setSelectedOrderId(orderId)
+    const order = orders.find((o) => o.id === orderId)
+    if (!order) return
+    const lineItems = Array.isArray(order.items) && order.items.length > 0
+      ? order.items.map((i: any) => ({
+          description: `${i.name}${i.quantity > 1 ? ` × ${i.quantity}` : ''}`,
+          amount: String((i.price * i.quantity).toFixed(2)),
+        }))
+      : [{ description: `Order ${order.reference_number}`, amount: String(Number(order.total).toFixed(2)) }]
+    setForm({
+      customer_name: order.customer_name,
+      customer_email: order.customer_email,
+      due_date: '',
+      lineItems,
+    })
+  }
 
   function addLineItem() {
     setForm({ ...form, lineItems: [...form.lineItems, { description: '', amount: '' }] })
@@ -74,6 +107,8 @@ export default function InvoicesManager({ caterererId, businessName, initialInvo
     } else {
       setInvoices((prev) => [data, ...prev])
       setShowCreate(false)
+      setCreateMode('custom')
+      setSelectedOrderId('')
       setForm({ customer_name: '', customer_email: '', due_date: '', lineItems: [{ description: '', amount: '' }] })
       toast({ title: 'Invoice created', variant: 'success' })
     }
@@ -127,12 +162,45 @@ export default function InvoicesManager({ caterererId, businessName, initialInvo
         </div>
       )}
 
-      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+      <Dialog open={showCreate} onOpenChange={(open) => { setShowCreate(open); if (!open) { setCreateMode('custom'); setSelectedOrderId(''); setForm({ customer_name: '', customer_email: '', due_date: '', lineItems: [{ description: '', amount: '' }] }) } }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Create Invoice</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {orders.length > 0 && (
+              <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm">
+                <button
+                  onClick={() => { setCreateMode('custom'); setSelectedOrderId(''); setForm({ customer_name: '', customer_email: '', due_date: '', lineItems: [{ description: '', amount: '' }] }) }}
+                  className={`flex-1 py-2 font-medium transition-colors ${createMode === 'custom' ? 'bg-gray-900 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                >
+                  Custom
+                </button>
+                <button
+                  onClick={() => setCreateMode('from-order')}
+                  className={`flex-1 py-2 font-medium transition-colors ${createMode === 'from-order' ? 'bg-gray-900 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                >
+                  From Order
+                </button>
+              </div>
+            )}
+
+            {createMode === 'from-order' && (
+              <div>
+                <Label>Select order</Label>
+                <Select value={selectedOrderId} onValueChange={handleOrderSelect}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Choose an order..." /></SelectTrigger>
+                  <SelectContent>
+                    {orders.map((o) => (
+                      <SelectItem key={o.id} value={o.id}>
+                        {o.reference_number} — {o.customer_name} (£{Number(o.total).toFixed(2)})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Customer name *</Label>
@@ -184,7 +252,7 @@ export default function InvoicesManager({ caterererId, businessName, initialInvo
             </div>
 
             <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => { setShowCreate(false); setCreateMode('custom'); setSelectedOrderId(''); setForm({ customer_name: '', customer_email: '', due_date: '', lineItems: [{ description: '', amount: '' }] }) }}>Cancel</Button>
               <Button onClick={createInvoice} disabled={saving}>{saving ? 'Creating...' : 'Create Invoice'}</Button>
             </div>
           </div>

@@ -20,7 +20,7 @@ export default function CatererNav({ businessName, logoUrl, primaryColor, sectio
         <div className="flex items-center justify-between h-16">
           <a href="#" className="text-xl font-bold" style={{ color: primaryColor }}>
             {logoUrl ? (
-              <img src={logoUrl} alt={businessName} className="h-10 object-contain" />
+              <img src={logoUrl} alt={businessName} className="h-14 object-contain" />
             ) : (
               businessName
             )}

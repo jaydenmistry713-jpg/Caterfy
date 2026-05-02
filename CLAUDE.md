@@ -390,14 +390,15 @@ All phases are implemented and the app builds successfully (Next.js 16, 33 route
 - Caterer signup/login with email verification (Supabase Auth)
 - 14-day trial on signup, caterer record auto-created on email verify
 - Site builder: 3 templates (Classic, Modern, Bold), branding, content, image uploads, URL slug
+  - Template picker shows mini wireframe previews of each layout (not just a label)
 - Individual caterer public pages at `/{slug}`
-- Menu/packages editor
+- Menu/packages editor with delete for both items and packages
 - Gallery manager (Supabase Storage, `caterer-images` bucket)
 - Orders dashboard with fixed-price and quote flows
 - Quote builder dialog (send quote → customer gets email with accept link)
 - Availability/blocked dates manager
 - Reviews dashboard with caterer response
-- Invoices manager
+- Invoices manager — create custom invoices or generate from any accepted/completed order
 - Stripe Billing subscription flow (£10/month, checkout + portal)
 - Stripe Connect onboarding for caterer payouts
 - Stripe webhooks (subscription lifecycle, payment events)
@@ -407,6 +408,8 @@ All phases are implemented and the app builds successfully (Next.js 16, 33 route
 - Order status lookup page (`/order-status`)
 - Customer review submission page (`/review`)
 - Legal pages (terms, privacy, cookies)
+- Order form category filter: pill buttons let customers filter menu items by category (shown when 2+ categories exist)
+- Logo on caterer public pages displays at h-14 (56px) for better visibility
 
 ### Pending / Not Yet Built
 - Order reminder cron (email caterer after 24hr, auto-cancel at 48hr)

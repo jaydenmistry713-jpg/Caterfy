@@ -35,6 +35,7 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
   const [loading, setLoading] = useState(false)
 
   const [selectedItems, setSelectedItems] = useState<OrderItem[]>([])
+  const [categoryFilter, setCategoryFilter] = useState<string>('All')
   const [form, setForm] = useState({
     customer_name: '',
     customer_email: '',
@@ -165,24 +166,46 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
               </div>
             )}
 
-            {menuItems.length > 0 && (
-              <div>
-                <p className="text-sm text-gray-500 mb-2">Menu items</p>
-                {menuItems.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-100">
-                    <div>
-                      <p className="font-medium text-sm">{item.name}</p>
-                      <p className="text-xs text-gray-500">£{Number(item.price).toFixed(2)} {item.price_unit}</p>
+            {menuItems.length > 0 && (() => {
+              const categories = ['All', ...Array.from(new Set(menuItems.map((i) => i.category || 'Other')))]
+              const visible = categoryFilter === 'All' ? menuItems : menuItems.filter((i) => (i.category || 'Other') === categoryFilter)
+              return (
+                <div>
+                  <p className="text-sm text-gray-500 mb-2">Menu items</p>
+                  {categories.length > 2 && (
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {categories.map((cat) => (
+                        <button
+                          key={cat}
+                          onClick={() => setCategoryFilter(cat)}
+                          className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                            categoryFilter === cat
+                              ? 'border-transparent text-white'
+                              : 'border-gray-300 text-gray-600 hover:border-gray-400 bg-white'
+                          }`}
+                          style={categoryFilter === cat ? { backgroundColor: accentColor } : undefined}
+                        >
+                          {cat}
+                        </button>
+                      ))}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => adjustQuantity(item, -1)} className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-sm hover:bg-gray-100">−</button>
-                      <span className="w-5 text-center text-sm">{getQty(item.id)}</span>
-                      <button onClick={() => adjustQuantity(item, 1)} className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-sm hover:bg-gray-100">+</button>
+                  )}
+                  {visible.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-100">
+                      <div>
+                        <p className="font-medium text-sm">{item.name}</p>
+                        <p className="text-xs text-gray-500">£{Number(item.price).toFixed(2)} {item.price_unit}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => adjustQuantity(item, -1)} className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-sm hover:bg-gray-100">−</button>
+                        <span className="w-5 text-center text-sm">{getQty(item.id)}</span>
+                        <button onClick={() => adjustQuantity(item, 1)} className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-sm hover:bg-gray-100">+</button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )
+            })()}
 
             {selectedItems.length > 0 && (
               <div className="flex justify-between items-center pt-2 border-t border-gray-200 font-semibold">

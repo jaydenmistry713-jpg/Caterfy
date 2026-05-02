@@ -96,6 +96,13 @@ export default function MenuEditor({ caterererId, initialItems, initialPackages 
     setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, is_available: !i.is_available } : i))
   }
 
+  async function deletePackage(id: string) {
+    const supabase = createClient()
+    await supabase.from('packages').delete().eq('id', id)
+    setPackages((prev) => prev.filter((p) => p.id !== id))
+    toast({ title: 'Package deleted' })
+  }
+
   async function savePackage() {
     if (!pkgForm.name || !pkgForm.price) return
     setSaving(true)
@@ -210,6 +217,9 @@ export default function MenuEditor({ caterererId, initialItems, initialPackages 
                       <div className="flex gap-2">
                         <button onClick={() => { setEditingPackage(pkg); setPkgForm({ name: pkg.name, description: pkg.description || '', price: String(pkg.price), min_guests: pkg.min_guests ? String(pkg.min_guests) : '', max_guests: pkg.max_guests ? String(pkg.max_guests) : '', is_available: pkg.is_available }); setPackageDialog(true) }}>
                           <Pencil className="h-4 w-4 text-gray-400 hover:text-gray-700" />
+                        </button>
+                        <button onClick={() => deletePackage(pkg.id)} className="text-gray-400 hover:text-red-500">
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
                     </div>

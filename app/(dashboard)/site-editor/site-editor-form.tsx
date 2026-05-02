@@ -143,12 +143,70 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
                   form.template === t.id ? 'border-gray-900 bg-gray-50' : 'border-gray-200 hover:border-gray-400'
                 }`}
               >
-                <div className="h-24 rounded-lg mb-3 flex items-center justify-center text-2xl font-bold" style={{
-                  background: t.id === 'classic' ? '#f8f8f8' : t.id === 'modern' ? '#1a1a2e' : '#e63946',
-                  color: t.id === 'classic' ? '#333' : 'white',
-                }}>
-                  {t.name[0]}
-                </div>
+                {/* Classic: full-width hero, left-aligned about, list menu */}
+                {t.id === 'classic' && (
+                  <div className="h-28 rounded-lg mb-3 bg-gray-100 overflow-hidden flex flex-col border border-gray-200">
+                    <div className="h-2.5 bg-white border-b border-gray-200 flex items-center px-1.5 gap-1">
+                      <div className="w-8 h-1 bg-gray-400 rounded" />
+                      <div className="ml-auto flex gap-1"><div className="w-3 h-0.5 bg-gray-300 rounded" /><div className="w-3 h-0.5 bg-gray-300 rounded" /></div>
+                    </div>
+                    <div className="h-9 bg-gray-300 flex items-end px-2 pb-1"><div className="w-16 h-1.5 bg-white/80 rounded" /></div>
+                    <div className="flex-1 px-2 pt-1.5 space-y-1">
+                      <div className="w-12 h-1 bg-gray-400 rounded" />
+                      <div className="w-20 h-0.5 bg-gray-300 rounded" />
+                      <div className="w-16 h-0.5 bg-gray-300 rounded" />
+                      <div className="mt-1 space-y-0.5">
+                        <div className="flex gap-1 items-center"><div className="w-1 h-1 bg-gray-400 rounded-full" /><div className="w-14 h-0.5 bg-gray-300 rounded" /></div>
+                        <div className="flex gap-1 items-center"><div className="w-1 h-1 bg-gray-400 rounded-full" /><div className="w-10 h-0.5 bg-gray-300 rounded" /></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {/* Modern: dark nav, hero with text overlay, centred content */}
+                {t.id === 'modern' && (
+                  <div className="h-28 rounded-lg mb-3 bg-gray-100 overflow-hidden flex flex-col border border-gray-200">
+                    <div className="h-2.5 bg-gray-900 flex items-center px-1.5 gap-1">
+                      <div className="w-8 h-1 bg-white/60 rounded" />
+                      <div className="ml-auto flex gap-1"><div className="w-3 h-0.5 bg-white/40 rounded" /><div className="w-3 h-0.5 bg-white/40 rounded" /></div>
+                    </div>
+                    <div className="h-10 bg-gray-700 flex flex-col items-center justify-center gap-0.5">
+                      <div className="w-20 h-1.5 bg-white/80 rounded" />
+                      <div className="w-12 h-0.5 bg-white/50 rounded" />
+                    </div>
+                    <div className="flex-1 px-2 pt-1.5 flex flex-col items-center space-y-1">
+                      <div className="w-12 h-1 bg-gray-400 rounded" />
+                      <div className="w-20 h-0.5 bg-gray-300 rounded" />
+                      <div className="grid grid-cols-3 gap-0.5 mt-0.5 w-full">
+                        <div className="h-3 bg-gray-300 rounded" />
+                        <div className="h-3 bg-gray-200 rounded" />
+                        <div className="h-3 bg-gray-300 rounded" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {/* Bold: coloured hero, card menu, split about */}
+                {t.id === 'bold' && (
+                  <div className="h-28 rounded-lg mb-3 bg-gray-100 overflow-hidden flex flex-col border border-gray-200">
+                    <div className="h-2.5 bg-red-600 flex items-center px-1.5 gap-1">
+                      <div className="w-8 h-1 bg-white/80 rounded" />
+                      <div className="ml-auto flex gap-1"><div className="w-3 h-0.5 bg-white/60 rounded" /><div className="w-3 h-0.5 bg-white/60 rounded" /></div>
+                    </div>
+                    <div className="h-8 bg-red-500 flex items-center px-2">
+                      <div className="w-16 h-1.5 bg-white/90 rounded" />
+                    </div>
+                    <div className="flex-1 px-2 pt-1.5 space-y-1">
+                      <div className="flex gap-1.5">
+                        <div className="w-8 h-5 bg-gray-300 rounded" />
+                        <div className="flex-1 space-y-0.5 pt-0.5"><div className="w-full h-0.5 bg-gray-400 rounded" /><div className="w-3/4 h-0.5 bg-gray-300 rounded" /></div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-0.5">
+                        <div className="h-3 bg-white border border-gray-300 rounded shadow-sm" />
+                        <div className="h-3 bg-white border border-gray-300 rounded shadow-sm" />
+                        <div className="h-3 bg-white border border-gray-300 rounded shadow-sm" />
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <p className="font-semibold text-gray-900">{t.name}</p>
                 <p className="text-sm text-gray-500 mt-1">{t.desc}</p>
               </button>

@@ -15,13 +15,20 @@ export default async function InvoicesPage() {
 
   const { data: caterer } = await supabase.from('caterers').select('business_name').eq('id', user.id).single()
 
+  const { data: orders } = await supabase
+    .from('orders')
+    .select('id, reference_number, customer_name, customer_email, total, items, status, event_date')
+    .eq('caterer_id', user.id)
+    .in('status', ['accepted', 'completed'])
+    .order('created_at', { ascending: false })
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
         <p className="text-gray-500 mt-1">View and create invoices for your customers</p>
       </div>
-      <InvoicesManager caterererId={user.id} businessName={caterer?.business_name || ''} initialInvoices={invoices || []} />
+      <InvoicesManager caterererId={user.id} businessName={caterer?.business_name || ''} initialInvoices={invoices || []} orders={orders || []} />
     </div>
   )
 }
