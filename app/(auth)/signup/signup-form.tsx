@@ -28,7 +28,7 @@ export default function SignupForm() {
         email: form.email,
         password: form.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/verify-email`,
+          emailRedirectTo: `${window.location.origin}/api/auth/callback?next=/dashboard?welcome=true`,
           data: { business_name: form.businessName, slug },
         },
       })

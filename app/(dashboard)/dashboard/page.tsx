@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge'
 import { ShoppingBag, Star, AlertCircle, CheckCircle, ArrowRight } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ welcome?: string }> }) {
+  const { welcome } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -44,6 +45,19 @@ export default async function DashboardPage() {
         </h1>
         <p className="text-gray-500 mt-1">Here's an overview of your business</p>
       </div>
+
+      {/* Welcome banner — shown once after email verification */}
+      {welcome === 'true' && (
+        <div className="bg-green-50 border border-green-200 rounded-xl p-5 flex items-start gap-3">
+          <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold text-green-900">Email verified — welcome to Caterfy!</p>
+            <p className="text-sm text-green-800 mt-1">
+              Your account is set up and your 14-day free trial has started. Work through the setup checklist below to get your site live.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Trial banner */}
       {caterer?.subscription_status === 'trialling' && caterer?.trial_ends_at && (
