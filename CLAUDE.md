@@ -381,37 +381,38 @@ NEXT_PUBLIC_GA_MEASUREMENT_ID=
 ### Admin
 - `caterfy.com/mistuzzo` - Admin dashboard
 
-## Key Features to Implement
+## Build Status
 
-### Phase 1: Core Platform
-1. Landing page with directory search
-2. Caterer signup flow with email verification
-3. Site builder (templates, branding, content)
-4. Individual caterer pages
-5. Stripe Connect onboarding
+All phases are implemented and the app builds successfully (Next.js 16, 33 routes).
 
-### Phase 2: Ordering System
-1. Fixed-price ordering
-2. Quote request system
-3. Order management dashboard
-4. Email notifications (Resend)
+### Completed
+- Landing page with directory search
+- Caterer signup/login with email verification (Supabase Auth)
+- 14-day trial on signup, caterer record auto-created on email verify
+- Site builder: 3 templates (Classic, Modern, Bold), branding, content, image uploads, URL slug
+- Individual caterer public pages at `/{slug}`
+- Menu/packages editor
+- Gallery manager (Supabase Storage, `caterer-images` bucket)
+- Orders dashboard with fixed-price and quote flows
+- Quote builder dialog (send quote → customer gets email with accept link)
+- Availability/blocked dates manager
+- Reviews dashboard with caterer response
+- Invoices manager
+- Stripe Billing subscription flow (£10/month, checkout + portal)
+- Stripe Connect onboarding for caterer payouts
+- Stripe webhooks (subscription lifecycle, payment events)
+- Resend email notifications (orders, quotes, reviews, auth)
+- Admin dashboard at `/mistuzzo`
+- Directory with location + cuisine filters
+- Order status lookup page (`/order-status`)
+- Customer review submission page (`/review`)
+- Legal pages (terms, privacy, cookies)
 
-### Phase 3: Payments & Billing
-1. Stripe Billing for subscriptions
-2. Payment processing for orders
-3. Invoice generation
-4. Subscription management
-
-### Phase 4: Directory & Discovery
-1. Directory with filters
-2. Location-based search
-3. SEO optimization for all pages
-
-### Phase 5: Reviews & Polish
-1. Review system
-2. Review prompts (1 day after event)
-3. Caterer responses
-4. Admin dashboard
+### Pending / Not Yet Built
+- Order reminder cron (email caterer after 24hr, auto-cancel at 48hr)
+- Review request email trigger (1 day after event date)
+- Google Analytics wired up (env var exists, tag not added to layout yet)
+- Google Fonts loading (fonts selected in site editor but not loaded via next/font)
 
 ## Coding Standards
 
