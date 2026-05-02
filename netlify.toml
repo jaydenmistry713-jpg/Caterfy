@@ -1,5 +1,4 @@
 [build]
-  base = "caterfy-app"
   command = "npm run build"
   publish = ".next"
 
