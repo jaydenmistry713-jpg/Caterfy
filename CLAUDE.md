@@ -1,0 +1,507 @@
+# Caterfy - Claude Code Instructions
+
+## Project Overview
+
+Caterfy is a SaaS platform that provides affordable website building and marketplace services for catering businesses. Caterers pay £10/month (UK) or $12/month (US) for a professional online presence with built-in customer discovery.
+
+**Status: TEST MODE** - All integrations in test mode until finalised.
+
+## Tech Stack
+
+| Component | Technology |
+|-----------|------------|
+| Frontend | Next.js |
+| Hosting | Netlify (with environment variables) |
+| Database | Supabase (PostgreSQL) |
+| Authentication | Supabase Auth (caterers only) |
+| Image Storage | Supabase Storage |
+| API | Next.js API routes + Supabase Edge Functions |
+| Payments (subscriptions) | Stripe Billing |
+| Payments (caterer payouts) | Stripe Connect |
+| Email | Resend |
+| Analytics | Google Analytics |
+
+## Project Structure
+
+```
+caterfy/
+├── app/                    # Next.js App Router
+│   ├── (marketing)/        # Public marketing pages
+│   │   ├── page.tsx        # Homepage (directory-first)
+│   │   └── layout.tsx
+│   ├── (auth)/             # Authentication pages
+│   │   ├── login/
+│   │   ├── signup/
+│   │   └── verify-email/
+│   ├── (dashboard)/        # Caterer dashboard (protected)
+│   │   ├── dashboard/
+│   │   ├── orders/
+│   │   ├── menu/
+│   │   ├── site-editor/
+│   │   ├── gallery/
+│   │   ├── reviews/
+│   │   ├── availability/
+│   │   ├── analytics/
+│   │   ├── payments/
+│   │   ├── invoices/
+│   │   └── settings/
+│   ├── (admin)/            # Admin dashboard
+│   │   └── mistuzzo/       # Admin route
+│   ├── directory/          # Public directory
+│   │   ├── page.tsx        # All caterers
+│   │   └── [location]/     # Filtered by location
+│   │       └── [cuisine]/  # Filtered by location + cuisine
+│   ├── [slug]/             # Individual caterer pages
+│   └── api/                # API routes
+│       ├── webhooks/
+│       │   ├── stripe/
+│       │   └── resend/
+│       ├── orders/
+│       ├── quotes/
+│       └── reviews/
+├── components/
+│   ├── ui/                 # Shared UI components
+│   ├── caterer/            # Caterer-specific components
+│   ├── customer/           # Customer-facing components
+│   ├── dashboard/          # Dashboard components
+│   └── admin/              # Admin components
+├── lib/
+│   ├── supabase/           # Supabase client and utilities
+│   ├── stripe/             # Stripe client and utilities
+│   ├── resend/             # Email utilities
+│   └── utils/              # Helper functions
+├── types/                  # TypeScript types
+├── public/                 # Static assets
+└── supabase/
+    ├── migrations/         # Database migrations
+    └── functions/          # Edge Functions
+```
+
+## Database Schema
+
+### Core Tables
+
+```sql
+-- Caterers (business accounts)
+caterers (
+  id UUID PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  business_name TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  phone TEXT,
+  location_id UUID REFERENCES locations(id),
+  stripe_customer_id TEXT,
+  stripe_connect_id TEXT,
+  subscription_status TEXT, -- 'trialling', 'active', 'cancelled', 'past_due'
+  trial_ends_at TIMESTAMP,
+  subscription_ends_at TIMESTAMP,
+  is_accepting_orders BOOLEAN DEFAULT true,
+  max_orders_per_week INTEGER,
+  auto_accept_orders BOOLEAN DEFAULT false,
+  show_contact_publicly BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+)
+
+-- Caterer page content and branding
+caterer_pages (
+  id UUID PRIMARY KEY,
+  caterer_id UUID REFERENCES caterers(id),
+  template TEXT DEFAULT 'classic', -- 'classic', 'modern', 'bold'
+  tagline TEXT,
+  about TEXT,
+  primary_color TEXT DEFAULT '#000000',
+  secondary_color TEXT DEFAULT '#666666',
+  accent_color TEXT DEFAULT '#2E75B6',
+  heading_font TEXT DEFAULT 'Arial',
+  body_font TEXT DEFAULT 'Arial',
+  background_color TEXT DEFAULT '#FFFFFF',
+  logo_url TEXT,
+  hero_image_url TEXT,
+  terms_conditions TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+)
+
+-- Menu items
+menu_items (
+  id UUID PRIMARY KEY,
+  caterer_id UUID REFERENCES caterers(id),
+  category TEXT,
+  name TEXT NOT NULL,
+  description TEXT,
+  price DECIMAL(10,2) NOT NULL,
+  price_unit TEXT DEFAULT 'per person', -- 'per person', 'per item', 'flat'
+  image_url TEXT,
+  is_available BOOLEAN DEFAULT true,
+  sort_order INTEGER,
+  created_at TIMESTAMP DEFAULT NOW()
+)
+
+-- Packages
+packages (
+  id UUID PRIMARY KEY,
+  caterer_id UUID REFERENCES caterers(id),
+  name TEXT NOT NULL,
+  description TEXT,
+  price DECIMAL(10,2) NOT NULL,
+  min_guests INTEGER,
+  max_guests INTEGER,
+  is_available BOOLEAN DEFAULT true,
+  sort_order INTEGER,
+  created_at TIMESTAMP DEFAULT NOW()
+)
+
+-- Gallery images
+gallery_images (
+  id UUID PRIMARY KEY,
+  caterer_id UUID REFERENCES caterers(id),
+  image_url TEXT NOT NULL,
+  caption TEXT,
+  sort_order INTEGER,
+  created_at TIMESTAMP DEFAULT NOW()
+)
+
+-- Orders
+orders (
+  id UUID PRIMARY KEY,
+  caterer_id UUID REFERENCES caterers(id),
+  customer_id UUID REFERENCES customers(id),
+  reference_number TEXT UNIQUE NOT NULL,
+  status TEXT DEFAULT 'pending', -- 'pending', 'accepted', 'declined', 'cancelled', 'completed'
+  payment_status TEXT DEFAULT 'unpaid', -- 'unpaid', 'awaiting_payment', 'paid', 'refunded'
+  payment_method TEXT, -- 'card', 'offline'
+  order_type TEXT, -- 'fixed', 'quote'
+  customer_name TEXT NOT NULL,
+  customer_email TEXT NOT NULL,
+  customer_phone TEXT NOT NULL,
+  event_date DATE NOT NULL,
+  event_time TIME,
+  event_location TEXT,
+  event_type TEXT,
+  guest_count INTEGER,
+  items JSONB, -- Array of {item_id, quantity, price}
+  subtotal DECIMAL(10,2),
+  total DECIMAL(10,2),
+  special_requests TEXT,
+  dietary_requirements TEXT,
+  additional_comments TEXT,
+  stripe_payment_intent_id TEXT,
+  reminder_sent_at TIMESTAMP,
+  accepted_at TIMESTAMP,
+  cancelled_at TIMESTAMP,
+  completed_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW()
+)
+
+-- Quotes
+quotes (
+  id UUID PRIMARY KEY,
+  caterer_id UUID REFERENCES caterers(id),
+  order_id UUID REFERENCES orders(id),
+  line_items JSONB, -- Array of {description, amount}
+  total DECIMAL(10,2),
+  notes TEXT,
+  status TEXT DEFAULT 'pending', -- 'pending', 'sent', 'accepted', 'declined'
+  sent_at TIMESTAMP,
+  accepted_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW()
+)
+
+-- Reviews
+reviews (
+  id UUID PRIMARY KEY,
+  caterer_id UUID REFERENCES caterers(id),
+  order_id UUID REFERENCES orders(id),
+  customer_name TEXT NOT NULL,
+  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  review_text TEXT,
+  event_type TEXT,
+  caterer_response TEXT,
+  caterer_responded_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW()
+)
+
+-- Customers (optional accounts)
+customers (
+  id UUID PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  name TEXT,
+  phone TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+)
+
+-- Invoices
+invoices (
+  id UUID PRIMARY KEY,
+  caterer_id UUID REFERENCES caterers(id),
+  order_id UUID REFERENCES orders(id), -- NULL for manual invoices
+  invoice_number TEXT UNIQUE NOT NULL,
+  customer_name TEXT NOT NULL,
+  customer_email TEXT NOT NULL,
+  line_items JSONB NOT NULL,
+  total DECIMAL(10,2) NOT NULL,
+  status TEXT DEFAULT 'unpaid', -- 'unpaid', 'paid'
+  due_date DATE,
+  sent_at TIMESTAMP,
+  paid_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW()
+)
+
+-- Blocked dates
+blocked_dates (
+  id UUID PRIMARY KEY,
+  caterer_id UUID REFERENCES caterers(id),
+  date DATE NOT NULL,
+  reason TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+)
+
+-- Caterer cuisine types (junction table)
+caterer_cuisines (
+  caterer_id UUID REFERENCES caterers(id),
+  cuisine_id UUID REFERENCES cuisines(id),
+  PRIMARY KEY (caterer_id, cuisine_id)
+)
+
+-- Caterer event types (junction table)
+caterer_event_types (
+  caterer_id UUID REFERENCES caterers(id),
+  event_type_id UUID REFERENCES event_types(id),
+  PRIMARY KEY (caterer_id, event_type_id)
+)
+
+-- Caterer dietary options (junction table)
+caterer_dietary_options (
+  caterer_id UUID REFERENCES caterers(id),
+  dietary_option_id UUID REFERENCES dietary_options(id),
+  PRIMARY KEY (caterer_id, dietary_option_id)
+)
+```
+
+### Reference Tables
+
+```sql
+-- Cuisines
+cuisines (
+  id UUID PRIMARY KEY,
+  name TEXT UNIQUE NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+)
+
+-- Event types
+event_types (
+  id UUID PRIMARY KEY,
+  name TEXT UNIQUE NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+)
+
+-- Dietary options
+dietary_options (
+  id UUID PRIMARY KEY,
+  name TEXT UNIQUE NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+)
+
+-- Locations (UK/US cities and towns)
+locations (
+  id UUID PRIMARY KEY,
+  name TEXT NOT NULL,
+  slug TEXT NOT NULL,
+  country TEXT NOT NULL, -- 'UK', 'US'
+  latitude DECIMAL(10,8) NOT NULL,
+  longitude DECIMAL(11,8) NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+)
+```
+
+### Admin Tables
+
+```sql
+-- Global settings
+settings (
+  key TEXT PRIMARY KEY,
+  value JSONB NOT NULL,
+  updated_at TIMESTAMP DEFAULT NOW()
+)
+
+-- Admin users
+admin_users (
+  id UUID PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+)
+```
+
+## Environment Variables
+
+Required in Netlify:
+
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+
+# Stripe
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+
+# Resend
+RESEND_API_KEY=
+
+# App
+NEXT_PUBLIC_APP_URL=https://caterfy.com
+
+# Google Analytics
+NEXT_PUBLIC_GA_MEASUREMENT_ID=
+```
+
+## URL Structure
+
+### Caterer Sites
+- `caterfy.com/[slug]` - Individual caterer page (single page with sections)
+- Sections: #about, #menu, #gallery, #reviews, #contact, #order
+
+### Directory
+- `caterfy.com/directory` - All caterers
+- `caterfy.com/directory/[location]` - By location
+- `caterfy.com/directory/[location]/[cuisine]` - By location and cuisine
+
+### Dashboard
+- `caterfy.com/dashboard` - Caterer dashboard home
+- `caterfy.com/orders` - Orders management
+- `caterfy.com/menu` - Menu/services editor
+- etc.
+
+### Admin
+- `caterfy.com/mistuzzo` - Admin dashboard
+
+## Key Features to Implement
+
+### Phase 1: Core Platform
+1. Landing page with directory search
+2. Caterer signup flow with email verification
+3. Site builder (templates, branding, content)
+4. Individual caterer pages
+5. Stripe Connect onboarding
+
+### Phase 2: Ordering System
+1. Fixed-price ordering
+2. Quote request system
+3. Order management dashboard
+4. Email notifications (Resend)
+
+### Phase 3: Payments & Billing
+1. Stripe Billing for subscriptions
+2. Payment processing for orders
+3. Invoice generation
+4. Subscription management
+
+### Phase 4: Directory & Discovery
+1. Directory with filters
+2. Location-based search
+3. SEO optimization for all pages
+
+### Phase 5: Reviews & Polish
+1. Review system
+2. Review prompts (1 day after event)
+3. Caterer responses
+4. Admin dashboard
+
+## Coding Standards
+
+### File Naming
+- Components: PascalCase (e.g., `CatererCard.tsx`)
+- Utilities: camelCase (e.g., `formatPrice.ts`)
+- Pages: lowercase with hyphens (Next.js convention)
+
+### TypeScript
+- Use strict mode
+- Define types in `/types` directory
+- Use interfaces for objects, types for unions
+
+### Components
+- Functional components only
+- Use hooks for state management
+- Server components by default, client components when needed
+
+### API Routes
+- Use Next.js App Router conventions
+- Validate inputs with Zod
+- Return consistent response shapes
+
+### Database
+- Use Supabase client from `/lib/supabase`
+- Use Row Level Security (RLS) policies
+- Use Edge Functions for complex operations
+
+## Important Notes
+
+1. **Test Mode**: All Stripe and Resend integrations should use test credentials until launch.
+
+2. **Image Handling**: Accept JPG, JPEG, PNG, WebP, HEIC, HEIF. Auto-convert HEIC/HEIF to JPG. Max 5MB per image, auto-compress.
+
+3. **URL Slugs**: Lowercase, letters/numbers/hyphens only, 3-40 chars, must start with letter. Check reserved slugs list.
+
+4. **Guest Checkout**: Customers don't need accounts. Optional account creation after order.
+
+5. **Caterer Auth Only**: Only caterers authenticate via Supabase Auth. Customers use email links for order tracking and reviews.
+
+6. **No Platform Fee**: Revenue from subscriptions only. No transaction fees.
+
+7. **Offline Payments**: Support "pay later" option where caterer collects payment directly.
+
+8. **Distance Calculation**: City centre to city centre using coordinates from locations table.
+
+9. **Trial Period**: 14 days, fully functional. Stripe Connect required before going live.
+
+10. **Payment Failure**: Retry after 3 days, final warning, offline on day 4. Data preserved.
+
+## Templates
+
+### Classic
+- Full-width hero image
+- Left-aligned about section
+- Menu in clean list format
+- Gallery as uniform grid
+- Contact form centred
+
+### Modern
+- Hero with text overlay on darkened image
+- Centred about section
+- Menu with small thumbnail images
+- Masonry gallery layout
+- Contact form with map
+
+### Bold
+- Large coloured background hero
+- Split about layout (image left, text right)
+- Card-format menu items
+- Horizontal carousel gallery
+- Full-width contact section
+
+## Email Templates Required
+
+### To Caterers
+- Email verification
+- Welcome email
+- New order notification
+- New quote request
+- Order reminder (24hr)
+- Order auto-cancelled (48hr)
+- Payment failed
+- Final warning
+- Subscription cancelled
+- New review received
+
+### To Customers
+- Order confirmation
+- Order accepted
+- Order declined
+- Quote received
+- Review request (1 day after event)

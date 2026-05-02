@@ -1,0 +1,65 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { stripe } from '@/lib/stripe'
+import { createServiceClient } from '@/lib/supabase/server'
+import { sendPaymentFailed } from '@/lib/resend/emails'
+import Stripe from 'stripe'
+
+export async function POST(request: NextRequest) {
+  const body = await request.text()
+  const sig = request.headers.get('stripe-signature')!
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
+
+  let event: Stripe.Event
+  try {
+    event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
+  } catch (err: any) {
+    return NextResponse.json({ error: `Webhook error: ${err.message}` }, { status: 400 })
+  }
+
+  const supabase = await createServiceClient()
+
+  switch (event.type) {
+    case 'customer.subscription.created':
+    case 'customer.subscription.updated': {
+      const sub = event.data.object as Stripe.Subscription
+      const customerId = sub.customer as string
+      const { data: caterer } = await supabase.from('caterers').select('id').eq('stripe_customer_id', customerId).single()
+      if (caterer) {
+        await supabase.from('caterers').update({
+          subscription_status: sub.status === 'trialing' ? 'trialling' : sub.status === 'active' ? 'active' : sub.status === 'canceled' ? 'cancelled' : 'past_due',
+          trial_ends_at: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
+          subscription_ends_at: (sub as any).current_period_end ? new Date((sub as any).current_period_end * 1000).toISOString() : null,
+        }).eq('id', caterer.id)
+      }
+      break
+    }
+
+    case 'invoice.payment_failed': {
+      const invoice = event.data.object as Stripe.Invoice
+      const customerId = invoice.customer as string
+      const { data: caterer } = await supabase.from('caterers').select('id, email, business_name').eq('stripe_customer_id', customerId).single()
+      if (caterer) {
+        await supabase.from('caterers').update({ subscription_status: 'past_due' }).eq('id', caterer.id)
+        await sendPaymentFailed(caterer.email, caterer.business_name)
+      }
+      break
+    }
+
+    case 'invoice.payment_succeeded': {
+      const invoice = event.data.object as Stripe.Invoice
+      const customerId = invoice.customer as string
+      await supabase.from('caterers').update({ subscription_status: 'active' }).eq('stripe_customer_id', customerId)
+      break
+    }
+
+    case 'account.updated': {
+      const account = event.data.object as Stripe.Account
+      if (account.charges_enabled) {
+        await supabase.from('caterers').update({ stripe_connect_id: account.id }).eq('stripe_connect_id', account.id)
+      }
+      break
+    }
+  }
+
+  return NextResponse.json({ received: true })
+}
