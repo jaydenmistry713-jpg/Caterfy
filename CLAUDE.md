@@ -414,6 +414,52 @@ All phases are implemented and the app builds successfully (Next.js 16, 33 route
 - Google Analytics wired up (env var exists, tag not added to layout yet)
 - Google Fonts loading (fonts selected in site editor but not loaded via next/font)
 
+## Deployment & Infrastructure Notes
+
+### Hosting
+- Netlify at `caterfy.netlify.app`
+- Repo root is the Next.js project (no subdirectory) — do NOT set a base directory in Netlify UI or netlify.toml
+- Build command: `npm run build`, publish directory: `.next`
+
+### Supabase Auth
+- Redirect URL must be set to `https://caterfy.netlify.app/api/auth/callback` in Supabase → Authentication → URL Configuration
+- Site URL must be `https://caterfy.netlify.app`
+- `emailRedirectTo` in signup form points to `/api/auth/callback?next=/dashboard?welcome=true`
+- Dashboard layout has a fallback that auto-creates the caterer record if the callback was missed
+- Custom SMTP: attempted via Resend but `onboarding@resend.dev` does not work over SMTP — requires a verified domain. Until domain is verified, leave Supabase on its default email service (Project Settings → Auth → SMTP disabled)
+- To use custom SMTP in future: verify domain in Resend, then set sender to `hello@yourdomain.com` in Supabase Project Settings → Auth → SMTP Settings
+
+### Resend Emails
+- `FROM_EMAIL` and `ORDERS_EMAIL` default to `onboarding@resend.dev` when `RESEND_FROM_DOMAIN` env var is not set
+- Emails go through Resend API (not SMTP) — this works without domain verification
+- Resend sandbox restriction: with `onboarding@resend.dev`, emails only deliver to the Resend account owner email
+- To send to any recipient: verify domain in Resend, then set `RESEND_FROM_DOMAIN=yourdomain.com` in Netlify env vars
+
+### Images
+- Supabase Storage bucket: `caterer-images` (must be public)
+- `next.config.ts` whitelists `*.supabase.co` for Next.js Image component
+- Paths: `hero/{catererId}.ext`, `logos/{catererId}.ext`, `gallery/{catererId}/{timestamp}.ext`
+
+### Stripe
+- All in test mode — use test card `4242 4242 4242 4242`
+- Stripe Connect must be activated at `dashboard.stripe.com/connect` before the Connect Stripe button works
+- Webhook endpoint: `https://caterfy.netlify.app/api/webhooks/stripe`
+- Required webhook events: `customer.subscription.created`, `customer.subscription.updated`, `invoice.payment_succeeded`, `invoice.payment_failed`, `account.updated`
+
+### Deleting a test account (SQL order)
+```sql
+DELETE FROM orders WHERE caterer_id = '[user-id]';
+DELETE FROM caterer_cuisines WHERE caterer_id = '[user-id]';
+DELETE FROM caterer_event_types WHERE caterer_id = '[user-id]';
+DELETE FROM caterer_dietary_options WHERE caterer_id = '[user-id]';
+DELETE FROM caterer_pages WHERE caterer_id = '[user-id]';
+DELETE FROM gallery_images WHERE caterer_id = '[user-id]';
+DELETE FROM menu_items WHERE caterer_id = '[user-id]';
+DELETE FROM blocked_dates WHERE caterer_id = '[user-id]';
+DELETE FROM caterers WHERE id = '[user-id]';
+-- Then delete from Supabase Authentication → Users
+```
+
 ## Coding Standards
 
 ### File Naming
