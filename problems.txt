@@ -1,9 +1,2 @@
-- order confirmation email. when paying offline, it says arrange with caterer in the email. change that to say something about caterer contacting them for payment
-- click a button to automatically send invoice to the email in that order (use resend)
-- email acceptance with review link not working
-- everything loads very slow and there’s nothing happening while it loads which makes you think you didn’t click. So add some sort of subtle loading animation
-- Discount code functionality
-- FAQs
-- Video signup detailing how to do things (quick tutorial)
-- Powered by caterfy in the footer of all websites created
-- mobile admin side can't be navigated and isn't optimised
+- instead of a checklist initially (keep it), have an onboarding phase, questions fade into and out of the screen with a indicator as to which question you're on. whatever isn't complete will show up in the checklist
+- when ordering there needs to be differentiation between orders of items and catering requests, it seems like they have the same order screen and process because when I order an item, it asks about event location and other infor

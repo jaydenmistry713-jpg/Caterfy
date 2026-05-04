@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { toast } from '@/lib/utils/use-toast'
 import { generateOrderReference } from '@/lib/utils'
-import { CheckCircle, Tag, Loader2 } from 'lucide-react'
+import { CheckCircle, Tag, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
 
 interface OrderItem {
   id: string
@@ -36,6 +36,7 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
 
   const [selectedItems, setSelectedItems] = useState<OrderItem[]>([])
   const [categoryFilter, setCategoryFilter] = useState<string>('All')
+  const [showExtraDetails, setShowExtraDetails] = useState(false)
   const [discountCode, setDiscountCode] = useState('')
   const [discountValidating, setDiscountValidating] = useState(false)
   const [appliedDiscount, setAppliedDiscount] = useState<{ code: string; amount: number; label: string } | null>(null)
@@ -262,36 +263,102 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
           </div>
         )}
 
-        {/* Step 2: Event & personal details */}
-        {step === (orderType === 'fixed' ? 2 : 1) && (
+        {/* Step 2 (fixed): checkout-style contact details */}
+        {orderType === 'fixed' && step === 2 && (
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
                 <Label>Full name *</Label>
-                <Input className="mt-1" value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} required />
+                <Input className="mt-1" value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} />
               </div>
               <div>
                 <Label>Email *</Label>
-                <Input className="mt-1" type="email" value={form.customer_email} onChange={(e) => setForm({ ...form, customer_email: e.target.value })} required />
+                <Input className="mt-1" type="email" value={form.customer_email} onChange={(e) => setForm({ ...form, customer_email: e.target.value })} />
               </div>
               <div>
                 <Label>Phone *</Label>
-                <Input className="mt-1" type="tel" value={form.customer_phone} onChange={(e) => setForm({ ...form, customer_phone: e.target.value })} required />
+                <Input className="mt-1" type="tel" value={form.customer_phone} onChange={(e) => setForm({ ...form, customer_phone: e.target.value })} />
+              </div>
+              <div className="col-span-2">
+                <Label>Delivery / event date *</Label>
+                <Input className="mt-1" type="date" min={new Date().toISOString().split('T')[0]} value={form.event_date} onChange={(e) => setForm({ ...form, event_date: e.target.value })} />
+              </div>
+            </div>
+
+            {/* Optional event details toggle */}
+            <button
+              type="button"
+              onClick={() => setShowExtraDetails((v) => !v)}
+              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors mt-1"
+            >
+              {showExtraDetails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              {showExtraDetails ? 'Hide extra details' : 'Add event details (optional)'}
+            </button>
+
+            {showExtraDetails && (
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div>
+                  <Label>Event time</Label>
+                  <Input className="mt-1" type="time" value={form.event_time} onChange={(e) => setForm({ ...form, event_time: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Number of guests</Label>
+                  <Input className="mt-1" type="number" min="1" value={form.guest_count} onChange={(e) => setForm({ ...form, guest_count: e.target.value })} />
+                </div>
+                <div className="col-span-2">
+                  <Label>Venue / delivery address</Label>
+                  <Input className="mt-1" placeholder="Address or venue name" value={form.event_location} onChange={(e) => setForm({ ...form, event_location: e.target.value })} />
+                </div>
+                <div className="col-span-2">
+                  <Label>Dietary requirements</Label>
+                  <Input className="mt-1" value={form.dietary_requirements} onChange={(e) => setForm({ ...form, dietary_requirements: e.target.value })} placeholder="e.g. Vegan, nut-free, halal..." />
+                </div>
+                <div className="col-span-2">
+                  <Label>Notes for the caterer</Label>
+                  <Textarea className="mt-1" rows={2} value={form.additional_comments} onChange={(e) => setForm({ ...form, additional_comments: e.target.value })} />
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-between pt-1">
+              <Button variant="outline" onClick={() => setStep(1)}>← Back</Button>
+              <Button
+                onClick={() => setStep(3)}
+                disabled={!form.customer_name || !form.customer_email || !form.customer_phone || !form.event_date}
+                style={{ backgroundColor: accentColor }}
+              >
+                Continue →
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 1 (quote): full event details */}
+        {orderType === 'quote' && step === 1 && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2">
+                <Label>Full name *</Label>
+                <Input className="mt-1" value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} />
+              </div>
+              <div>
+                <Label>Email *</Label>
+                <Input className="mt-1" type="email" value={form.customer_email} onChange={(e) => setForm({ ...form, customer_email: e.target.value })} />
+              </div>
+              <div>
+                <Label>Phone *</Label>
+                <Input className="mt-1" type="tel" value={form.customer_phone} onChange={(e) => setForm({ ...form, customer_phone: e.target.value })} />
               </div>
               <div>
                 <Label>Event date *</Label>
-                <Input className="mt-1" type="date" min={new Date().toISOString().split('T')[0]} value={form.event_date} onChange={(e) => setForm({ ...form, event_date: e.target.value })} required />
+                <Input className="mt-1" type="date" min={new Date().toISOString().split('T')[0]} value={form.event_date} onChange={(e) => setForm({ ...form, event_date: e.target.value })} />
               </div>
               <div>
-                <Label>Event time</Label>
-                <Input className="mt-1" type="time" value={form.event_time} onChange={(e) => setForm({ ...form, event_time: e.target.value })} />
-              </div>
-              <div className="col-span-2">
-                <Label>Event location</Label>
-                <Input className="mt-1" placeholder="Address or venue" value={form.event_location} onChange={(e) => setForm({ ...form, event_location: e.target.value })} />
+                <Label>Number of guests *</Label>
+                <Input className="mt-1" type="number" min="1" value={form.guest_count} onChange={(e) => setForm({ ...form, guest_count: e.target.value })} placeholder="Approx." />
               </div>
               <div>
-                <Label>Event type</Label>
+                <Label>Event type *</Label>
                 <Select value={form.event_type} onValueChange={(v) => setForm({ ...form, event_type: v })}>
                   <SelectTrigger className="mt-1"><SelectValue placeholder="Select..." /></SelectTrigger>
                   <SelectContent>
@@ -301,30 +368,24 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label>Number of guests</Label>
-                <Input className="mt-1" type="number" min="1" value={form.guest_count} onChange={(e) => setForm({ ...form, guest_count: e.target.value })} />
+              <div className="col-span-2">
+                <Label>Event location</Label>
+                <Input className="mt-1" placeholder="Address or venue" value={form.event_location} onChange={(e) => setForm({ ...form, event_location: e.target.value })} />
               </div>
-              {orderType === 'quote' && (
-                <div className="col-span-2">
-                  <Label>Describe your requirements</Label>
-                  <Textarea className="mt-1" rows={3} value={form.special_requests} onChange={(e) => setForm({ ...form, special_requests: e.target.value })} placeholder="What kind of food are you looking for?" />
-                </div>
-              )}
+              <div className="col-span-2">
+                <Label>Describe your requirements *</Label>
+                <Textarea className="mt-1" rows={3} value={form.special_requests} onChange={(e) => setForm({ ...form, special_requests: e.target.value })} placeholder="What food are you looking for? Any themes, serving styles, or special requests?" />
+              </div>
               <div className="col-span-2">
                 <Label>Dietary requirements</Label>
                 <Input className="mt-1" value={form.dietary_requirements} onChange={(e) => setForm({ ...form, dietary_requirements: e.target.value })} placeholder="e.g. Vegan, nut-free, halal..." />
               </div>
-              <div className="col-span-2">
-                <Label>Additional comments</Label>
-                <Textarea className="mt-1" rows={2} value={form.additional_comments} onChange={(e) => setForm({ ...form, additional_comments: e.target.value })} />
-              </div>
             </div>
 
             <div className="flex justify-between">
-              <Button variant="outline" onClick={() => setStep(orderType === 'fixed' ? 1 : 1)}>← Back</Button>
+              <div />
               <Button
-                onClick={() => setStep(orderType === 'fixed' ? 3 : 2)}
+                onClick={() => setStep(2)}
                 disabled={!form.customer_name || !form.customer_email || !form.customer_phone || !form.event_date}
                 style={{ backgroundColor: accentColor }}
               >
