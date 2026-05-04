@@ -107,7 +107,7 @@ caterers (
 caterer_pages (
   id UUID PRIMARY KEY,
   caterer_id UUID REFERENCES caterers(id),
-  template TEXT DEFAULT 'classic', -- 'classic', 'modern', 'bold'
+  template TEXT DEFAULT 'classic', -- 'classic', 'modern', 'bold', 'linkpage'
   tagline TEXT,
   about TEXT,
   primary_color TEXT DEFAULT '#000000',
@@ -119,6 +119,7 @@ caterer_pages (
   logo_url TEXT,
   hero_image_url TEXT,
   terms_conditions TEXT,
+  template_data JSONB DEFAULT '{}', -- linkpage-specific: chips, badge1, badge2, instagram, cta_label, extras, faqs
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 )
@@ -187,6 +188,8 @@ orders (
   dietary_requirements TEXT,
   additional_comments TEXT,
   stripe_payment_intent_id TEXT,
+  discount_code TEXT,
+  discount_amount DECIMAL(10,2),
   reminder_sent_at TIMESTAMP,
   accepted_at TIMESTAMP,
   cancelled_at TIMESTAMP,
@@ -276,6 +279,21 @@ caterer_dietary_options (
   caterer_id UUID REFERENCES caterers(id),
   dietary_option_id UUID REFERENCES dietary_options(id),
   PRIMARY KEY (caterer_id, dietary_option_id)
+)
+
+-- Discount codes
+discount_codes (
+  id UUID PRIMARY KEY,
+  caterer_id UUID REFERENCES caterers(id),
+  code TEXT NOT NULL,
+  type TEXT NOT NULL, -- 'percent', 'fixed'
+  value DECIMAL(10,2) NOT NULL,
+  min_order_value DECIMAL(10,2),
+  max_uses INTEGER,
+  uses_count INTEGER DEFAULT 0,
+  expires_at TIMESTAMP,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT NOW()
 )
 ```
 
@@ -383,35 +401,44 @@ NEXT_PUBLIC_GA_MEASUREMENT_ID=
 
 ## Build Status
 
-All phases are implemented and the app builds successfully (Next.js 16, 33 routes).
+All phases are implemented and the app builds successfully (Next.js 16, 36 routes).
 
 ### Completed
 - Landing page with directory search
 - Caterer signup/login with email verification (Supabase Auth)
 - 14-day trial on signup, caterer record auto-created on email verify
-- Site builder: 3 templates (Classic, Modern, Bold), branding, content, image uploads, URL slug
+- Site builder: 4 templates (Classic, Modern, Bold, Link Page), branding, content, image uploads, URL slug
   - Template picker shows mini wireframe previews of each layout (not just a label)
+  - Animated 3-step onboarding wizard on first visit (template → accent colour → tagline)
 - Individual caterer public pages at `/{slug}`
 - Menu/packages editor with delete for both items and packages
 - Gallery manager (Supabase Storage, `caterer-images` bucket)
 - Orders dashboard with fixed-price and quote flows
+  - Fixed-price orders and quote requests use differentiated forms (fixed: simple checkout with optional extras; quote: full event details with requirements textarea)
   - "Mark as Completed" button available on all accepted orders (not gated to offline payment)
   - Delete button available on all orders (in expanded view)
+  - Order accept/decline sends email via API route (`/api/orders/[id]`) with review link in acceptance email
 - Quote builder dialog (send quote → customer gets email with accept link)
 - Availability/blocked dates manager
 - Reviews dashboard with caterer response
-- Invoices manager — create custom invoices or generate from any accepted/completed order
+- Invoices manager — create custom invoices or generate from any accepted/completed order; send via email button
+- Discount codes — full CRUD at `/discount-codes`; customers can apply codes at checkout; validated via `/api/discount-codes/validate`
 - Stripe Billing subscription flow (£10/month, checkout + portal)
 - Stripe Connect onboarding for caterer payouts
 - Stripe webhooks (subscription lifecycle, payment events)
-- Resend email notifications (orders, quotes, reviews, auth)
+- Resend email notifications (orders, quotes, reviews, auth, invoices)
 - Admin dashboard at `/mistuzzo`
 - Directory with location + cuisine filters
 - Order status lookup page (`/order-status`)
 - Customer review submission page (`/review`)
 - Legal pages (terms, privacy, cookies)
+- FAQ page at `/faq` (10 caterer FAQs + 6 customer FAQs)
 - Order form category filter: pill buttons let customers filter menu items by category (shown when 2+ categories exist)
 - Logo on caterer public pages displays at h-14 (56px) for better visibility
+- "Powered by Caterfy" footer on all four caterer page templates
+- Mobile navigation: topbar has a slide-out drawer with full nav for mobile
+- Dashboard onboarding wizard: animated 4-step full-screen overlay shown once after email verification (phone → location → cuisines → event types)
+- Loading skeleton (`app/(dashboard)/loading.tsx`) for Suspense-based page transitions
 
 ### Pending / Not Yet Built
 - Order reminder cron (email caterer after 24hr, auto-cancel at 48hr)
@@ -451,6 +478,14 @@ All phases are implemented and the app builds successfully (Next.js 16, 33 route
 - Webhook endpoint: `https://caterfy.netlify.app/api/webhooks/stripe`
 - Required webhook events: `customer.subscription.created`, `customer.subscription.updated`, `invoice.payment_succeeded`, `invoice.payment_failed`, `account.updated`
 
+### Database Migrations
+Migrations live in `supabase/migrations/` and must be run manually in Supabase SQL editor:
+- `001_*` — initial schema
+- `002_*` — early additions
+- `003_discount_codes.sql` — discount_codes table; adds discount_code + discount_amount to orders
+- `004_link_page.sql` — adds template_data JSONB column to caterer_pages
+- `005_template_constraint.sql` — updates caterer_pages_template_check to include 'linkpage'
+
 ### Deleting a test account (SQL order)
 ```sql
 DELETE FROM orders WHERE caterer_id = '[user-id]';
@@ -462,6 +497,7 @@ DELETE FROM gallery_images WHERE caterer_id = '[user-id]';
 DELETE FROM menu_items WHERE caterer_id = '[user-id]';
 DELETE FROM blocked_dates WHERE caterer_id = '[user-id]';
 DELETE FROM caterers WHERE id = '[user-id]';
+DELETE FROM discount_codes WHERE caterer_id = '[user-id]';
 -- Then delete from Supabase Authentication → Users
 ```
 
@@ -536,6 +572,21 @@ DELETE FROM caterers WHERE id = '[user-id]';
 - Card-format menu items
 - Horizontal carousel gallery
 - Full-width contact section
+
+### Link Page
+- Dark mobile-first layout (max 460px centred), inspired by link-in-bio pages
+- Hero banner with avatar/logo, business name, tagline in accent colour
+- Profile bio + chip tags and credential badges (from `template_data`)
+- Quick action links: primary CTA button, phone, email, Instagram
+- Horizontal scrollable gallery strip
+- Packages as tray cards (1–3 grid; middle card marked "Popular" when 3 packages)
+- Extras add-on list (from `template_data.extras` in "Name | Price" format, one per line)
+- Menu items grouped by category in collapsible accordions
+- Reviews with serif italic quotes and star ratings in accent colour
+- FAQ accordions (from `template_data.faqs`)
+- Sticky bottom bar with "Order Now" + "Call" buttons
+- All accent colours are fully dynamic from `caterer_pages.accent_color`
+- Link Page-specific fields in the site editor Content tab: chips, badges, instagram, CTA label, extras, FAQs
 
 ## Email Templates Required
 
