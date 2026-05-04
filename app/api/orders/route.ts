@@ -22,6 +22,8 @@ const orderSchema = z.object({
   dietary_requirements: z.string().optional(),
   additional_comments: z.string().optional(),
   payment_method: z.enum(['card', 'offline']).optional(),
+  discount_code: z.string().optional().nullable(),
+  discount_amount: z.number().optional().nullable(),
 })
 
 export async function POST(request: NextRequest) {

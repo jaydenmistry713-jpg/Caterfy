@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { toast } from '@/lib/utils/use-toast'
 import { generateOrderReference } from '@/lib/utils'
-import { CheckCircle } from 'lucide-react'
+import { CheckCircle, Tag, Loader2 } from 'lucide-react'
 
 interface OrderItem {
   id: string
@@ -36,6 +36,9 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
 
   const [selectedItems, setSelectedItems] = useState<OrderItem[]>([])
   const [categoryFilter, setCategoryFilter] = useState<string>('All')
+  const [discountCode, setDiscountCode] = useState('')
+  const [discountValidating, setDiscountValidating] = useState(false)
+  const [appliedDiscount, setAppliedDiscount] = useState<{ code: string; amount: number; label: string } | null>(null)
   const [form, setForm] = useState({
     customer_name: '',
     customer_email: '',
@@ -68,7 +71,31 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
     return selectedItems.find((i) => i.id === id)?.quantity || 0
   }
 
-  const total = selectedItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const subtotal = selectedItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const total = subtotal - (appliedDiscount?.amount || 0)
+
+  async function applyDiscount() {
+    if (!discountCode.trim()) return
+    setDiscountValidating(true)
+    try {
+      const res = await fetch('/api/discount-codes/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: discountCode.trim(), caterer_id: caterer.id, order_total: subtotal }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      const label = data.discount_type === 'percent'
+        ? `${data.discount_value}% off`
+        : `£${Number(data.discount_value).toFixed(2)} off`
+      setAppliedDiscount({ code: discountCode.trim().toUpperCase(), amount: data.discount_amount, label })
+      toast({ title: `Discount applied: ${label}`, variant: 'success' })
+    } catch (err: any) {
+      toast({ title: 'Invalid code', description: err.message, variant: 'destructive' })
+    } finally {
+      setDiscountValidating(false)
+    }
+  }
 
   async function submitOrder() {
     setLoading(true)
@@ -84,8 +111,10 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
           ...form,
           guest_count: form.guest_count ? parseInt(form.guest_count) : null,
           items: orderType === 'fixed' ? selectedItems.map(({ id, name, quantity, price, price_unit }) => ({ item_id: id, name, quantity, price, price_unit })) : null,
-          subtotal: orderType === 'fixed' ? total : null,
+          subtotal: orderType === 'fixed' ? subtotal : null,
           total: orderType === 'fixed' ? total : null,
+          discount_code: appliedDiscount?.code || null,
+          discount_amount: appliedDiscount?.amount || null,
         }),
       })
 
@@ -208,9 +237,20 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
             })()}
 
             {selectedItems.length > 0 && (
-              <div className="flex justify-between items-center pt-2 border-t border-gray-200 font-semibold">
-                <span>Total</span>
-                <span>£{total.toFixed(2)}</span>
+              <div className="pt-2 border-t border-gray-200 space-y-2">
+                <div className="flex justify-between items-center font-semibold">
+                  <span>Total</span>
+                  <span>£{subtotal.toFixed(2)}</span>
+                </div>
+                {appliedDiscount && (
+                  <div className="flex justify-between items-center text-green-700 text-sm">
+                    <span className="flex items-center gap-1">
+                      <Tag className="h-3.5 w-3.5" />{appliedDiscount.code} ({appliedDiscount.label})
+                      <button onClick={() => setAppliedDiscount(null)} className="ml-1 text-gray-400 hover:text-gray-600 text-xs">✕</button>
+                    </span>
+                    <span>−£{appliedDiscount.amount.toFixed(2)}</span>
+                  </div>
+                )}
               </div>
             )}
 
@@ -331,6 +371,38 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
               </div>
             )}
 
+            {/* Discount code (fixed orders only) */}
+            {orderType === 'fixed' && (
+              <div>
+                <Label>Discount code</Label>
+                {appliedDiscount ? (
+                  <div className="mt-1 flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+                    <Tag className="h-4 w-4 flex-shrink-0" />
+                    <span className="flex-1">{appliedDiscount.code} — {appliedDiscount.label} (−£{appliedDiscount.amount.toFixed(2)})</span>
+                    <button onClick={() => { setAppliedDiscount(null); setDiscountCode('') }} className="text-green-500 hover:text-green-700">✕</button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2 mt-1">
+                    <Input
+                      placeholder="Enter code"
+                      value={discountCode}
+                      onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => e.key === 'Enter' && applyDiscount()}
+                      disabled={subtotal === 0}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={applyDiscount}
+                      disabled={!discountCode.trim() || discountValidating || subtotal === 0}
+                    >
+                      {discountValidating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Order summary */}
             <div className="bg-gray-50 rounded-xl p-4">
               <p className="font-medium text-gray-900 mb-2">Order Summary</p>
@@ -341,7 +413,15 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
                 {form.event_type && <p><span className="text-gray-500">Event:</span> {form.event_type}</p>}
                 {form.guest_count && <p><span className="text-gray-500">Guests:</span> {form.guest_count}</p>}
                 {orderType === 'fixed' && (
-                  <p className="font-semibold text-gray-900 pt-1">Total: £{total.toFixed(2)}</p>
+                  <div className="pt-1 space-y-0.5">
+                    {appliedDiscount && (
+                      <>
+                        <p className="text-gray-500">Subtotal: £{subtotal.toFixed(2)}</p>
+                        <p className="text-green-700">Discount: −£{appliedDiscount.amount.toFixed(2)}</p>
+                      </>
+                    )}
+                    <p className="font-semibold text-gray-900">Total: £{total.toFixed(2)}</p>
+                  </div>
                 )}
               </div>
             </div>

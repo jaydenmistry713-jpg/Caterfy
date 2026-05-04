@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ShoppingBag, Star, AlertCircle, CheckCircle, ArrowRight } from 'lucide-react'
+import { ShoppingBag, Star, AlertCircle, CheckCircle, ArrowRight, PlayCircle } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ welcome?: string }> }) {
@@ -190,6 +190,24 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           </CardContent>
         </Card>
       </div>
+
+      {/* Getting started video */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <PlayCircle className="h-5 w-5 text-gray-400" />
+            Getting started with Caterfy
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="aspect-video w-full max-w-2xl rounded-xl bg-gray-100 flex items-center justify-center">
+            <div className="text-center">
+              <PlayCircle className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-sm text-gray-400">Tutorial video coming soon</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

@@ -105,7 +105,7 @@ export async function sendOrderConfirmationToCustomer(
         <tr><td style="padding: 8px; border-bottom: 1px solid #eee; color: #666;">Caterer</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${order.business_name}</td></tr>
         <tr><td style="padding: 8px; border-bottom: 1px solid #eee; color: #666;">Event Date</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${new Date(order.event_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</td></tr>
         ${order.total ? `<tr><td style="padding: 8px; border-bottom: 1px solid #eee; color: #666;">Total</td><td style="padding: 8px; border-bottom: 1px solid #eee;">£${order.total.toFixed(2)}</td></tr>` : ''}
-        <tr><td style="padding: 8px; color: #666;">Payment</td><td style="padding: 8px;">${order.payment_method === 'offline' ? 'Arrange with caterer' : 'Card — awaiting acceptance'}</td></tr>
+        <tr><td style="padding: 8px; color: #666;">Payment</td><td style="padding: 8px;">${order.payment_method === 'offline' ? 'Pay later — the caterer will contact you to arrange payment once your order is confirmed' : 'Card — awaiting acceptance'}</td></tr>
       </table>
       <div style="text-align: center; margin: 30px 0;">
         <a href="${APP_URL}/order-status?ref=${order.reference_number}" style="background: #1a1a1a; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold;">Track Order Status</a>
@@ -114,7 +114,10 @@ export async function sendOrderConfirmationToCustomer(
   })
 }
 
-export async function sendOrderAccepted(to: string, order: { reference_number: string; business_name: string }) {
+export async function sendOrderAccepted(
+  to: string,
+  order: { reference_number: string; business_name: string; id: string }
+) {
   return resend.emails.send({
     from: ORDERS_EMAIL,
     to,
@@ -123,6 +126,54 @@ export async function sendOrderAccepted(to: string, order: { reference_number: s
       <h2>Your order has been accepted! 🎉</h2>
       <p><strong>${order.business_name}</strong> has accepted your order (${order.reference_number}).</p>
       <p>They will be in touch to confirm the details. If you paid by card, your card will now be charged.</p>
+      <p style="margin-top: 24px; color: #666; font-size: 14px;">Once your event is over, we'd love to hear how it went!</p>
+      <div style="text-align: center; margin: 20px 0;">
+        <a href="${APP_URL}/review?order=${order.id}" style="background: #1a1a1a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-size: 14px;">Leave a Review</a>
+      </div>
+    `),
+  })
+}
+
+export async function sendInvoiceEmail(
+  to: string,
+  invoice: {
+    invoice_number: string
+    business_name: string
+    customer_name: string
+    line_items: { description: string; amount: number }[]
+    total: number
+    due_date?: string
+  }
+) {
+  const rows = invoice.line_items
+    .map((l) => `<tr><td style="padding: 8px; border-bottom: 1px solid #eee;">${l.description}</td><td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">£${Number(l.amount).toFixed(2)}</td></tr>`)
+    .join('')
+
+  return resend.emails.send({
+    from: FROM_EMAIL,
+    to,
+    subject: `Invoice ${invoice.invoice_number} from ${invoice.business_name}`,
+    html: baseTemplate(`
+      <h2>Invoice from ${invoice.business_name}</h2>
+      <p>Hi ${invoice.customer_name},</p>
+      <p>Please find your invoice details below.</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        <thead>
+          <tr style="background: #f9f9f9;">
+            <th style="padding: 8px; text-align: left; border-bottom: 2px solid #eee; color: #666;">Description</th>
+            <th style="padding: 8px; text-align: right; border-bottom: 2px solid #eee; color: #666;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+        <tfoot>
+          <tr>
+            <td style="padding: 12px 8px; font-weight: bold; font-size: 16px;">Total</td>
+            <td style="padding: 12px 8px; font-weight: bold; font-size: 16px; text-align: right;">£${Number(invoice.total).toFixed(2)}</td>
+          </tr>
+        </tfoot>
+      </table>
+      ${invoice.due_date ? `<p style="color: #666; font-size: 14px;">Payment due: <strong>${new Date(invoice.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</strong></p>` : ''}
+      <p style="color: #666; font-size: 14px;">Please arrange payment directly with ${invoice.business_name}. If you have any questions, reply to this email.</p>
     `),
   })
 }

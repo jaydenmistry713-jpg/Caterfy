@@ -1,9 +1,29 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import Link from 'next/link'
+import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { LogOut, Bell } from 'lucide-react'
+import { LogOut, Menu, X, ExternalLink,
+  LayoutDashboard, ShoppingBag, UtensilsCrossed, Palette,
+  Images, Star, Calendar, BarChart2, CreditCard, FileText, Settings, Tag } from 'lucide-react'
+import { cn } from '@/lib/utils'
+
+const navItems = [
+  { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { href: '/orders', icon: ShoppingBag, label: 'Orders' },
+  { href: '/menu', icon: UtensilsCrossed, label: 'Menu & Services' },
+  { href: '/site-editor', icon: Palette, label: 'Site Editor' },
+  { href: '/gallery', icon: Images, label: 'Gallery' },
+  { href: '/reviews', icon: Star, label: 'Reviews' },
+  { href: '/availability', icon: Calendar, label: 'Availability' },
+  { href: '/analytics', icon: BarChart2, label: 'Analytics' },
+  { href: '/payments', icon: CreditCard, label: 'Payments' },
+  { href: '/invoices', icon: FileText, label: 'Invoices' },
+  { href: '/discount-codes', icon: Tag, label: 'Discount Codes' },
+  { href: '/settings', icon: Settings, label: 'Settings' },
+]
 
 interface Props {
   caterer: any
@@ -11,6 +31,8 @@ interface Props {
 
 export default function DashboardTopbar({ caterer }: Props) {
   const router = useRouter()
+  const pathname = usePathname()
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   async function handleLogout() {
     const supabase = createClient()
@@ -20,18 +42,83 @@ export default function DashboardTopbar({ caterer }: Props) {
   }
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-      <div className="lg:hidden font-bold text-lg text-gray-900">Caterfy</div>
-      <div className="hidden lg:block" />
+    <>
+      <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4 flex items-center justify-between sticky top-0 z-30">
+        <div className="flex items-center gap-3">
+          <button
+            className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+            onClick={() => setMobileOpen(true)}
+            aria-label="Open menu"
+          >
+            <Menu className="h-5 w-5 text-gray-700" />
+          </button>
+          <div className="lg:hidden font-bold text-lg text-gray-900">Caterfy</div>
+        </div>
+        <div className="hidden lg:block" />
 
-      <div className="flex items-center gap-3">
-        {caterer && (
-          <span className="hidden sm:block text-sm text-gray-500">{caterer.email}</span>
-        )}
-        <Button variant="ghost" size="icon" onClick={handleLogout} title="Log out">
-          <LogOut className="h-4 w-4" />
-        </Button>
-      </div>
-    </header>
+        <div className="flex items-center gap-3">
+          {caterer && (
+            <span className="hidden sm:block text-sm text-gray-500">{caterer.email}</span>
+          )}
+          <Button variant="ghost" size="icon" onClick={handleLogout} title="Log out">
+            <LogOut className="h-4 w-4" />
+          </Button>
+        </div>
+      </header>
+
+      {/* Mobile nav overlay */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
+          <aside className="absolute left-0 top-0 h-full w-72 bg-white flex flex-col shadow-xl">
+            <div className="p-5 border-b border-gray-200 flex items-center justify-between">
+              <div>
+                <p className="font-bold text-lg text-gray-900">Caterfy</p>
+                {caterer?.business_name && (
+                  <p className="text-sm text-gray-500 truncate">{caterer.business_name}</p>
+                )}
+              </div>
+              <button onClick={() => setMobileOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-100">
+                <X className="h-5 w-5 text-gray-600" />
+              </button>
+            </div>
+
+            <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+              {navItems.map((item) => {
+                const active = pathname === item.href
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors',
+                      active ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    )}
+                  >
+                    <item.icon className="h-4 w-4 flex-shrink-0" />
+                    {item.label}
+                  </Link>
+                )
+              })}
+            </nav>
+
+            {caterer?.slug && (
+              <div className="p-4 border-t border-gray-200">
+                <Link
+                  href={`/${caterer.slug}`}
+                  target="_blank"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  View my site
+                </Link>
+              </div>
+            )}
+          </aside>
+        </div>
+      )}
+    </>
   )
 }

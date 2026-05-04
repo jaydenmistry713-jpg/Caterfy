@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { createClient } from '@/lib/supabase/client'
 import { toast } from '@/lib/utils/use-toast'
 import { formatDate } from '@/lib/utils'
-import { Plus, Send, CheckCircle, Trash2 } from 'lucide-react'
+import { Plus, Send, CheckCircle, Trash2, Loader2 } from 'lucide-react'
 
 interface Order {
   id: string
@@ -36,6 +36,7 @@ export default function InvoicesManager({ caterererId, businessName, initialInvo
   const [invoices, setInvoices] = useState(initialInvoices)
   const [showCreate, setShowCreate] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [sendingId, setSendingId] = useState<string | null>(null)
   const [createMode, setCreateMode] = useState<'custom' | 'from-order'>('custom')
   const [selectedOrderId, setSelectedOrderId] = useState<string>('')
   const [form, setForm] = useState({
@@ -122,6 +123,20 @@ export default function InvoicesManager({ caterererId, businessName, initialInvo
     toast({ title: 'Invoice marked as paid', variant: 'success' })
   }
 
+  async function sendInvoice(id: string) {
+    setSendingId(id)
+    try {
+      const res = await fetch(`/api/invoices/${id}/send`, { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      toast({ title: 'Invoice sent!', description: 'Email delivered to customer.', variant: 'success' })
+    } catch (err: any) {
+      toast({ title: 'Failed to send', description: err.message, variant: 'destructive' })
+    } finally {
+      setSendingId(null)
+    }
+  }
+
   return (
     <>
       <div className="flex justify-end">
@@ -149,6 +164,17 @@ export default function InvoicesManager({ caterererId, businessName, initialInvo
                     {inv.due_date && <p className="text-xs text-gray-400">Due: {formatDate(inv.due_date)}</p>}
                   </div>
                   <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => sendInvoice(inv.id)}
+                      disabled={sendingId === inv.id}
+                    >
+                      {sendingId === inv.id
+                        ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                        : <Send className="h-3.5 w-3.5 mr-1" />}
+                      Send
+                    </Button>
                     {inv.status === 'unpaid' && (
                       <Button size="sm" variant="outline" onClick={() => markPaid(inv.id)}>
                         <CheckCircle className="h-3.5 w-3.5 mr-1" />Mark Paid

@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { formatDate } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from '@/lib/utils/use-toast'
-import { Check, X, ChevronDown, ChevronUp, FileText, Plus, Trash2 } from 'lucide-react'
+import { Check, X, ChevronDown, ChevronUp, FileText, Plus, Trash2, Loader2 } from 'lucide-react'
 
 interface Props {
   orders: Order[]
@@ -23,6 +23,7 @@ interface Props {
 export default function OrdersList({ orders: initialOrders, caterererId }: Props) {
   const [orders, setOrders] = useState(initialOrders)
   const [expanded, setExpanded] = useState<string | null>(null)
+  const [processingId, setProcessingId] = useState<string | null>(null)
   const [quotingOrder, setQuotingOrder] = useState<Order | null>(null)
   const [quoteLines, setQuoteLines] = useState([{ description: '', amount: '' }])
   const [quoteNotes, setQuoteNotes] = useState('')
@@ -72,20 +73,22 @@ export default function OrdersList({ orders: initialOrders, caterererId }: Props
   }
 
   async function updateOrderStatus(orderId: string, status: string) {
-    const supabase = createClient()
-    const { error } = await supabase
-      .from('orders')
-      .update({ status, ...(status === 'accepted' ? { accepted_at: new Date().toISOString() } : {}) })
-      .eq('id', orderId)
-      .eq('caterer_id', caterererId)
-
-    if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' })
-      return
+    setProcessingId(orderId + status)
+    try {
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, status: status as any } : o))
+      toast({ title: 'Order updated', variant: 'success' })
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' })
+    } finally {
+      setProcessingId(null)
     }
-
-    setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, status: status as any } : o))
-    toast({ title: 'Order updated', variant: 'success' })
   }
 
   function OrderCard({ order }: { order: Order }) {
@@ -137,16 +140,24 @@ export default function OrdersList({ orders: initialOrders, caterererId }: Props
                     size="sm"
                     onClick={(e) => { e.stopPropagation(); updateOrderStatus(order.id, 'accepted') }}
                     className="bg-green-600 hover:bg-green-700"
+                    disabled={processingId === order.id + 'accepted'}
                   >
-                    <Check className="h-3 w-3 mr-1" />Accept
+                    {processingId === order.id + 'accepted'
+                      ? <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                      : <Check className="h-3 w-3 mr-1" />}
+                    Accept
                   </Button>
                 )}
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={(e) => { e.stopPropagation(); updateOrderStatus(order.id, 'declined') }}
+                  disabled={processingId === order.id + 'declined'}
                 >
-                  <X className="h-3 w-3 mr-1" />Decline
+                  {processingId === order.id + 'declined'
+                    ? <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                    : <X className="h-3 w-3 mr-1" />}
+                  Decline
                 </Button>
               </>
             )}
@@ -208,7 +219,11 @@ export default function OrdersList({ orders: initialOrders, caterererId }: Props
                   size="sm"
                   onClick={() => updateOrderStatus(order.id, 'completed')}
                   className="bg-green-600 hover:bg-green-700"
+                  disabled={processingId === order.id + 'completed'}
                 >
+                  {processingId === order.id + 'completed'
+                    ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                    : null}
                   Mark as Completed
                 </Button>
               )}

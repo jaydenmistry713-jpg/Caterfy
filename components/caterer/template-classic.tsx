@@ -260,6 +260,13 @@ export default function CatererPageClassic({ caterer, menuItems, packages, galle
         )}
       </div>
 
+      {/* Footer */}
+      <footer className="py-6 text-center border-t border-gray-100">
+        <a href="https://caterfy.com" target="_blank" rel="noopener noreferrer" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+          Powered by Caterfy
+        </a>
+      </footer>
+
       {/* Sticky order button (mobile) */}
       <div className="fixed bottom-4 right-4 z-40 flex gap-2 md:hidden">
         <a

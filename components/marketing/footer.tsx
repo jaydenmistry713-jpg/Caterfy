@@ -26,8 +26,9 @@ export default function MarketingFooter() {
             </ul>
           </div>
           <div>
-            <h4 className="text-white text-sm font-semibold mb-3">Legal</h4>
+            <h4 className="text-white text-sm font-semibold mb-3">Help</h4>
             <ul className="space-y-2 text-sm">
+              <li><Link href="/faq" className="hover:text-white transition-colors">FAQs</Link></li>
               <li><Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link></li>
               <li><Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
               <li><Link href="/cookies" className="hover:text-white transition-colors">Cookie Policy</Link></li>

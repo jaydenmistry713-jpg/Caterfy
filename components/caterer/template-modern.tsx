@@ -162,6 +162,12 @@ export default function CatererPageModern({ caterer, menuItems, packages, galler
           </section>
         )}
       </div>
+
+      <footer className="py-6 text-center border-t border-gray-100">
+        <a href="https://caterfy.com" target="_blank" rel="noopener noreferrer" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+          Powered by Caterfy
+        </a>
+      </footer>
     </div>
   )
 }

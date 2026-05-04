@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, ShoppingBag, UtensilsCrossed, Palette,
-  Images, Star, Calendar, BarChart2, CreditCard, FileText, Settings, ExternalLink
+  Images, Star, Calendar, BarChart2, CreditCard, FileText, Settings, ExternalLink, Tag
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -19,6 +19,7 @@ const navItems = [
   { href: '/analytics', icon: BarChart2, label: 'Analytics' },
   { href: '/payments', icon: CreditCard, label: 'Payments' },
   { href: '/invoices', icon: FileText, label: 'Invoices' },
+  { href: '/discount-codes', icon: Tag, label: 'Discount Codes' },
   { href: '/settings', icon: Settings, label: 'Settings' },
 ]
 
