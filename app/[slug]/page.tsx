@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import CatererPageClassic from '@/components/caterer/template-classic'
 import CatererPageModern from '@/components/caterer/template-modern'
 import CatererPageBold from '@/components/caterer/template-bold'
+import CatererPageLinkPage from '@/components/caterer/template-linkpage'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -66,5 +67,6 @@ export default async function CatererPage({ params }: Props) {
 
   if (template === 'modern') return <CatererPageModern {...data} />
   if (template === 'bold') return <CatererPageBold {...data} />
+  if (template === 'linkpage') return <CatererPageLinkPage {...data} />
   return <CatererPageClassic {...data} />
 }
