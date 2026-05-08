@@ -99,6 +99,7 @@ caterers (
   max_orders_per_week INTEGER,
   auto_accept_orders BOOLEAN DEFAULT false,
   show_contact_publicly BOOLEAN DEFAULT true,
+  business_mode TEXT DEFAULT 'full', -- 'full', 'catering_only', 'items_only'
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 )
@@ -119,7 +120,7 @@ caterer_pages (
   logo_url TEXT,
   hero_image_url TEXT,
   terms_conditions TEXT,
-  template_data JSONB DEFAULT '{}', -- linkpage-specific: chips, badge1, badge2, instagram, cta_label, extras, faqs
+  template_data JSONB DEFAULT '{}', -- shared: certifications[]; linkpage: chips, badge1, badge2, instagram, cta_label, extras, faqs
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 )
@@ -135,6 +136,7 @@ menu_items (
   price_unit TEXT DEFAULT 'per person', -- 'per person', 'per item', 'flat'
   image_url TEXT,
   is_available BOOLEAN DEFAULT true,
+  stock_limit INTEGER, -- NULL = unlimited; enforced at checkout
   sort_order INTEGER,
   created_at TIMESTAMP DEFAULT NOW()
 )
@@ -439,6 +441,14 @@ All phases are implemented and the app builds successfully (Next.js 16, 36 route
 - Mobile navigation: topbar has a slide-out drawer with full nav for mobile
 - Dashboard onboarding wizard: animated 4-step full-screen overlay shown once after email verification (phone → location → cuisines → event types)
 - Loading skeleton (`app/(dashboard)/loading.tsx`) for Suspense-based page transitions
+- Dashboard setup checklist only shows **incomplete** items; shows "You're all set!" when everything is done
+- Order button differentiated into two cards: "Order items" (fixed, shopping bag) and "Request a catering quote" (document icon with description text)
+- Business mode setting (Settings → Business Profile): `full` / `catering_only` / `items_only` — controls which order options appear on the public page
+- Menu item stock limits: optional per-item inventory cap set in menu editor; enforced in the order form with "X remaining" indicator
+- Expandable menu item descriptions: descriptions hidden by default on Classic and Modern templates; chevron appears for items with a description; click/tap to expand. LinkPage accordion items also expand descriptions on tap.
+- Food certifications: 10 UK accreditations (Halal, Hygiene 5★, Kosher, FSA, Vegan Society, SALSA, BRC, ISO 22000, Organic, Allergen Aware) selectable in Site Editor → Content; rendered as badges in the hero section of all 4 templates. Stored in `caterer_pages.template_data.certifications`.
+- Send message form on all caterer public pages (Contact section); submits to `/api/messages` which emails the caterer (with reply-to set) and sends an auto-reply to the customer
+- Homepage payment methods section showing: Visa, Mastercard, Amex, Apple Pay, Google Pay, Bank Transfer, Pay Later
 
 ### Pending / Not Yet Built
 - Order reminder cron (email caterer after 24hr, auto-cancel at 48hr)
@@ -485,6 +495,7 @@ Migrations live in `supabase/migrations/` and must be run manually in Supabase S
 - `003_discount_codes.sql` — discount_codes table; adds discount_code + discount_amount to orders
 - `004_link_page.sql` — adds template_data JSONB column to caterer_pages
 - `005_template_constraint.sql` — updates caterer_pages_template_check to include 'linkpage'
+- `006_business_mode_stock_limit.sql` — adds business_mode to caterers; adds stock_limit to menu_items
 
 ### Deleting a test account (SQL order)
 ```sql
@@ -552,38 +563,46 @@ DELETE FROM discount_codes WHERE caterer_id = '[user-id]';
 
 ## Templates
 
+All four templates share:
+- Certification badges in the hero (from `template_data.certifications`)
+- Expandable menu item descriptions (hidden by default, expand on click/tap)
+- Send message form in the contact/order section (→ `/api/messages`)
+- Order button respects `business_mode` (hides items or quote based on setting)
+
 ### Classic
 - Full-width hero image
 - Left-aligned about section
-- Menu in clean list format
+- Menu in clean list format with expandable descriptions
 - Gallery as uniform grid
-- Contact form centred
+- Contact info + send message form
 
 ### Modern
 - Hero with text overlay on darkened image
 - Centred about section
-- Menu with small thumbnail images
+- Menu in card grid with expandable descriptions
 - Masonry gallery layout
-- Contact form with map
+- Contact info + send message form (centred, max-w-lg)
 
 ### Bold
 - Large coloured background hero
 - Split about layout (image left, text right)
-- Card-format menu items
+- Card-format menu items (descriptions always visible in card)
 - Horizontal carousel gallery
-- Full-width contact section
+- Full-width order/contact section with send message form
 
 ### Link Page
 - Dark mobile-first layout (max 460px centred), inspired by link-in-bio pages
 - Hero banner with avatar/logo, business name, tagline in accent colour
+- Certification badges below profile chips
 - Profile bio + chip tags and credential badges (from `template_data`)
 - Quick action links: primary CTA button, phone, email, Instagram
 - Horizontal scrollable gallery strip
 - Packages as tray cards (1–3 grid; middle card marked "Popular" when 3 packages)
 - Extras add-on list (from `template_data.extras` in "Name | Price" format, one per line)
-- Menu items grouped by category in collapsible accordions
+- Menu items grouped by category in collapsible accordions; tap item to expand description
 - Reviews with serif italic quotes and star ratings in accent colour
 - FAQ accordions (from `template_data.faqs`)
+- Send message form section above the order section
 - Sticky bottom bar with "Order Now" + "Call" buttons
 - All accent colours are fully dynamic from `caterer_pages.accent_color`
 - Link Page-specific fields in the site editor Content tab: chips, badges, instagram, CTA label, extras, FAQs

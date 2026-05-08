@@ -3,6 +3,8 @@ import { MapPin, Star } from 'lucide-react'
 import CatererNav from './caterer-nav'
 import StarRating from './star-rating'
 import OrderButton from './order-button'
+import CertificationBadges from './certification-badges'
+import SendMessageForm from './send-message-form'
 import { formatDate } from '@/lib/utils'
 
 interface Props {
@@ -55,6 +57,7 @@ export default function CatererPageBold({ caterer, menuItems, packages, gallery,
               </span>
             )}
           </div>
+          <CertificationBadges certifications={page?.template_data?.certifications || []} dark />
         </div>
       </section>
 
@@ -138,11 +141,14 @@ export default function CatererPageBold({ caterer, menuItems, packages, gallery,
           </section>
         )}
 
-        <section id="order" className="rounded-3xl p-10 text-center text-white" style={{ backgroundColor: primaryColor }}>
-          <h2 className="text-4xl font-black mb-4" style={headingStyle}>Ready to book?</h2>
-          <p className="text-white/80 mb-8">Get in touch or place your order today.</p>
-          <div className="flex justify-center">
+        <section id="order" className="rounded-3xl p-10 text-white" style={{ backgroundColor: primaryColor }}>
+          <h2 className="text-4xl font-black mb-4 text-center" style={headingStyle}>Ready to book?</h2>
+          <p className="text-white/80 mb-8 text-center">Get in touch or place your order today.</p>
+          <div className="flex justify-center mb-10">
             <OrderButton caterer={caterer} menuItems={menuItems} packages={packages} accentColor="#fff" />
+          </div>
+          <div className="max-w-lg mx-auto">
+            <SendMessageForm caterer={caterer} accentColor="#fff" dark />
           </div>
         </section>
 

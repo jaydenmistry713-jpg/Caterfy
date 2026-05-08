@@ -3,6 +3,9 @@ import { MapPin, Star } from 'lucide-react'
 import CatererNav from './caterer-nav'
 import StarRating from './star-rating'
 import OrderButton from './order-button'
+import ExpandableMenuItem from './expandable-menu-item'
+import CertificationBadges from './certification-badges'
+import SendMessageForm from './send-message-form'
 import { formatDate } from '@/lib/utils'
 
 interface Props {
@@ -53,6 +56,9 @@ export default function CatererPageModern({ caterer, menuItems, packages, galler
             {caterer.location && <span className="flex items-center gap-1"><MapPin className="h-4 w-4" />{caterer.location.name}</span>}
             {avgRating && <span className="flex items-center gap-1"><Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />{avgRating.toFixed(1)} ({reviews.length})</span>}
           </div>
+          <div className="flex justify-center">
+            <CertificationBadges certifications={page?.template_data?.certifications || []} dark />
+          </div>
         </div>
       </section>
 
@@ -87,20 +93,7 @@ export default function CatererPageModern({ caterer, menuItems, packages, galler
                   <h3 className="text-lg font-semibold mb-4" style={{ color: primaryColor }}>{cat}</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {items.map((item) => (
-                      <div key={item.id} className="flex gap-3 p-3 rounded-lg border border-gray-100">
-                        {item.image_url && (
-                          <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                            <Image src={item.image_url} alt={item.name} fill className="object-cover" />
-                          </div>
-                        )}
-                        <div className="flex-1">
-                          <p className="font-medium text-gray-900">{item.name}</p>
-                          {item.description && <p className="text-xs text-gray-500">{item.description}</p>}
-                          <p className="text-sm font-semibold mt-1" style={{ color: accentColor }}>
-                            £{Number(item.price).toFixed(2)} {item.price_unit}
-                          </p>
-                        </div>
-                      </div>
+                      <ExpandableMenuItem key={item.id} item={item} variant="modern-card" accentColor={accentColor} />
                     ))}
                   </div>
                 </div>
@@ -140,12 +133,15 @@ export default function CatererPageModern({ caterer, menuItems, packages, galler
         <section id="contact">
           <h2 className="text-3xl font-bold mb-6 text-center" style={{ ...headingStyle, color: primaryColor }}>Contact</h2>
           {caterer.show_contact_publicly && (
-            <div className="text-center space-y-2">
+            <div className="text-center space-y-2 mb-6">
               {caterer.phone && <p className="text-gray-600">{caterer.phone}</p>}
               {caterer.email && <p className="text-gray-600">{caterer.email}</p>}
               {caterer.location && <p className="text-gray-600">{caterer.location.name}</p>}
             </div>
           )}
+          <div className="max-w-lg mx-auto">
+            <SendMessageForm caterer={caterer} accentColor={accentColor} />
+          </div>
         </section>
 
         <section id="order" className="text-center">

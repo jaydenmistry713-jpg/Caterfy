@@ -15,6 +15,7 @@ import { GOOGLE_FONTS, validateSlug, slugify } from '@/lib/utils'
 import Link from 'next/link'
 import { ExternalLink, Upload, X, Plus, Trash2 } from 'lucide-react'
 import SiteEditorOnboarding from './site-editor-onboarding'
+import { CERTIFICATIONS } from '@/components/caterer/certification-badges'
 
 const TEMPLATES = [
   { id: 'classic', name: 'Classic', desc: 'Clean and professional with full-width hero' },
@@ -80,6 +81,7 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
   })
 
   const td = page?.template_data || {}
+  const [selectedCerts, setSelectedCerts] = useState<string[]>(td.certifications || [])
   const [templateData, setTemplateData] = useState({
     chips: (td.chips || []).join(', '),
     badge1: td.badge1 || '',
@@ -130,6 +132,7 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
           cta_label: templateData.cta_label || null,
           extras: templateData.extras || null,
           faqs: templateData.faqs.filter((f) => f.q && f.a),
+          certifications: selectedCerts,
         },
       }
       if (page) {
@@ -359,6 +362,29 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
                   <Label htmlFor="terms">Terms &amp; Conditions</Label>
                   <p className="text-xs text-gray-500 mb-1">Include your cancellation policy. This will be displayed on your site.</p>
                   <Textarea id="terms" className="mt-1" rows={6} value={form.terms_conditions} onChange={(e) => setForm({ ...form, terms_conditions: e.target.value })} placeholder="e.g. Orders cancelled within 48 hours of event will be charged 50%..." />
+                </div>
+
+                {/* Certifications */}
+                <div>
+                  <Label>Food certifications &amp; accreditations</Label>
+                  <p className="text-xs text-gray-500 mb-3">Displayed as badges in the hero section of your site.</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {Object.entries(CERTIFICATIONS).map(([key, label]) => (
+                      <label key={key} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedCerts.includes(key)}
+                          onChange={() =>
+                            setSelectedCerts((prev) =>
+                              prev.includes(key) ? prev.filter((c) => c !== key) : [...prev, key]
+                            )
+                          }
+                          className="rounded"
+                        />
+                        <span className="text-sm">{label}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Link Page specific fields */}

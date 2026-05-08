@@ -1,2 +1,10 @@
 - instead of a checklist initially (keep it), have an onboarding phase, questions fade into and out of the screen with a indicator as to which question you're on. whatever isn't complete will show up in the checklist
-- when ordering there needs to be differentiation between orders of items and catering requests, it seems like they have the same order screen and process because when I order an item, it asks about event location and other infor
+- when ordering there needs to be differentiation between orders of items and catering requests, it seems like they have the same order screen and process because when I order an item, it asks about event location and other information
+- how can we integrate AI
+- some businesses don't do orders at all and only do catering, for them you would only have a services section (with menus), and the order now button won't be a thing
+- each menu item can be tapped/clicked to expand a description
+- certifications to appear in hero section (a fixed selection of most uk food certifications)
+- Have somewhere on the homepage which visually shows the methods of payment accept (Stripe compatible)
+- be able to set item limits or inventory
+- send message feature, they should also get an email from our domain with the message, and automatic reply to feature with the email mentioned in the message
+- 

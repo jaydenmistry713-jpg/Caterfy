@@ -28,6 +28,7 @@ export default function SettingsForm({ caterererId, caterer, locations, cuisines
     phone: caterer?.phone || '',
     location_id: caterer?.location_id || '',
     show_contact_publicly: caterer?.show_contact_publicly ?? true,
+    business_mode: caterer?.business_mode || 'full',
   })
 
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>(
@@ -114,6 +115,33 @@ export default function SettingsForm({ caterererId, caterer, locations, cuisines
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label>Business mode</Label>
+              <p className="text-xs text-gray-500 mb-2">Controls which order options customers see on your public page.</p>
+              <div className="space-y-2">
+                {[
+                  { value: 'full', label: 'Full service', desc: 'Show both "Order items" and "Request a catering quote"' },
+                  { value: 'catering_only', label: 'Catering inquiries only', desc: 'Hide item ordering — only show quote requests' },
+                  { value: 'items_only', label: 'Items only', desc: 'Hide quote requests — only show item ordering' },
+                ].map((opt) => (
+                  <label key={opt.value} className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors">
+                    <input
+                      type="radio"
+                      name="business_mode"
+                      value={opt.value}
+                      checked={profile.business_mode === opt.value}
+                      onChange={() => setProfile({ ...profile, business_mode: opt.value })}
+                      className="mt-0.5"
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{opt.label}</p>
+                      <p className="text-xs text-gray-500">{opt.desc}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
             <Button onClick={saveProfile} disabled={saving}>
               {saving ? 'Saving...' : 'Save Profile'}
             </Button>

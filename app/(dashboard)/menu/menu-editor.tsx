@@ -31,26 +31,27 @@ export default function MenuEditor({ caterererId, initialItems, initialPackages 
 
   const [itemForm, setItemForm] = useState<{
     name: string; category: string; description: string; price: string;
-    price_unit: 'per person' | 'per item' | 'flat'; is_available: boolean;
+    price_unit: 'per person' | 'per item' | 'flat'; is_available: boolean; stock_limit: string;
   }>({
-    name: '', category: '', description: '', price: '', price_unit: 'per person', is_available: true,
+    name: '', category: '', description: '', price: '', price_unit: 'per person', is_available: true, stock_limit: '',
   })
   const [pkgForm, setPkgForm] = useState({
     name: '', description: '', price: '', min_guests: '', max_guests: '', is_available: true,
   })
 
-  function openEditItem(item: MenuItem) {
+  function openEditItem(item: any) {
     setEditingItem(item)
     setItemForm({
       name: item.name, category: item.category || '', description: item.description || '',
-      price: String(item.price), price_unit: item.price_unit as 'per person' | 'per item' | 'flat', is_available: item.is_available,
+      price: String(item.price), price_unit: item.price_unit as 'per person' | 'per item' | 'flat',
+      is_available: item.is_available, stock_limit: item.stock_limit != null ? String(item.stock_limit) : '',
     })
     setItemDialog(true)
   }
 
   function openNewItem() {
     setEditingItem(null)
-    setItemForm({ name: '', category: '', description: '', price: '', price_unit: 'per person', is_available: true })
+    setItemForm({ name: '', category: '', description: '', price: '', price_unit: 'per person', is_available: true, stock_limit: '' })
     setItemDialog(true)
   }
 
@@ -66,6 +67,7 @@ export default function MenuEditor({ caterererId, initialItems, initialPackages 
       price: parseFloat(itemForm.price),
       price_unit: itemForm.price_unit,
       is_available: itemForm.is_available,
+      stock_limit: itemForm.stock_limit ? parseInt(itemForm.stock_limit) : null,
     }
 
     if (editingItem) {
@@ -273,6 +275,18 @@ export default function MenuEditor({ caterererId, initialItems, initialPackages 
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div>
+              <Label>Stock limit (optional)</Label>
+              <Input
+                className="mt-1"
+                type="number"
+                min="0"
+                value={itemForm.stock_limit}
+                onChange={(e) => setItemForm({ ...itemForm, stock_limit: e.target.value })}
+                placeholder="Leave blank for unlimited"
+              />
+              <p className="text-xs text-gray-400 mt-1">Customers won't be able to order more than this quantity.</p>
             </div>
             <div className="flex justify-end gap-3">
               <Button variant="outline" onClick={() => setItemDialog(false)}>Cancel</Button>

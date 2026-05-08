@@ -61,9 +61,13 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
       if (existing) {
         const newQty = existing.quantity + delta
         if (newQty <= 0) return prev.filter((i) => i.id !== item.id)
+        if (delta > 0 && item.stock_limit != null && newQty > item.stock_limit) return prev
         return prev.map((i) => i.id === item.id ? { ...i, quantity: newQty } : i)
       }
-      if (delta > 0) return [...prev, { id: item.id, name: item.name, price: item.price, price_unit: item.price_unit || 'flat', quantity: 1 }]
+      if (delta > 0) {
+        if (item.stock_limit != null && item.stock_limit < 1) return prev
+        return [...prev, { id: item.id, name: item.name, price: item.price, price_unit: item.price_unit || 'flat', quantity: 1 }]
+      }
       return prev
     })
   }
@@ -220,19 +224,30 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
                       ))}
                     </div>
                   )}
-                  {visible.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-100">
-                      <div>
-                        <p className="font-medium text-sm">{item.name}</p>
-                        <p className="text-xs text-gray-500">£{Number(item.price).toFixed(2)} {item.price_unit}</p>
+                  {visible.map((item) => {
+                    const qty = getQty(item.id)
+                    const atLimit = item.stock_limit != null && qty >= item.stock_limit
+                    return (
+                      <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-100">
+                        <div>
+                          <p className="font-medium text-sm">{item.name}</p>
+                          <p className="text-xs text-gray-500">£{Number(item.price).toFixed(2)} {item.price_unit}</p>
+                          {item.stock_limit != null && (
+                            <p className="text-xs text-orange-500">{item.stock_limit - qty} remaining</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => adjustQuantity(item, -1)} className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-sm hover:bg-gray-100">−</button>
+                          <span className="w-5 text-center text-sm">{qty}</span>
+                          <button
+                            onClick={() => adjustQuantity(item, 1)}
+                            disabled={atLimit}
+                            className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                          >+</button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => adjustQuantity(item, -1)} className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-sm hover:bg-gray-100">−</button>
-                        <span className="w-5 text-center text-sm">{getQty(item.id)}</span>
-                        <button onClick={() => adjustQuantity(item, 1)} className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-sm hover:bg-gray-100">+</button>
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )
             })()}
@@ -280,7 +295,7 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
                 <Input className="mt-1" type="tel" value={form.customer_phone} onChange={(e) => setForm({ ...form, customer_phone: e.target.value })} />
               </div>
               <div className="col-span-2">
-                <Label>Delivery / event date *</Label>
+                <Label>Date *</Label>
                 <Input className="mt-1" type="date" min={new Date().toISOString().split('T')[0]} value={form.event_date} onChange={(e) => setForm({ ...form, event_date: e.target.value })} />
               </div>
             </div>

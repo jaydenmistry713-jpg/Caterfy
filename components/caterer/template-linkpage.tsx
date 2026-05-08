@@ -4,6 +4,8 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { ChevronDown, Phone, Mail, Share2, User, List } from 'lucide-react'
 import OrderButton from './order-button'
+import { CERTIFICATIONS } from './certification-badges'
+import SendMessageForm from './send-message-form'
 
 interface LinkPageData {
   chips?: string[]
@@ -13,6 +15,7 @@ interface LinkPageData {
   cta_label?: string
   extras?: string
   faqs?: { q: string; a: string }[]
+  certifications?: string[]
 }
 
 interface Props {
@@ -21,6 +24,35 @@ interface Props {
   packages: any[]
   gallery: any[]
   reviews: any[]
+}
+
+function LpMenuItem({ item, accent, off, muted, last }: { item: any; accent: string; off: string; muted: string; last: boolean }) {
+  const [expanded, setExpanded] = useState(false)
+  const hasDesc = !!item.description
+  return (
+    <div
+      onClick={() => hasDesc && setExpanded((v) => !v)}
+      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '8px 0', borderBottom: last ? 'none' : `1px solid rgba(255,255,255,0.04)`, gap: 12, cursor: hasDesc ? 'pointer' : 'default' }}
+    >
+      <div style={{ flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 13, color: off }}>{item.name}</span>
+          {hasDesc && (
+            <ChevronDown size={12} style={{ color: muted, flexShrink: 0, transition: 'transform 0.2s', transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+          )}
+        </div>
+        {expanded && item.description && (
+          <span style={{ fontSize: 11, color: muted, marginTop: 4, display: 'block', lineHeight: 1.6 }}>{item.description}</span>
+        )}
+      </div>
+      <span style={{ fontFamily: 'Georgia, serif', fontSize: 15, color: accent, flexShrink: 0 }}>
+        £{parseFloat(item.price).toFixed(2)}
+        {item.price_unit && item.price_unit !== 'flat' && (
+          <span style={{ fontSize: 10, color: muted }}> /{item.price_unit === 'per person' ? 'pp' : 'ea'}</span>
+        )}
+      </span>
+    </div>
+  )
 }
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -160,6 +192,19 @@ export default function CatererPageLinkPage({ caterer, menuItems, packages, gall
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                   {td.badge2}
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* CERTIFICATIONS */}
+          {(td.certifications || []).length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '16px 16px 4px' }}>
+              {(td.certifications as string[]).map((cert) =>
+                CERTIFICATIONS[cert] ? (
+                  <span key={cert} style={{ border: `1px solid rgba(255,255,255,0.15)`, color: 'rgba(237,232,226,0.7)', fontSize: 10, padding: '4px 10px', borderRadius: 20, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ color: accent }}>✓</span>{CERTIFICATIONS[cert]}
+                  </span>
+                ) : null
               )}
             </div>
           )}
@@ -334,18 +379,7 @@ export default function CatererPageLinkPage({ caterer, menuItems, packages, gall
                       <div style={{ height: 1, background: border }} />
                       <div style={{ padding: 14 }}>
                         {items.map((item: any, idx: number) => (
-                          <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '8px 0', borderBottom: idx < items.length - 1 ? `1px solid rgba(255,255,255,0.04)` : 'none', gap: 12 }}>
-                            <div style={{ flex: 1 }}>
-                              <span style={{ fontSize: 13, color: off, display: 'block', marginBottom: 2 }}>{item.name}</span>
-                              {item.description && <span style={{ fontSize: 11, color: muted }}>{item.description}</span>}
-                            </div>
-                            <span style={{ fontFamily: 'Georgia, serif', fontSize: 15, color: accent, flexShrink: 0 }}>
-                              £{parseFloat(item.price).toFixed(2)}
-                              {item.price_unit && item.price_unit !== 'flat' && (
-                                <span style={{ fontSize: 10, color: muted }}> /{item.price_unit === 'per person' ? 'pp' : 'ea'}</span>
-                              )}
-                            </span>
-                          </div>
+                          <LpMenuItem key={item.id} item={item} accent={accent} off={off} muted={muted} last={idx === items.length - 1} />
                         ))}
                       </div>
                       <div style={{ padding: '0 12px 12px' }}>
@@ -421,6 +455,15 @@ export default function CatererPageLinkPage({ caterer, menuItems, packages, gall
               <div style={{ height: 1, background: border, margin: '16px 20px' }} />
             </>
           )}
+
+          {/* SEND MESSAGE */}
+          <div style={{ padding: '8px 16px 16px' }}>
+            <span style={{ fontSize: 10, letterSpacing: '3px', textTransform: 'uppercase', color: muted, display: 'block', marginBottom: 12 }}>
+              Send a Message
+            </span>
+            <SendMessageForm caterer={caterer} accentColor={accent} dark />
+          </div>
+          <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '0 20px 16px' }} />
 
           {/* ORDER */}
           <div id="order" style={{ padding: '24px 16px 16px' }}>

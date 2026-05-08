@@ -81,6 +81,20 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Accepted payment methods */}
+      <section className="py-10 px-4 bg-white border-y border-gray-100">
+        <div className="max-w-3xl mx-auto text-center">
+          <p className="text-xs text-gray-400 uppercase tracking-widest font-medium mb-5">Secure payments powered by Stripe</p>
+          <div className="flex flex-wrap justify-center items-center gap-3">
+            {['Visa', 'Mastercard', 'Amex', 'Apple Pay', 'Google Pay', 'Bank Transfer', 'Pay Later'].map((method) => (
+              <span key={method} className="px-4 py-2 rounded-lg border border-gray-200 bg-gray-50 text-sm font-medium text-gray-600">
+                {method}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* For caterers CTA */}
       <section id="pricing" className="py-16 px-4 bg-gray-900 text-white">
         <div className="max-w-4xl mx-auto text-center">

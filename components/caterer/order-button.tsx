@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import OrderForm from './order-form'
+import { ShoppingBag, FileText } from 'lucide-react'
 
 interface Props {
   caterer: any
@@ -17,6 +18,10 @@ export default function OrderButton({ caterer, menuItems, packages, accentColor 
 
   const hasFixedItems = menuItems.length > 0 || packages.length > 0
   const acceptingOrders = caterer.is_accepting_orders
+  const mode = caterer.business_mode || 'full'
+
+  const showItems = mode !== 'catering_only' && hasFixedItems
+  const showQuote = mode !== 'items_only'
 
   if (!acceptingOrders) {
     return (
@@ -30,26 +35,37 @@ export default function OrderButton({ caterer, menuItems, packages, accentColor 
   }
 
   return (
-    <div>
-      <div className="flex gap-3 flex-wrap">
-        {hasFixedItems && (
-          <Button
-            size="lg"
-            onClick={() => setShowOrderForm(true)}
-            style={{ backgroundColor: accentColor, borderColor: accentColor }}
-          >
-            Order Now
-          </Button>
-        )}
-        <Button
-          size="lg"
-          variant="outline"
-          onClick={() => setShowQuoteForm(true)}
-          style={{ borderColor: accentColor, color: accentColor }}
+    <div className="flex flex-col sm:flex-row gap-4">
+      {showItems && (
+        <button
+          onClick={() => setShowOrderForm(true)}
+          className="flex items-start gap-4 p-4 rounded-xl border-2 text-left hover:shadow-md transition-shadow"
+          style={{ borderColor: accentColor }}
         >
-          Request Quote
-        </Button>
-      </div>
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-white" style={{ backgroundColor: accentColor }}>
+            <ShoppingBag className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="font-semibold text-gray-900">Order items</p>
+            <p className="text-sm text-gray-500 mt-0.5">Browse and order directly from the menu</p>
+          </div>
+        </button>
+      )}
+
+      {showQuote && (
+        <button
+          onClick={() => setShowQuoteForm(true)}
+          className="flex items-start gap-4 p-4 rounded-xl border border-gray-200 text-left hover:bg-gray-50 transition-colors"
+        >
+          <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+            <FileText className="h-5 w-5 text-gray-500" />
+          </div>
+          <div>
+            <p className="font-semibold text-gray-900">Request a catering quote</p>
+            <p className="text-sm text-gray-500 mt-0.5">Tell us about your event and we&apos;ll get back to you</p>
+          </div>
+        </button>
+      )}
 
       {(showOrderForm || showQuoteForm) && (
         <OrderForm

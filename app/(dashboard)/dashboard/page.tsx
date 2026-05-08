@@ -146,27 +146,29 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             <CardTitle>Setup checklist</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {checklist.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      item.done ? 'bg-green-500' : 'bg-gray-200'
-                    }`}>
-                      {item.done && <CheckCircle className="h-4 w-4 text-white" />}
+            {checklist.every((i) => i.done) ? (
+              <div className="flex flex-col items-center gap-2 py-6 text-center">
+                <CheckCircle className="h-8 w-8 text-green-500" />
+                <p className="font-medium text-gray-900">All set!</p>
+                <p className="text-sm text-gray-500">Your profile is complete and ready for customers.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {checklist.filter((item) => !item.done).map((item) => (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 bg-gray-200" />
+                      <span className="text-sm text-gray-700">{item.label}</span>
                     </div>
-                    <span className={`text-sm ${item.done ? 'line-through text-gray-400' : 'text-gray-700'}`}>
-                      {item.label}
-                    </span>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-gray-400" />
-                </Link>
-              ))}
-            </div>
+                    <ArrowRight className="h-4 w-4 text-gray-400" />
+                  </Link>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 

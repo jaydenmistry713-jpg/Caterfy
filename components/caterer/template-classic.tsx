@@ -4,6 +4,9 @@ import { MapPin, Phone, Mail, Star } from 'lucide-react'
 import CatererNav from './caterer-nav'
 import StarRating from './star-rating'
 import OrderButton from './order-button'
+import ExpandableMenuItem from './expandable-menu-item'
+import CertificationBadges from './certification-badges'
+import SendMessageForm from './send-message-form'
 import { formatDate } from '@/lib/utils'
 
 interface Props {
@@ -74,6 +77,7 @@ export default function CatererPageClassic({ caterer, menuItems, packages, galle
               </span>
             )}
           </div>
+          <CertificationBadges certifications={page?.template_data?.certifications || []} dark />
         </div>
       </section>
 
@@ -124,22 +128,7 @@ export default function CatererPageClassic({ caterer, menuItems, packages, galle
                   <h3 className="text-xl font-semibold mb-4 text-gray-800">{cat}</h3>
                   <div className="space-y-3">
                     {items.map((item) => (
-                      <div key={item.id} className="flex justify-between items-start border-b border-gray-100 pb-3">
-                        <div className="flex gap-3">
-                          {item.image_url && (
-                            <div className="relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
-                              <Image src={item.image_url} alt={item.name} fill className="object-cover" />
-                            </div>
-                          )}
-                          <div>
-                            <p className="font-medium text-gray-900">{item.name}</p>
-                            {item.description && <p className="text-sm text-gray-500">{item.description}</p>}
-                          </div>
-                        </div>
-                        <p className="font-semibold text-gray-900 ml-4 flex-shrink-0">
-                          £{Number(item.price).toFixed(2)}<span className="text-xs text-gray-400"> /{item.price_unit}</span>
-                        </p>
-                      </div>
+                      <ExpandableMenuItem key={item.id} item={item} variant="classic" />
                     ))}
                   </div>
                 </div>
@@ -211,7 +200,7 @@ export default function CatererPageClassic({ caterer, menuItems, packages, galle
             Contact
           </h2>
           {caterer.show_contact_publicly && (
-            <div className="space-y-3">
+            <div className="space-y-3 mb-6">
               {caterer.phone && (
                 <a href={`tel:${caterer.phone}`} className="flex items-center gap-3 text-gray-700 hover:text-gray-900">
                   <Phone className="h-5 w-5" style={{ color: accentColor }} />
@@ -232,6 +221,7 @@ export default function CatererPageClassic({ caterer, menuItems, packages, galle
               )}
             </div>
           )}
+          <SendMessageForm caterer={caterer} accentColor={accentColor} />
         </section>
 
         {/* Order */}
