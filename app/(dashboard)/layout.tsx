@@ -1,15 +1,14 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient, getUser } from '@/lib/supabase/server'
 import { slugify } from '@/lib/utils'
 import DashboardSidebar from '@/components/dashboard/sidebar'
 import DashboardTopbar from '@/components/dashboard/topbar'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
+  const user = await getUser()
   if (!user) redirect('/login')
+
+  const supabase = await createClient()
 
   let { data: caterer } = await supabase
     .from('caterers')

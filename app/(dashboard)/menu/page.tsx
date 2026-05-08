@@ -1,11 +1,11 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getUser } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import MenuEditor from './menu-editor'
 
 export default async function MenuPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getUser()
   if (!user) redirect('/login')
+  const supabase = await createClient()
 
   const [itemsRes, packagesRes] = await Promise.all([
     supabase.from('menu_items').select('*').eq('caterer_id', user.id).order('sort_order', { ascending: true }),

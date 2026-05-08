@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getUser } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -8,19 +8,23 @@ import { ExternalLink, CreditCard, CheckCircle, AlertCircle } from 'lucide-react
 import { formatDate } from '@/lib/utils'
 
 export default async function PaymentsPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getUser()
   if (!user) redirect('/login')
+  const supabase = await createClient()
 
-  const { data: caterer } = await supabase.from('caterers').select('*').eq('id', user.id).single()
+  const [catererRes, transactionsRes] = await Promise.all([
+    supabase.from('caterers').select('*').eq('id', user.id).single(),
+    supabase
+      .from('orders')
+      .select('id, reference_number, customer_name, total, payment_status, payment_method, event_date, status')
+      .eq('caterer_id', user.id)
+      .in('payment_status', ['paid', 'awaiting_payment'])
+      .order('created_at', { ascending: false })
+      .limit(20),
+  ])
 
-  const { data: transactions } = await supabase
-    .from('orders')
-    .select('id, reference_number, customer_name, total, payment_status, payment_method, event_date, status')
-    .eq('caterer_id', user.id)
-    .in('payment_status', ['paid', 'awaiting_payment'])
-    .order('created_at', { ascending: false })
-    .limit(20)
+  const caterer = catererRes.data
+  const transactions = transactionsRes.data
 
   return (
     <div className="space-y-6">
