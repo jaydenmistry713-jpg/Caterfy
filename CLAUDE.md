@@ -403,7 +403,7 @@ NEXT_PUBLIC_GA_MEASUREMENT_ID=
 
 ## Build Status
 
-All phases are implemented and the app builds successfully (Next.js 16, 36 routes).
+All phases are implemented and the app builds successfully (Next.js 16, 37 routes).
 
 ### Completed
 - Landing page with directory search
@@ -449,6 +449,7 @@ All phases are implemented and the app builds successfully (Next.js 16, 36 route
 - Food certifications: 10 UK accreditations (Halal, Hygiene 5★, Kosher, FSA, Vegan Society, SALSA, BRC, ISO 22000, Organic, Allergen Aware) selectable in Site Editor → Content; rendered as badges in the hero section of all 4 templates. Stored in `caterer_pages.template_data.certifications`.
 - Send message form on all caterer public pages (Contact section); submits to `/api/messages` which emails the caterer (with reply-to set) and sends an auto-reply to the customer
 - Homepage payment methods section showing: Visa, Mastercard, Amex, Apple Pay, Google Pay, Bank Transfer, Pay Later
+- Dashboard performance: `getUser()` in `lib/supabase/server.ts` is wrapped with React `cache()` so `auth.getUser()` fires once per request even though layout and page both call it; all dashboard pages use this cached helper instead of calling `supabase.auth.getUser()` directly
 
 ### Pending / Not Yet Built
 - Order reminder cron (email caterer after 24hr, auto-cancel at 48hr)
@@ -538,6 +539,10 @@ DELETE FROM discount_codes WHERE caterer_id = '[user-id]';
 - Use Supabase client from `/lib/supabase`
 - Use Row Level Security (RLS) policies
 - Use Edge Functions for complex operations
+
+### Performance
+- Always use `getUser()` from `lib/supabase/server` (React-cached) — never call `supabase.auth.getUser()` directly in dashboard pages
+- Fetch independent DB queries with `Promise.all`, never sequential `await` chains
 
 ## Important Notes
 
