@@ -143,11 +143,19 @@ export async function sendInvoiceEmail(
     line_items: { description: string; amount: number }[]
     total: number
     due_date?: string
+    bank_transfer_details?: string
   }
 ) {
   const rows = invoice.line_items
     .map((l) => `<tr><td style="padding: 8px; border-bottom: 1px solid #eee;">${l.description}</td><td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">£${Number(l.amount).toFixed(2)}</td></tr>`)
     .join('')
+
+  const bankSection = invoice.bank_transfer_details
+    ? `<div style="margin-top: 24px; padding: 16px; background: #f9f9f9; border-radius: 8px; border: 1px solid #eee;">
+        <p style="font-weight: bold; margin: 0 0 8px 0; font-size: 14px;">Bank Transfer Details</p>
+        <pre style="font-family: monospace; font-size: 13px; color: #444; margin: 0; white-space: pre-wrap;">${invoice.bank_transfer_details}</pre>
+      </div>`
+    : ''
 
   return resend.emails.send({
     from: FROM_EMAIL,
@@ -173,7 +181,8 @@ export async function sendInvoiceEmail(
         </tfoot>
       </table>
       ${invoice.due_date ? `<p style="color: #666; font-size: 14px;">Payment due: <strong>${new Date(invoice.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</strong></p>` : ''}
-      <p style="color: #666; font-size: 14px;">Please arrange payment directly with ${invoice.business_name}. If you have any questions, reply to this email.</p>
+      ${bankSection}
+      <p style="color: #666; font-size: 14px; margin-top: 16px;">If you have any questions, reply to this email.</p>
     `),
   })
 }

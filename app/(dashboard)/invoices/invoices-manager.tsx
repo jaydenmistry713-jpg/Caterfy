@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { createClient } from '@/lib/supabase/client'
 import { toast } from '@/lib/utils/use-toast'
 import { formatDate } from '@/lib/utils'
-import { Plus, Send, CheckCircle, Trash2, Loader2 } from 'lucide-react'
+import { Plus, Send, CheckCircle, Trash2, Loader2, Info } from 'lucide-react'
 
 interface Order {
   id: string
@@ -30,9 +30,11 @@ interface Props {
   businessName: string
   initialInvoices: Invoice[]
   orders?: Order[]
+  bankTransferDetails?: string | null
+  showBankDetailsOnInvoice?: boolean
 }
 
-export default function InvoicesManager({ caterererId, businessName, initialInvoices, orders = [] }: Props) {
+export default function InvoicesManager({ caterererId, businessName, initialInvoices, orders = [], bankTransferDetails, showBankDetailsOnInvoice }: Props) {
   const [invoices, setInvoices] = useState(initialInvoices)
   const [showCreate, setShowCreate] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -139,6 +141,16 @@ export default function InvoicesManager({ caterererId, businessName, initialInvo
 
   return (
     <>
+      {bankTransferDetails && showBankDetailsOnInvoice && (
+        <div className="flex gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-900">
+          <Info className="h-4 w-4 flex-shrink-0 mt-0.5 text-blue-600" />
+          <div>
+            <p className="font-medium">Bank transfer details are included on your invoices</p>
+            <p className="text-xs text-blue-700 mt-0.5">Customers receiving invoices by email will see your bank account details so they can pay by transfer. You can change this in Settings → Payments.</p>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-end">
         <Button onClick={() => setShowCreate(true)}>
           <Plus className="h-4 w-4 mr-2" />Create Invoice

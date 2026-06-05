@@ -100,6 +100,8 @@ caterers (
   auto_accept_orders BOOLEAN DEFAULT false,
   show_contact_publicly BOOLEAN DEFAULT true,
   business_mode TEXT DEFAULT 'full', -- 'full', 'catering_only', 'items_only'
+  bank_transfer_details TEXT,
+  show_bank_details_on_invoice BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 )
@@ -411,22 +413,23 @@ All phases are implemented and the app builds successfully (Next.js 16, 37 route
 - 14-day trial on signup, caterer record auto-created on email verify
 - Site builder: 4 templates (Classic, Modern, Bold, Link Page), branding, content, image uploads, URL slug
   - Template picker shows mini wireframe previews of each layout (not just a label)
-  - Animated 3-step onboarding wizard on first visit (template → accent colour → tagline)
+  - Animated 4-step onboarding wizard on first visit to site editor (template → accent colour → tagline → URL); final button says "Publish" and saves slug + page settings; slug saved to caterers table
 - Individual caterer public pages at `/{slug}`
 - Menu/packages editor with delete for both items and packages
-- Gallery manager (Supabase Storage, `caterer-images` bucket)
+- Gallery manager (Supabase Storage, `caterer-images` bucket); no captions/descriptions on images
 - Orders dashboard with fixed-price and quote flows
   - Fixed-price orders and quote requests use differentiated forms (fixed: simple checkout with optional extras; quote: full event details with requirements textarea)
+  - Fixed-price checkout payment options: card, bank transfer (shown only if caterer has bank details set), pay later; quote requests have no payment step
   - "Mark as Completed" button available on all accepted orders (not gated to offline payment)
   - Delete button available on all orders (in expanded view)
   - Order accept/decline sends email via API route (`/api/orders/[id]`) with review link in acceptance email
 - Quote builder dialog (send quote → customer gets email with accept link)
 - Availability/blocked dates manager
 - Reviews dashboard with caterer response
-- Invoices manager — create custom invoices or generate from any accepted/completed order; send via email button
+- Invoices manager — create custom invoices or generate from any accepted/completed order; send via email button; bank transfer details auto-included in invoice emails when configured
 - Discount codes — full CRUD at `/discount-codes`; customers can apply codes at checkout; validated via `/api/discount-codes/validate`
 - Stripe Billing subscription flow (£10/month, checkout + portal)
-- Stripe Connect onboarding for caterer payouts
+- Stripe Connect onboarding for caterer payouts (simplified 3-step flow); Payments page shows Stripe fee info (1.2% + 20p), catering quote disclaimer, and requires agreement checkbox before connecting
 - Stripe webhooks (subscription lifecycle, payment events)
 - Resend email notifications (orders, quotes, reviews, auth, invoices)
 - Admin dashboard at `/mistuzzo`
@@ -439,9 +442,9 @@ All phases are implemented and the app builds successfully (Next.js 16, 37 route
 - Logo on caterer public pages displays at h-14 (56px) for better visibility
 - "Powered by Caterfy" footer on all four caterer page templates
 - Mobile navigation: topbar has a slide-out drawer with full nav for mobile
-- Dashboard onboarding wizard: animated 4-step full-screen overlay shown once after email verification (phone → location → cuisines → event types)
+- Dashboard onboarding wizard: animated 4-step full-screen overlay shown once after email verification (phone → location → cuisines → event types); events step has an "All events" chip to select all at once
 - Loading skeleton (`app/(dashboard)/loading.tsx`) for Suspense-based page transitions
-- Dashboard setup checklist only shows **incomplete** items; shows "You're all set!" when everything is done
+- Dashboard setup checklist shows **all items** at all times; completed items show a green tick with strikethrough; "You're all set!" only when all done; branding marked done when tagline or accent colour is set
 - Order button differentiated into two cards: "Order items" (fixed, shopping bag) and "Request a catering quote" (document icon with description text)
 - Business mode setting (Settings → Business Profile): `full` / `catering_only` / `items_only` — controls which order options appear on the public page
 - Menu item stock limits: optional per-item inventory cap set in menu editor; enforced in the order form with "X remaining" indicator
@@ -449,6 +452,8 @@ All phases are implemented and the app builds successfully (Next.js 16, 37 route
 - Food certifications: 10 UK accreditations (Halal, Hygiene 5★, Kosher, FSA, Vegan Society, SALSA, BRC, ISO 22000, Organic, Allergen Aware) selectable in Site Editor → Content; rendered as badges in the hero section of all 4 templates. Stored in `caterer_pages.template_data.certifications`.
 - Send message form on all caterer public pages (Contact section); submits to `/api/messages` which emails the caterer (with reply-to set) and sends an auto-reply to the customer
 - Homepage payment methods section showing: Visa, Mastercard, Amex, Apple Pay, Google Pay, Bank Transfer, Pay Later
+- Bank transfer payment option: caterer enters account details in Settings → Payments; shown to customers at checkout on fixed orders; bank details shown on order confirmation and optionally auto-included on invoice emails (toggle in Settings → Payments)
+- Site editor Save Changes button only active when unsaved changes exist; resets after successful save
 - Dashboard performance: `getUser()` in `lib/supabase/server.ts` is wrapped with React `cache()` so `auth.getUser()` fires once per request even though layout and page both call it; all dashboard pages use this cached helper instead of calling `supabase.auth.getUser()` directly
 
 ### Pending / Not Yet Built
@@ -497,6 +502,7 @@ Migrations live in `supabase/migrations/` and must be run manually in Supabase S
 - `004_link_page.sql` — adds template_data JSONB column to caterer_pages
 - `005_template_constraint.sql` — updates caterer_pages_template_check to include 'linkpage'
 - `006_business_mode_stock_limit.sql` — adds business_mode to caterers; adds stock_limit to menu_items
+- `007_bank_transfer.sql` — adds bank_transfer_details TEXT and show_bank_details_on_invoice BOOLEAN to caterers
 
 ### Deleting a test account (SQL order)
 ```sql
@@ -508,8 +514,9 @@ DELETE FROM caterer_pages WHERE caterer_id = '[user-id]';
 DELETE FROM gallery_images WHERE caterer_id = '[user-id]';
 DELETE FROM menu_items WHERE caterer_id = '[user-id]';
 DELETE FROM blocked_dates WHERE caterer_id = '[user-id]';
-DELETE FROM caterers WHERE id = '[user-id]';
+DELETE FROM invoices WHERE caterer_id = '[user-id]';
 DELETE FROM discount_codes WHERE caterer_id = '[user-id]';
+DELETE FROM caterers WHERE id = '[user-id]';
 -- Then delete from Supabase Authentication → Users
 ```
 

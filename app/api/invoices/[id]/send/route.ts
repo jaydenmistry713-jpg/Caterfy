@@ -14,7 +14,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
 
     const { data: invoice, error } = await service
       .from('invoices')
-      .select('*, caterers(business_name)')
+      .select('*, caterers(business_name, bank_transfer_details, show_bank_details_on_invoice)')
       .eq('id', id)
       .eq('caterer_id', user.id)
       .single()
@@ -23,13 +23,19 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
     }
 
+    const catererData = (invoice as any).caterers
+    const bankDetails = catererData?.show_bank_details_on_invoice && catererData?.bank_transfer_details
+      ? catererData.bank_transfer_details
+      : undefined
+
     await sendInvoiceEmail(invoice.customer_email, {
       invoice_number: invoice.invoice_number,
-      business_name: (invoice as any).caterers?.business_name || '',
+      business_name: catererData?.business_name || '',
       customer_name: invoice.customer_name,
       line_items: invoice.line_items as { description: string; amount: number }[],
       total: invoice.total,
       due_date: invoice.due_date || undefined,
+      bank_transfer_details: bankDetails,
     })
 
     await service

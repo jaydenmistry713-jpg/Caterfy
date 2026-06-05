@@ -144,7 +144,12 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
             <h3 className="text-xl font-bold text-gray-900 mb-2">Order submitted!</h3>
             <p className="text-gray-500 mb-2">Your reference number is:</p>
             <p className="text-2xl font-mono font-bold text-gray-900 mb-4">{refNumber}</p>
-            {form.payment_method === 'offline' ? (
+            {form.payment_method === 'bank_transfer' && caterer.bank_transfer_details ? (
+              <div className="mt-2 text-left bg-gray-50 rounded-lg p-3 w-full">
+                <p className="text-sm font-medium text-gray-900 mb-1">Bank transfer details:</p>
+                <pre className="text-xs text-gray-600 whitespace-pre-wrap font-sans">{caterer.bank_transfer_details}</pre>
+              </div>
+            ) : form.payment_method === 'offline' ? (
               <p className="text-sm text-gray-500">The caterer will contact you to arrange payment once your order is confirmed.</p>
             ) : (
               <p className="text-sm text-gray-500">A confirmation email has been sent to {form.customer_email}.</p>
@@ -430,6 +435,21 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
                       <p className="text-xs text-gray-500">Visa, Mastercard, Apple Pay, Google Pay</p>
                     </div>
                   </label>
+                  {caterer.bank_transfer_details && (
+                    <label className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="radio"
+                        name="payment"
+                        value="bank_transfer"
+                        checked={form.payment_method === 'bank_transfer'}
+                        onChange={() => setForm({ ...form, payment_method: 'bank_transfer' })}
+                      />
+                      <div>
+                        <p className="font-medium text-sm">Bank transfer</p>
+                        <p className="text-xs text-gray-500">Transfer directly to the caterer's account — details provided after your order is confirmed</p>
+                      </div>
+                    </label>
+                  )}
                   <label className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-gray-50">
                     <input
                       type="radio"
@@ -439,8 +459,8 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
                       onChange={() => setForm({ ...form, payment_method: 'offline' })}
                     />
                     <div>
-                      <p className="font-medium text-sm">Pay later (offline)</p>
-                      <p className="text-xs text-gray-500">Cash, bank transfer, or arrange with caterer</p>
+                      <p className="font-medium text-sm">Pay later</p>
+                      <p className="text-xs text-gray-500">Arrange payment directly with the caterer</p>
                     </div>
                   </label>
                 </div>

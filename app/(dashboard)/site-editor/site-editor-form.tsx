@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,6 +32,8 @@ interface Props {
 
 export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
   const [saving, setSaving] = useState(false)
+  const [dirty, setDirty] = useState(false)
+  const isMounted = useRef(false)
   const [heroUrl, setHeroUrl] = useState<string>(page?.hero_image_url || '')
   const [logoUrl, setLogoUrl] = useState<string>(page?.logo_url || '')
   const [uploadingHero, setUploadingHero] = useState(false)
@@ -95,6 +97,14 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
   const [slug, setSlug] = useState(caterer?.slug || '')
   const [slugError, setSlugError] = useState<string | null>(null)
 
+  useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true
+      return
+    }
+    setDirty(true)
+  }, [form, heroUrl, logoUrl, slug, selectedCerts, templateData])
+
   function handleSlugChange(val: string) {
     const cleaned = slugify(val)
     setSlug(cleaned)
@@ -151,6 +161,7 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
       }
 
       toast({ title: 'Site saved!', variant: 'success' })
+      setDirty(false)
     } catch (err: any) {
       toast({ title: 'Error saving', description: err.message, variant: 'destructive' })
     } finally {
@@ -163,8 +174,10 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
       {showOnboarding && (
         <SiteEditorOnboarding
           caterererId={caterererId}
-          onComplete={(tmpl, accent, tgln) => {
+          initialSlug={caterer?.slug || ''}
+          onComplete={(tmpl, accent, tgln, newSlug) => {
             setForm((f) => ({ ...f, template: tmpl, accent_color: accent, tagline: tgln }))
+            if (newSlug) setSlug(newSlug)
             setShowOnboarding(false)
           }}
           onSkip={() => setShowOnboarding(false)}
@@ -538,7 +551,7 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
         </Tabs>
 
         <div className="flex justify-end">
-          <Button onClick={save} disabled={saving} size="lg">
+          <Button onClick={save} disabled={saving || !dirty} size="lg">
             {saving ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>

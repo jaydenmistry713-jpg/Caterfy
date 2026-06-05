@@ -4,7 +4,6 @@ import { useState, useRef } from 'react'
 import Image from 'next/image'
 import { GalleryImage } from '@/types'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from '@/lib/utils/use-toast'
 import { Upload, Trash2, ImageIcon } from 'lucide-react'
@@ -90,12 +89,6 @@ export default function GalleryManager({ caterererId, initialImages }: Props) {
     toast({ title: 'Photo deleted' })
   }
 
-  async function updateCaption(id: string, caption: string) {
-    const supabase = createClient()
-    await supabase.from('gallery_images').update({ caption }).eq('id', id)
-    setImages((prev) => prev.map((i) => i.id === id ? { ...i, caption } : i))
-  }
-
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -149,14 +142,6 @@ export default function GalleryManager({ caterererId, initialImages }: Props) {
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
-              <Input
-                value={image.caption || ''}
-                onChange={(e) => updateCaption(image.id, e.target.value)}
-                onBlur={(e) => updateCaption(image.id, e.target.value)}
-                placeholder="Add caption..."
-                className="mt-1 text-xs h-7"
-                maxLength={150}
-              />
             </div>
           ))}
 
