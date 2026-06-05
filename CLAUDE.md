@@ -414,12 +414,15 @@ All phases are implemented and the app builds successfully (Next.js 16, 37 route
 - Site builder: 4 templates (Classic, Modern, Bold, Link Page), branding, content, image uploads, URL slug
   - Template picker shows mini wireframe previews of each layout (not just a label)
   - Animated 4-step onboarding wizard on first visit to site editor (template → accent colour → tagline → URL); final button says "Publish" and saves slug + page settings; slug saved to caterers table
+  - After completing onboarding, automatically switches to Content tab with a nudge banner to add hero image and about text
+  - Hero image field has a plain-language description explaining what it is
 - Individual caterer public pages at `/{slug}`
 - Menu/packages editor with delete for both items and packages
 - Gallery manager (Supabase Storage, `caterer-images` bucket); no captions/descriptions on images
 - Orders dashboard with fixed-price and quote flows
-  - Fixed-price orders and quote requests use differentiated forms (fixed: simple checkout with optional extras; quote: full event details with requirements textarea)
-  - Fixed-price checkout payment options: card, bank transfer (shown only if caterer has bank details set), pay later; quote requests have no payment step
+  - Fixed-price orders and quote requests use differentiated forms (fixed: name/email/phone/date/delivery address with optional dietary+notes; quote: full event details with requirements textarea)
+  - Fixed-price checkout payment options: card (only if caterer Stripe connected), bank transfer (only if caterer has bank details set), pay later; quote requests have no payment step
+  - Card payment option hidden and default payment set to offline when caterer has not connected Stripe
   - "Mark as Completed" button available on all accepted orders (not gated to offline payment)
   - Delete button available on all orders (in expanded view)
   - Order accept/decline sends email via API route (`/api/orders/[id]`) with review link in acceptance email

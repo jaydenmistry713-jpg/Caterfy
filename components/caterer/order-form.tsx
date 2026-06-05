@@ -52,7 +52,7 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
     special_requests: '',
     dietary_requirements: '',
     additional_comments: '',
-    payment_method: 'card',
+    payment_method: caterer.stripe_connect_id ? 'card' : 'offline',
   })
 
   function adjustQuantity(item: any, delta: number) {
@@ -283,7 +283,7 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
           </div>
         )}
 
-        {/* Step 2 (fixed): checkout-style contact details */}
+        {/* Step 2 (fixed): contact + delivery details */}
         {orderType === 'fixed' && step === 2 && (
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
@@ -303,32 +303,23 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
                 <Label>Date *</Label>
                 <Input className="mt-1" type="date" min={new Date().toISOString().split('T')[0]} value={form.event_date} onChange={(e) => setForm({ ...form, event_date: e.target.value })} />
               </div>
+              <div className="col-span-2">
+                <Label>Delivery address</Label>
+                <Input className="mt-1" placeholder="Where should the order be delivered?" value={form.event_location} onChange={(e) => setForm({ ...form, event_location: e.target.value })} />
+              </div>
             </div>
 
-            {/* Optional event details toggle */}
             <button
               type="button"
               onClick={() => setShowExtraDetails((v) => !v)}
               className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors mt-1"
             >
               {showExtraDetails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-              {showExtraDetails ? 'Hide extra details' : 'Add event details (optional)'}
+              {showExtraDetails ? 'Hide extra details' : 'Add more details (optional)'}
             </button>
 
             {showExtraDetails && (
               <div className="grid grid-cols-2 gap-3 pt-1">
-                <div>
-                  <Label>Event time</Label>
-                  <Input className="mt-1" type="time" value={form.event_time} onChange={(e) => setForm({ ...form, event_time: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Number of guests</Label>
-                  <Input className="mt-1" type="number" min="1" value={form.guest_count} onChange={(e) => setForm({ ...form, guest_count: e.target.value })} />
-                </div>
-                <div className="col-span-2">
-                  <Label>Venue / delivery address</Label>
-                  <Input className="mt-1" placeholder="Address or venue name" value={form.event_location} onChange={(e) => setForm({ ...form, event_location: e.target.value })} />
-                </div>
                 <div className="col-span-2">
                   <Label>Dietary requirements</Label>
                   <Input className="mt-1" value={form.dietary_requirements} onChange={(e) => setForm({ ...form, dietary_requirements: e.target.value })} placeholder="e.g. Vegan, nut-free, halal..." />
@@ -422,19 +413,21 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
               <div>
                 <p className="font-medium text-gray-900 mb-3">Payment method</p>
                 <div className="space-y-2">
-                  <label className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-gray-50">
-                    <input
-                      type="radio"
-                      name="payment"
-                      value="card"
-                      checked={form.payment_method === 'card'}
-                      onChange={() => setForm({ ...form, payment_method: 'card' })}
-                    />
-                    <div>
-                      <p className="font-medium text-sm">Pay by card</p>
-                      <p className="text-xs text-gray-500">Visa, Mastercard, Apple Pay, Google Pay</p>
-                    </div>
-                  </label>
+                  {caterer.stripe_connect_id && (
+                    <label className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="radio"
+                        name="payment"
+                        value="card"
+                        checked={form.payment_method === 'card'}
+                        onChange={() => setForm({ ...form, payment_method: 'card' })}
+                      />
+                      <div>
+                        <p className="font-medium text-sm">Pay by card</p>
+                        <p className="text-xs text-gray-500">Visa, Mastercard, Apple Pay, Google Pay</p>
+                      </div>
+                    </label>
+                  )}
                   {caterer.bank_transfer_details && (
                     <label className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-gray-50">
                       <input

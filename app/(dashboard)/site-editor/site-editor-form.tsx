@@ -13,7 +13,7 @@ import { createClient } from '@/lib/supabase/client'
 import { toast } from '@/lib/utils/use-toast'
 import { GOOGLE_FONTS, validateSlug, slugify } from '@/lib/utils'
 import Link from 'next/link'
-import { ExternalLink, Upload, X, Plus, Trash2 } from 'lucide-react'
+import { ExternalLink, Upload, X, Plus, Trash2, Sparkles } from 'lucide-react'
 import SiteEditorOnboarding from './site-editor-onboarding'
 import { CERTIFICATIONS } from '@/components/caterer/certification-badges'
 
@@ -42,6 +42,7 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
   const logoRef = useRef<HTMLInputElement>(null)
 
   const [showOnboarding, setShowOnboarding] = useState(!page?.tagline && !page?.about && !page?.logo_url)
+  const [activeTab, setActiveTab] = useState('template')
 
   async function uploadImage(
     file: File,
@@ -179,6 +180,7 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
             setForm((f) => ({ ...f, template: tmpl, accent_color: accent, tagline: tgln }))
             if (newSlug) setSlug(newSlug)
             setShowOnboarding(false)
+            setActiveTab('content')
           }}
           onSkip={() => setShowOnboarding(false)}
         />
@@ -196,7 +198,7 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
           </div>
         )}
 
-        <Tabs defaultValue="template">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="flex-wrap">
             <TabsTrigger value="template">Template</TabsTrigger>
             <TabsTrigger value="content">Content</TabsTrigger>
@@ -315,10 +317,21 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
           <TabsContent value="content">
             <Card>
               <CardContent className="pt-6 space-y-6">
+                {/* Post-onboarding nudge */}
+                {!heroUrl && !form.about && (
+                  <div className="flex gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-900">
+                    <Sparkles className="h-4 w-4 flex-shrink-0 mt-0.5 text-blue-500" />
+                    <div>
+                      <p className="font-medium">Complete your profile</p>
+                      <p className="text-xs text-blue-700 mt-0.5">Add a hero image and about text so customers know who you are. These appear at the top of your public page.</p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Hero image */}
                 <div>
                   <Label>Hero image</Label>
-                  <p className="text-xs text-gray-500 mb-2">The main image shown at the top of your site (JPG, PNG, WebP, max 5MB)</p>
+                  <p className="text-xs text-gray-500 mb-2">The large banner image shown at the top of your site — use a high-quality photo of your food or an event you've catered. (JPG, PNG, WebP, max 5MB)</p>
                   <div className="flex items-start gap-4">
                     {heroUrl ? (
                       <div className="relative w-40 h-24 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
