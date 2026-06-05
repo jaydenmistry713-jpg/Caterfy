@@ -465,6 +465,11 @@ All phases are implemented and the app builds successfully (Next.js 16, 37 route
 - Review request email trigger (1 day after event date)
 - Google Analytics wired up (env var exists, tag not added to layout yet)
 - Google Fonts loading (fonts selected in site editor but not loaded via next/font)
+- **Card payment status update (no-webhook approach)**: Currently `checkout.session.completed` webhook marks orders as paid, but this requires Stripe webhook setup. Replace with session-verification on the success redirect:
+  1. Change `success_url` in `app/api/orders/route.ts` to include `{CHECKOUT_SESSION_ID}`: `/order-status?ref={ref}&session_id={CHECKOUT_SESSION_ID}`
+  2. In the `/order-status` page, if `session_id` query param is present, call a new API route `/api/orders/verify-payment` that retrieves the session from Stripe (`stripe.checkout.sessions.retrieve(session_id)`), checks `payment_status === 'paid'`, and updates the order's `payment_status` to `'paid'` + stores `stripe_payment_intent_id`
+  3. Remove the `checkout.session.completed` case from `app/api/webhooks/stripe/route.ts` (subscription webhook events are still needed)
+  - This removes the webhook dependency for order payments entirely — status updates happen when the customer lands on the success page
 
 ## Deployment & Infrastructure Notes
 
