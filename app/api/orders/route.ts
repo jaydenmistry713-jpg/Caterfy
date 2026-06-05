@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { sendNewOrderNotification, sendOrderConfirmationToCustomer } from '@/lib/resend/emails'
+import { stripe } from '@/lib/stripe'
 import { z } from 'zod'
 
 const orderSchema = z.object({
@@ -33,10 +34,10 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createServiceClient()
 
-    // Get caterer details for email
+    // Get caterer details
     const { data: caterer } = await supabase
       .from('caterers')
-      .select('email, business_name, auto_accept_orders, is_accepting_orders')
+      .select('email, business_name, auto_accept_orders, is_accepting_orders, stripe_connect_id, slug')
       .eq('id', validated.caterer_id)
       .single()
 
@@ -92,7 +93,44 @@ export async function POST(request: NextRequest) {
       console.error('Email send failed:', emailErr)
     }
 
-    return NextResponse.json({ order })
+    // Create Stripe Checkout Session for card payments
+    let checkout_url: string | null = null
+    if (
+      validated.payment_method === 'card' &&
+      caterer.stripe_connect_id &&
+      validated.total &&
+      validated.total > 0
+    ) {
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [{
+          price_data: {
+            currency: 'gbp',
+            product_data: {
+              name: `Order from ${caterer.business_name}`,
+              description: `Reference: ${validated.reference_number}`,
+            },
+            unit_amount: Math.round(Number(validated.total) * 100),
+          },
+          quantity: 1,
+        }],
+        mode: 'payment',
+        success_url: `${process.env.NEXT_PUBLIC_APP_URL}/order-status?ref=${validated.reference_number}`,
+        cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/${caterer.slug}`,
+        metadata: {
+          order_id: order.id,
+          reference_number: validated.reference_number,
+        },
+        payment_intent_data: {
+          transfer_data: {
+            destination: caterer.stripe_connect_id,
+          },
+        },
+      })
+      checkout_url = session.url
+    }
+
+    return NextResponse.json({ order, checkout_url })
   } catch (err: any) {
     if (err.name === 'ZodError') {
       return NextResponse.json({ error: 'Invalid request data', details: err.errors }, { status: 400 })

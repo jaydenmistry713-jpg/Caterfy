@@ -423,6 +423,7 @@ All phases are implemented and the app builds successfully (Next.js 16, 37 route
   - Fixed-price orders and quote requests use differentiated forms (fixed: name/email/phone/date/delivery address with optional dietary+notes; quote: full event details with requirements textarea)
   - Fixed-price checkout payment options: card (only if caterer Stripe connected), bank transfer (only if caterer has bank details set), pay later; quote requests have no payment step
   - Card payment option hidden and default payment set to offline when caterer has not connected Stripe
+  - Card payments create a Stripe Checkout Session (destination charge to caterer's connected account); customer is redirected to Stripe to pay, then back to /order-status; webhook `checkout.session.completed` marks order as paid
   - "Mark as Completed" button available on all accepted orders (not gated to offline payment)
   - Delete button available on all orders (in expanded view)
   - Order accept/decline sends email via API route (`/api/orders/[id]`) with review link in acceptance email
@@ -495,7 +496,7 @@ All phases are implemented and the app builds successfully (Next.js 16, 37 route
 - All in test mode — use test card `4242 4242 4242 4242`
 - Stripe Connect must be activated at `dashboard.stripe.com/connect` before the Connect Stripe button works
 - Webhook endpoint: `https://caterfy.netlify.app/api/webhooks/stripe`
-- Required webhook events: `customer.subscription.created`, `customer.subscription.updated`, `invoice.payment_succeeded`, `invoice.payment_failed`, `account.updated`
+- Required webhook events: `customer.subscription.created`, `customer.subscription.updated`, `invoice.payment_succeeded`, `invoice.payment_failed`, `account.updated`, `checkout.session.completed`
 
 ### Database Migrations
 Migrations live in `supabase/migrations/` and must be run manually in Supabase SQL editor:

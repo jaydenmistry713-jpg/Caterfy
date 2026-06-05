@@ -59,6 +59,18 @@ export async function POST(request: NextRequest) {
       }
       break
     }
+
+    case 'checkout.session.completed': {
+      const session = event.data.object as Stripe.Checkout.Session
+      const orderId = session.metadata?.order_id
+      if (orderId && session.payment_status === 'paid') {
+        await supabase.from('orders').update({
+          payment_status: 'paid',
+          stripe_payment_intent_id: typeof session.payment_intent === 'string' ? session.payment_intent : null,
+        }).eq('id', orderId)
+      }
+      break
+    }
   }
 
   return NextResponse.json({ received: true })

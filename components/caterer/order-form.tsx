@@ -126,6 +126,11 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to submit order')
 
+      if (data.checkout_url) {
+        window.location.href = data.checkout_url
+        return
+      }
+
       setRefNumber(reference)
       setSubmitted(true)
     } catch (err: any) {
