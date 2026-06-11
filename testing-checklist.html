@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Caterfy — Comprehensive Testing Checklist</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --panel-2: #1d212b;
+    --border: #2a2f3a;
+    --text: #e6e9ef;
+    --muted: #99a0ad;
+    --accent: #2E75B6;
+    --accent-2: #3b8fd6;
+    --green: #34c759;
+    --amber: #f5a623;
+    --red: #ff5b5b;
+    --done-bg: #15241a;
+    --shadow: 0 6px 24px rgba(0,0,0,.35);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent-2); }
+
+  header.app {
+    position: sticky; top: 0; z-index: 50;
+    background: linear-gradient(180deg, rgba(15,17,21,.98), rgba(15,17,21,.92));
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px 12px;
+  }
+  .title-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .title-row h1 { font-size: 20px; margin: 0; letter-spacing: .2px; }
+  .badge {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    background: var(--amber); color: #1a1300; padding: 2px 8px; border-radius: 999px;
+  }
+  .subtitle { color: var(--muted); font-size: 13px; margin: 4px 0 0; }
+
+  .progress-wrap { margin-top: 12px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .bar { flex: 1; min-width: 220px; height: 12px; background: var(--panel-2); border-radius: 999px; overflow: hidden; border: 1px solid var(--border); }
+  .bar > span { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--green)); transition: width .35s ease; }
+  .progress-num { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--muted); white-space: nowrap; }
+  .progress-num b { color: var(--text); }
+
+  .toolbar { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .toolbar input[type="search"] {
+    flex: 1; min-width: 200px; background: var(--panel-2); border: 1px solid var(--border);
+    color: var(--text); padding: 8px 12px; border-radius: 8px; font-size: 14px;
+  }
+  button.btn {
+    background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+    padding: 8px 12px; border-radius: 8px; font-size: 13px; cursor: pointer; transition: .15s;
+  }
+  button.btn:hover { border-color: var(--accent); }
+  button.btn.danger:hover { border-color: var(--red); color: var(--red); }
+  .filter-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip {
+    font-size: 12px; padding: 6px 10px; border-radius: 999px; cursor: pointer;
+    background: var(--panel-2); border: 1px solid var(--border); color: var(--muted);
+  }
+  .chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  main { max-width: 1040px; margin: 0 auto; padding: 20px; }
+
+  .legend { color: var(--muted); font-size: 13px; margin: 0 0 18px; padding: 12px 14px; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; }
+  .legend code { background: var(--panel-2); padding: 1px 6px; border-radius: 5px; color: var(--text); }
+
+  details.section {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    margin-bottom: 14px; overflow: hidden; box-shadow: var(--shadow);
+  }
+  details.section > summary {
+    cursor: pointer; list-style: none; padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+    user-select: none; font-weight: 600; font-size: 15px;
+  }
+  details.section > summary::-webkit-details-marker { display: none; }
+  .sec-caret { transition: transform .2s; color: var(--muted); font-size: 12px; }
+  details[open] > summary .sec-caret { transform: rotate(90deg); }
+  .sec-emoji { font-size: 18px; }
+  .sec-count { margin-left: auto; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .sec-minibar { width: 70px; height: 7px; background: var(--panel-2); border-radius: 999px; overflow: hidden; border: 1px solid var(--border); }
+  .sec-minibar > span { display: block; height: 100%; width: 0; background: var(--green); transition: width .3s; }
+
+  .sec-body { padding: 4px 16px 16px; }
+  .sec-desc { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+
+  .item {
+    display: grid; grid-template-columns: 22px 1fr; gap: 10px;
+    padding: 10px 10px; border-radius: 9px; border: 1px solid transparent;
+    align-items: start;
+  }
+  .item:hover { background: var(--panel-2); }
+  .item.done { background: var(--done-bg); }
+  .item.done .item-title { text-decoration: line-through; color: var(--muted); }
+  .item input[type="checkbox"] { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--green); cursor: pointer; }
+  .item-title { font-size: 14px; font-weight: 600; }
+  .item-steps { margin: 6px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
+  .item-steps li { margin: 2px 0; }
+  .item-expect { font-size: 12.5px; color: #b8e0c2; margin-top: 6px; }
+  .item-expect::before { content: "✓ Expect: "; color: var(--green); font-weight: 700; }
+  .tag { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 1px 6px; border-radius: 5px; margin-left: 6px; vertical-align: middle; }
+  .tag.critical { background: #3a1418; color: #ff9b9b; }
+  .tag.payment { background: #14233a; color: #9bc4ff; }
+  .tag.email { background: #2a2414; color: #f5d98a; }
+  .item-note {
+    width: 100%; margin-top: 6px; background: var(--bg); border: 1px dashed var(--border);
+    color: var(--text); border-radius: 6px; padding: 6px 8px; font-size: 12.5px; resize: vertical; min-height: 0; height: 30px;
+    font-family: inherit;
+  }
+  .item-note::placeholder { color: #5b616e; }
+
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 30px 20px 50px; }
+  .saved-flash {
+    position: fixed; bottom: 18px; right: 18px; background: var(--green); color: #05230f;
+    padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+    opacity: 0; transform: translateY(8px); transition: .25s; pointer-events: none; z-index: 100;
+  }
+  .saved-flash.show { opacity: 1; transform: translateY(0); }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 600px) {
+    .title-row h1 { font-size: 17px; }
+    main { padding: 14px; }
+  }
+</style>
+</head>
+<body>
+<header class="app">
+  <div class="title-row">
+    <h1>🍽️ Caterfy — Comprehensive Testing Checklist</h1>
+    <span class="badge">Test Mode</span>
+  </div>
+  <p class="subtitle">Work top-to-bottom. Every checkbox state and note is saved locally in your browser — close and reopen anytime.</p>
+
+  <div class="progress-wrap">
+    <div class="bar"><span id="globalBar"></span></div>
+    <div class="progress-num"><b id="doneCount">0</b> / <span id="totalCount">0</span> done · <span id="pctNum">0%</span></div>
+  </div>
+
+  <div class="toolbar">
+    <input type="search" id="search" placeholder="🔎 Filter checklist items…" />
+    <div class="filter-chips">
+      <span class="chip active" data-filter="all">All</span>
+      <span class="chip" data-filter="open">Open</span>
+      <span class="chip" data-filter="done">Done</span>
+      <span class="chip" data-filter="critical">Critical</span>
+      <span class="chip" data-filter="payment">Payments</span>
+    </div>
+    <button class="btn" id="expandAll">Expand all</button>
+    <button class="btn" id="collapseAll">Collapse all</button>
+    <button class="btn" id="exportIssues">⬇ Export issues</button>
+    <button class="btn" id="exportFull">⬇ Export full report</button>
+    <button class="btn danger" id="resetAll">Reset</button>
+  </div>
+</header>
+
+<main>
+  <p class="legend">
+    <b>How to use:</b> Each item has a <b>step-by-step</b> procedure and a <code>✓ Expect</code> line describing the correct result. Tick the box only when the actual behaviour matches the expectation. Use the note field under any item to log bugs, screenshots refs, or env details. Tags: <span class="tag critical">critical</span> must pass before launch · <span class="tag payment">payment</span> involves money/Stripe · <span class="tag email">email</span> involves Resend delivery. <b>Test cards:</b> <code>4242 4242 4242 4242</code> (success), <code>4000 0000 0000 9995</code> (declined).
+  </p>
+
+  <div id="sections"></div>
+</main>
+
+<footer>
+  Caterfy QA Checklist · saved to <code>localStorage</code> on this device/browser only · generated for testing in Test Mode.
+</footer>
+
+<div class="saved-flash" id="flash">Saved ✓</div>
+
+<script>
+/* ============================================================
+   CHECKLIST DATA
+   t = title, s = steps[], e = expected result, tag = optional
+   ============================================================ */
+const DATA = [
+ {
+  id: "env", emoji: "🧰", name: "0 · Pre-flight & Environment",
+  desc: "Confirm the app builds and all integrations are wired before functional testing.",
+  items: [
+   { t:"Production build succeeds", s:["Run <code>npm run build</code> from the repo root.","Confirm Next.js compiles with no type/lint errors."], e:"Build completes; ~37 routes generated, no errors.", tag:"critical" },
+   { t:"Environment variables present", s:["In Netlify, verify all required vars are set: Supabase URL/anon/service-role, Stripe secret/publishable/webhook secret, Resend key, App URL, GA id."], e:"No var is blank; app boots without 'missing env' errors." },
+   { t:"Supabase Storage bucket public", s:["Open Supabase → Storage → <code>caterer-images</code>.","Confirm the bucket exists and is set to Public."], e:"Public bucket; image URLs load without auth." },
+   { t:"Database migrations applied", s:["In Supabase SQL editor, confirm migrations 001–007 have all been run.","Spot-check columns: <code>caterers.business_mode</code>, <code>caterers.bank_transfer_details</code>, <code>menu_items.stock_limit</code>, <code>caterer_pages.template_data</code>."], e:"All expected columns/tables exist.", tag:"critical" },
+   { t:"Stripe in test mode", s:["Open Stripe dashboard, confirm the 'Test mode' toggle is ON.","Confirm Stripe Connect is activated (dashboard.stripe.com/connect)."], e:"Test mode active; Connect enabled.", tag:"payment" },
+   { t:"Supabase Auth redirect URLs", s:["Supabase → Authentication → URL Configuration.","Site URL = deployed URL; redirect includes <code>/api/auth/callback</code>."], e:"URLs match the deployed domain." },
+  ]
+ },
+ {
+  id: "auth", emoji: "🔐", name: "1 · Authentication & Account",
+  desc: "Signup, email verification, login, logout, password handling.",
+  items: [
+   { t:"Caterer signup creates account", s:["Go to /signup.","Enter business name, email, password and submit.","Check inbox for the verification email."], e:"Account created; verification email sent; redirected to verify-email screen.", tag:"critical email" },
+   { t:"Email verification link works", s:["Open the verification email and click the link.","Confirm redirect to /api/auth/callback then to dashboard with welcome state."], e:"Verified; caterer record auto-created; lands on dashboard.", tag:"critical" },
+   { t:"14-day trial set on signup", s:["After verifying, check Settings/subscription status.","Inspect <code>caterers.trial_ends_at</code> in DB."], e:"Status = trialling; trial_ends_at ≈ now + 14 days." },
+   { t:"Caterer record fallback auto-create", s:["Simulate a missed callback (verify, then navigate straight to /dashboard).","Dashboard layout fallback should create the caterer row."], e:"No crash; caterer record exists even if callback skipped." },
+   { t:"Login with correct credentials", s:["Log out, go to /login, enter valid credentials."], e:"Logged in; redirected to dashboard." },
+   { t:"Login rejects wrong password", s:["Enter a valid email with a wrong password."], e:"Clear error message; not logged in." },
+   { t:"Unverified email cannot access dashboard", s:["Create an account but don't verify.","Try to navigate to /dashboard."], e:"Blocked / redirected to verify-email." },
+   { t:"Logout clears session", s:["Click logout.","Try to revisit a protected page via back button."], e:"Session cleared; protected route redirects to login." },
+   { t:"Protected routes require auth", s:["While logged out, directly hit /orders, /menu, /settings, /payments."], e:"Each redirects to login.", tag:"critical" },
+   { t:"Customers cannot authenticate", s:["Confirm there is no customer login; customers use email links only."], e:"Only caterers have auth; customer flows are guest/email-link based." },
+  ]
+ },
+ {
+  id: "onboard", emoji: "🚀", name: "2 · Onboarding Wizards",
+  desc: "Dashboard onboarding (profile) and site-editor onboarding (publish flow).",
+  items: [
+   { t:"Dashboard onboarding overlay shows once", s:["After first email verification, the 4-step overlay (phone → location → cuisines → event types) should appear.","Complete it."], e:"Overlay appears once; does not reappear on next login." },
+   { t:"'All events' chip selects all", s:["On the event types step, click the 'All events' chip."], e:"All event types become selected at once." },
+   { t:"Onboarding saves to caterer record", s:["Complete the wizard, then check DB / Settings."], e:"Phone, location, cuisines, event types persisted." },
+   { t:"Site-editor wizard on first visit", s:["Open /site-editor for the first time.","Step through template → accent colour → tagline → URL.","Click Publish."], e:"Slug + page settings saved; slug written to caterers table.", tag:"critical" },
+   { t:"Post-onboarding nudge to Content tab", s:["After publishing, observe the auto-switch to Content tab."], e:"Lands on Content tab with a nudge banner to add hero image + about text." },
+   { t:"Hero image field has plain-language help", s:["In the Content tab, read the hero image description."], e:"Clear explanation of what the hero image is." },
+  ]
+ },
+ {
+  id: "site", emoji: "🎨", name: "3 · Site Builder / Editor",
+  desc: "Templates, branding, content, image uploads, slug validation, save behaviour.",
+  items: [
+   { t:"Template picker shows wireframe previews", s:["Open Site Editor → template picker.","Confirm each of the 4 templates shows a mini wireframe (not just a label)."], e:"Classic, Modern, Bold, Link Page each preview their layout." },
+   { t:"Switch between all 4 templates", s:["Select each template and save.","Reload the public page after each."], e:"Public page renders the selected template each time." },
+   { t:"Branding colours apply", s:["Change primary, secondary, accent, background colours.","Save and view public page."], e:"Colours reflected on the public page (accent especially on Link Page)." },
+   { t:"Font selections persist", s:["Change heading + body font, save, reload editor."], e:"Selections persist (note: Google Fonts not yet loaded — see Pending)." },
+   { t:"Logo upload", s:["Upload a logo (try JPG and PNG).","Save and view public page."], e:"Logo stored to <code>logos/{catererId}</code>; displays at h-14 (56px)." },
+   { t:"Hero image upload", s:["Upload a hero image, save, view public page."], e:"Hero image renders on the selected template." },
+   { t:"Image type acceptance", s:["Attempt uploads of JPG, JPEG, PNG, WebP, HEIC, HEIF."], e:"All accepted; HEIC/HEIF auto-convert to JPG." },
+   { t:"Image size/compression limit", s:["Upload an image > 5MB."], e:"Rejected or auto-compressed; max 5MB enforced." },
+   { t:"Slug validation rules", s:["Try slugs: too short (<3), too long (>40), starting with a number, with spaces/symbols, with uppercase."], e:"Only lowercase letters/numbers/hyphens, 3–40 chars, must start with a letter are accepted.", tag:"critical" },
+   { t:"Reserved slug blocked", s:["Try a reserved slug (e.g. 'directory', 'dashboard', 'admin')."], e:"Rejected with a clear message." },
+   { t:"Duplicate slug blocked", s:["Try to claim a slug already used by another caterer."], e:"Rejected; slugs are unique." },
+   { t:"Save button only active when dirty", s:["Open editor without changes → Save should be inactive.","Make a change → Save becomes active.","Save → button resets to inactive."], e:"Save reflects unsaved-changes state accurately." },
+   { t:"Certifications selectable & rendered", s:["Content tab → select several of the 10 certifications.","Save, view public page hero."], e:"Selected badges render in the hero on all 4 templates; stored in template_data.certifications." },
+   { t:"Link Page-specific fields", s:["With Link Page template, edit chips, badges, instagram, CTA label, extras, FAQs in Content tab.","Save and view."], e:"All Link Page fields render in the right sections." },
+  ]
+ },
+ {
+  id: "templates", emoji: "🖼️", name: "4 · Public Pages (All 4 Templates)",
+  desc: "Render each template end-to-end and verify shared + unique behaviours.",
+  items: [
+   { t:"Classic renders fully", s:["Visit /{slug} with Classic.","Check hero, left-aligned about, menu list, uniform gallery grid, contact + message form."], e:"All sections render correctly." },
+   { t:"Modern renders fully", s:["Switch to Modern.","Check overlay hero, centred about, menu card grid, masonry gallery, centred message form."], e:"All sections render correctly." },
+   { t:"Bold renders fully", s:["Switch to Bold.","Check coloured hero, split about, card menu (descriptions always visible), carousel gallery, full-width order/contact."], e:"All sections render correctly." },
+   { t:"Link Page renders fully", s:["Switch to Link Page.","Check dark mobile-first layout, avatar/logo, tagline in accent, chips/badges, quick links, gallery strip, package tray cards, extras, accordion menu, reviews, FAQ accordions, sticky bottom bar."], e:"All Link Page sections render; accent colour fully dynamic.", tag:"critical" },
+   { t:"Expandable menu descriptions", s:["On Classic & Modern, items with a description show a chevron.","Click/tap to expand.","On Link Page accordion items, tap to expand."], e:"Descriptions hidden by default (Classic/Modern/Link), expand on click; Bold shows them in-card." },
+   { t:"Link Page 'Popular' badge logic", s:["Create exactly 3 packages and view Link Page."], e:"Middle package card marked 'Popular' only when 3 packages exist." },
+   { t:"'Powered by Caterfy' footer", s:["Scroll to footer on each template."], e:"Footer present on all four templates." },
+   { t:"Certification badges in hero", s:["With certifications set, check each template's hero."], e:"Badges visible on all 4." },
+   { t:"Sticky bottom bar (Link Page)", s:["On mobile width, view Link Page."], e:"Sticky 'Order Now' + 'Call' bar stays at the bottom." },
+  ]
+ },
+ {
+  id: "menu", emoji: "📋", name: "5 · Menu / Packages Editor",
+  desc: "CRUD for menu items and packages, categories, stock limits, availability.",
+  items: [
+   { t:"Add a menu item", s:["/menu → add item with name, category, description, price, price unit."], e:"Item saved and visible in editor + public page." },
+   { t:"Edit a menu item", s:["Edit an existing item's price and description, save."], e:"Changes persist and reflect on public page." },
+   { t:"Delete a menu item", s:["Delete an item."], e:"Item removed from editor and public page." },
+   { t:"Price units work", s:["Create items with 'per person', 'per item', 'flat'."], e:"Each unit displays correctly on the public page." },
+   { t:"Add / edit / delete a package", s:["Create a package with min/max guests, price; edit it; delete it."], e:"Full CRUD works for packages." },
+   { t:"Stock limit set & enforced", s:["Set <code>stock_limit</code> on an item.","On the order form, try to order more than the limit."], e:"'X remaining' shown; cannot exceed stock; NULL = unlimited.", tag:"critical" },
+   { t:"Availability toggle", s:["Mark an item unavailable."], e:"Hidden/disabled on the public order form." },
+   { t:"Category filter pills on order form", s:["Create items across 2+ categories.","Open the order form."], e:"Category pill filters appear (only when 2+ categories) and filter items." },
+  ]
+ },
+ {
+  id: "gallery", emoji: "🖼️", name: "6 · Gallery Manager",
+  desc: "Upload, order, and delete gallery images.",
+  items: [
+   { t:"Upload gallery image", s:["/gallery → upload an image."], e:"Stored at <code>gallery/{catererId}/{timestamp}</code>; appears in grid." },
+   { t:"Multiple images & ordering", s:["Upload several images; reorder if supported."], e:"Order persists and reflects on public page gallery." },
+   { t:"Delete gallery image", s:["Delete an image."], e:"Removed from manager and public page." },
+   { t:"Gallery renders per template", s:["View gallery on Classic (grid), Modern (masonry), Bold (carousel), Link Page (strip)."], e:"Each template's gallery layout renders correctly." },
+  ]
+ },
+ {
+  id: "orders", emoji: "🛒", name: "7 · Orders — Fixed-price Flow",
+  desc: "Customer places a fixed-price order; caterer manages it.",
+  items: [
+   { t:"Order items card visible", s:["On public page, find the 'Order items' card (shopping bag icon)."], e:"Distinct from the quote card; shown per business_mode." },
+   { t:"Fixed order form fields", s:["Open the fixed order form."], e:"Asks name/email/phone/date/delivery address with optional dietary + notes (not full event details)." },
+   { t:"Place a fixed order (pay later)", s:["Add items, fill the form, choose 'pay later', submit."], e:"Order created with reference number; confirmation shown; caterer notified.", tag:"critical email" },
+   { t:"Reference number generated", s:["Check the created order."], e:"Unique <code>reference_number</code> assigned." },
+   { t:"Caterer sees new order", s:["Log in as caterer → /orders."], e:"New order listed with status 'pending'." },
+   { t:"Accept order sends email", s:["Accept the order."], e:"Status → accepted; customer gets acceptance email containing a review link.", tag:"email" },
+   { t:"Decline order sends email", s:["Decline a pending order."], e:"Status → declined; customer gets decline email.", tag:"email" },
+   { t:"Mark as completed", s:["On an accepted order, click 'Mark as Completed'."], e:"Available on ALL accepted orders (not just offline); status → completed." },
+   { t:"Delete order", s:["Expand an order and click delete."], e:"Available on all orders; order removed." },
+   { t:"Empty-time fields handled", s:["Place an order leaving event_time blank."], e:"Empty strings convert to null; no DB error (regression 2bbde5b)." },
+   { t:"Stock decrements / blocks", s:["Order an item with a stock limit down to zero, then try again."], e:"Cannot order beyond stock." },
+  ]
+ },
+ {
+  id: "quotes", emoji: "📝", name: "8 · Quotes Flow",
+  desc: "Customer requests a quote; caterer builds and sends it.",
+  items: [
+   { t:"Quote request card visible", s:["On public page, find 'Request a catering quote' (document icon + description)."], e:"Distinct card; shown per business_mode." },
+   { t:"Quote form asks full event details", s:["Open the quote request form."], e:"Full event details + requirements textarea (differs from fixed form)." },
+   { t:"Submit quote request", s:["Fill and submit a quote request."], e:"Order of type 'quote' created; caterer notified; no payment step.", tag:"email" },
+   { t:"Caterer builds a quote", s:["/orders → open the quote request → open the quote builder dialog.","Add line items (description + amount), notes, send."], e:"Quote total computed; status updates; customer emailed.", tag:"email" },
+   { t:"Customer accept-quote link", s:["Open the quote email as customer, click accept."], e:"Quote status → accepted; reflected in caterer dashboard." },
+   { t:"Quote line-item math", s:["Add several line items with decimals."], e:"Total sums correctly." },
+  ]
+ },
+ {
+  id: "payments", emoji: "💳", name: "9 · Payments — Card / Bank / Offline",
+  desc: "Stripe Checkout for cards, bank transfer details, pay-later. Money paths.",
+  items: [
+   { t:"Card option hidden without Stripe", s:["As a caterer who has NOT connected Stripe, view your order form."], e:"Card option hidden; default payment = offline.", tag:"payment critical" },
+   { t:"Card option appears after Connect", s:["Connect Stripe (Payments page), then re-open the order form."], e:"Card payment option now offered.", tag:"payment" },
+   { t:"Card payment → Stripe Checkout", s:["Place a fixed order, choose card.","Pay with <code>4242 4242 4242 4242</code>."], e:"Redirected to Stripe Checkout (destination charge to caterer's connected account), then back to /order-status.", tag:"payment critical" },
+   { t:"Order marked paid after payment", s:["After successful card payment, check the order."], e:"payment_status → paid (via checkout.session.completed webhook OR session-verify redirect if migrated).", tag:"payment critical" },
+   { t:"Declined card handled", s:["Repeat card flow with <code>4000 0000 0000 9995</code>."], e:"Payment fails gracefully; order not marked paid; customer can retry.", tag:"payment" },
+   { t:"Bank transfer option gated", s:["Without bank details set, check the order form.","Then set bank details in Settings → Payments and re-check."], e:"Bank transfer option only shows when bank details exist.", tag:"payment" },
+   { t:"Bank details on confirmation", s:["Place an order choosing bank transfer."], e:"Bank details shown on the order confirmation." },
+   { t:"Bank details on invoice toggle", s:["Toggle 'show bank details on invoice' in Settings → Payments.","Send an invoice both ways."], e:"Bank details included on invoice emails only when toggle is on.", tag:"email" },
+   { t:"Pay later (offline)", s:["Place an order with pay-later."], e:"Order created with offline method; no Stripe redirect." },
+   { t:"Stripe Connect onboarding", s:["Payments page → read fee info (1.2% + 20p), disclaimer, tick agreement checkbox → Connect.","Complete the 3-step Connect flow."], e:"Cannot connect without ticking agreement; Connect completes; stripe_connect_id saved.", tag:"payment" },
+  ]
+ },
+ {
+  id: "subs", emoji: "🔁", name: "10 · Subscription Billing",
+  desc: "Stripe Billing £10/£12 subscription, checkout, portal, lifecycle.",
+  items: [
+   { t:"Subscribe via Checkout", s:["Start the subscription checkout (£10/mo UK).","Pay with the test card."], e:"Subscription created; status → active.", tag:"payment critical" },
+   { t:"Billing portal opens", s:["Open the Stripe billing portal from the app."], e:"Portal loads; can manage/cancel subscription." },
+   { t:"subscription.created/updated webhooks", s:["After subscribing, check that webhook events update the caterer record."], e:"subscription_status reflects Stripe state.", tag:"payment" },
+   { t:"invoice.payment_succeeded", s:["Trigger a successful subscription invoice."], e:"Recorded; status stays active." },
+   { t:"invoice.payment_failed handling", s:["Simulate a failed payment."], e:"Status → past_due; failure handling per retry policy (retry day 3, warning, offline day 4)." },
+   { t:"Cancellation", s:["Cancel the subscription via portal."], e:"subscription_status → cancelled; subscription_ends_at set; data preserved." },
+  ]
+ },
+ {
+  id: "invoices", emoji: "🧾", name: "11 · Invoices",
+  desc: "Manual invoices and order-generated invoices; sending.",
+  items: [
+   { t:"Create a manual invoice", s:["/invoices → create with customer name/email, line items, total, due date."], e:"Invoice saved with unique invoice_number." },
+   { t:"Generate invoice from order", s:["Generate an invoice from an accepted/completed order."], e:"Line items pre-filled from the order." },
+   { t:"Send invoice email", s:["Click send on an invoice."], e:"Customer receives invoice email; bank details included if configured.", tag:"email" },
+   { t:"Mark invoice paid", s:["Mark an invoice as paid."], e:"status → paid; paid_at set." },
+  ]
+ },
+ {
+  id: "discounts", emoji: "🏷️", name: "12 · Discount Codes",
+  desc: "CRUD and checkout validation of discount codes.",
+  items: [
+   { t:"Create discount code (percent & fixed)", s:["/discount-codes → create one percent and one fixed code with min order, max uses, expiry."], e:"Both saved." },
+   { t:"Apply valid code at checkout", s:["On the order form, apply a valid code."], e:"Discount applied; total reduced; discount_code + discount_amount stored." },
+   { t:"Min order value enforced", s:["Apply a code to an order below its min_order_value."], e:"Rejected with reason." },
+   { t:"Max uses / expiry enforced", s:["Exhaust max_uses or use an expired code."], e:"Rejected; uses_count increments correctly on valid use." },
+   { t:"Validate endpoint", s:["Confirm /api/discount-codes/validate is called and returns consistent shape."], e:"Valid/invalid responses are correct." },
+   { t:"Edit & delete codes", s:["Edit a code's value; delete a code."], e:"Full CRUD works." },
+  ]
+ },
+ {
+  id: "reviews", emoji: "⭐", name: "13 · Reviews",
+  desc: "Customer review submission and caterer responses.",
+  items: [
+   { t:"Submit a review via link", s:["Use the review link from an acceptance email → /review.","Submit rating (1–5) + text."], e:"Review saved; rating within 1–5 enforced." },
+   { t:"Review shows on public page", s:["View the caterer page reviews section."], e:"Approved review renders with rating + text." },
+   { t:"Caterer responds to review", s:["/reviews → add a response."], e:"caterer_response + caterer_responded_at saved; shown publicly." },
+   { t:"Rating constraint", s:["Attempt to submit rating 0 or 6 (via tampering)."], e:"Rejected by CHECK constraint." },
+  ]
+ },
+ {
+  id: "availability", emoji: "📅", name: "14 · Availability & Blocked Dates",
+  desc: "Block dates and confirm order form respects them.",
+  items: [
+   { t:"Block a date", s:["/availability → block a specific date with a reason."], e:"Date saved to blocked_dates." },
+   { t:"Blocked date unselectable on order form", s:["On the order form, try to pick a blocked date."], e:"Blocked date cannot be selected for the event." },
+   { t:"Unblock a date", s:["Remove a blocked date."], e:"Date becomes selectable again." },
+  ]
+ },
+ {
+  id: "messages", emoji: "✉️", name: "15 · Contact / Messages",
+  desc: "Send-message form on public pages.",
+  items: [
+   { t:"Send message from public page", s:["On a caterer page contact section, submit the message form."], e:"POSTs to /api/messages; caterer emailed with reply-to set.", tag:"email" },
+   { t:"Customer auto-reply", s:["After sending, check the sender's inbox."], e:"Customer receives an auto-reply confirmation.", tag:"email" },
+   { t:"Message form on all templates", s:["Confirm the form exists on Classic, Modern, Bold, Link Page."], e:"Present on all four." },
+  ]
+ },
+ {
+  id: "settings", emoji: "⚙️", name: "16 · Settings & Business Mode",
+  desc: "Business profile, business mode, contact visibility, order controls.",
+  items: [
+   { t:"Business mode: full", s:["Settings → Business Profile → set mode 'full'.","View public page."], e:"Both 'Order items' and 'Request quote' options appear." },
+   { t:"Business mode: catering_only", s:["Set mode 'catering_only', view public page."], e:"Only the quote/catering option appears; items hidden." },
+   { t:"Business mode: items_only", s:["Set mode 'items_only', view public page."], e:"Only the items order option appears; quote hidden." },
+   { t:"Accepting orders toggle", s:["Set is_accepting_orders = false."], e:"Order options hidden/disabled on public page." },
+   { t:"Contact visibility", s:["Toggle show_contact_publicly."], e:"Contact info shown/hidden accordingly." },
+   { t:"Max orders per week", s:["Set max_orders_per_week and exceed it (if enforced)."], e:"Behaviour matches intended limit." },
+  ]
+ },
+ {
+  id: "directory", emoji: "🔎", name: "17 · Directory & Discovery",
+  desc: "Directory listing and location/cuisine filters.",
+  items: [
+   { t:"Directory lists caterers", s:["Visit /directory."], e:"Published caterers are listed." },
+   { t:"Filter by location", s:["Visit /directory/[location]."], e:"Only caterers in that location shown." },
+   { t:"Filter by location + cuisine", s:["Visit /directory/[location]/[cuisine]."], e:"Filtered correctly by both." },
+   { t:"Homepage directory search", s:["From the homepage, run a search."], e:"Routes to the correct directory results." },
+   { t:"Distance calculation", s:["Confirm distance uses city-centre coordinates from locations."], e:"Distances are computed centre-to-centre." },
+   { t:"Unpublished caterers excluded", s:["A caterer with no slug/page should not appear."], e:"Hidden from directory." },
+  ]
+ },
+ {
+  id: "admin", emoji: "🛡️", name: "18 · Admin Dashboard",
+  desc: "Admin route at /mistuzzo.",
+  items: [
+   { t:"Admin route loads", s:["Visit /mistuzzo and authenticate as admin."], e:"Admin dashboard renders.", tag:"critical" },
+   { t:"Admin protected", s:["Visit /mistuzzo while unauthenticated."], e:"Blocked / requires admin auth." },
+   { t:"Admin data views", s:["Browse caterers / settings in admin."], e:"Data displays; actions work as designed." },
+  ]
+ },
+ {
+  id: "emails", emoji: "📧", name: "19 · Email Notifications (Resend)",
+  desc: "Confirm every transactional email fires and renders. Note sandbox limits.",
+  items: [
+   { t:"Sandbox recipient limitation noted", s:["Confirm whether RESEND_FROM_DOMAIN is set.","If using onboarding@resend.dev, emails only deliver to the Resend account owner."], e:"Tester is aware delivery is limited until a domain is verified." },
+   { t:"Caterer: new order notification", s:["Place an order."], e:"Caterer receives new-order email.", tag:"email" },
+   { t:"Caterer: new quote request", s:["Submit a quote request."], e:"Caterer receives quote-request email.", tag:"email" },
+   { t:"Caterer: new review received", s:["Submit a review."], e:"Caterer receives review email.", tag:"email" },
+   { t:"Customer: order confirmation", s:["Place an order."], e:"Customer receives confirmation.", tag:"email" },
+   { t:"Customer: order accepted (with review link)", s:["Accept an order."], e:"Customer receives accepted email with working review link.", tag:"email" },
+   { t:"Customer: order declined", s:["Decline an order."], e:"Customer receives declined email.", tag:"email" },
+   { t:"Customer: quote received", s:["Send a quote."], e:"Customer receives quote email with accept link.", tag:"email" },
+   { t:"Invoice email", s:["Send an invoice."], e:"Customer receives invoice (bank details if configured).", tag:"email" },
+   { t:"Auth emails", s:["Trigger signup verification + welcome."], e:"Verification + welcome emails delivered.", tag:"email" },
+  ]
+ },
+ {
+  id: "responsive", emoji: "📱", name: "20 · Responsive / Mobile / Cross-browser",
+  desc: "Layouts, navigation, and forms across devices and browsers.",
+  items: [
+   { t:"Mobile nav drawer", s:["On mobile width, open the topbar slide-out drawer."], e:"Full nav available in the drawer." },
+   { t:"Dashboard responsive", s:["Resize dashboard pages from mobile → desktop."], e:"No broken layouts or overflow." },
+   { t:"Public templates on mobile", s:["View all 4 templates at 375px width."], e:"All readable; Link Page mobile-first; sticky bar works." },
+   { t:"Order/quote forms on mobile", s:["Complete an order and a quote on a phone-sized viewport."], e:"Forms usable; inputs reachable; no zoom traps." },
+   { t:"Cross-browser smoke", s:["Open the app in Chrome, Safari, and Firefox."], e:"Core flows work in each." },
+   { t:"Loading skeleton", s:["Navigate between dashboard pages."], e:"Suspense loading skeleton (app/(dashboard)/loading.tsx) shows during transitions." },
+  ]
+ },
+ {
+  id: "perf", emoji: "⚡", name: "21 · Performance & Data Integrity",
+  desc: "Caching, query patterns, and DB consistency.",
+  items: [
+   { t:"getUser() cached per request", s:["Confirm dashboard pages use cached getUser() from lib/supabase/server, not auth.getUser() directly."], e:"auth.getUser() fires once per request." },
+   { t:"Parallel queries", s:["Spot-check dashboard pages use Promise.all for independent queries."], e:"No sequential await chains for independent data." },
+   { t:"RLS policies enforced", s:["As caterer A, attempt to read/modify caterer B's data via API."], e:"Blocked by Row Level Security.", tag:"critical" },
+   { t:"No N+1 / slow pages", s:["Load orders/menu/dashboard with realistic data volume."], e:"Pages load promptly." },
+   { t:"Image domains whitelisted", s:["Confirm next.config.ts allows *.supabase.co."], e:"Next/Image loads Supabase images without errors." },
+  ]
+ },
+ {
+  id: "edge", emoji: "🧪", name: "22 · Edge Cases & Security",
+  desc: "Negative testing, validation, and abuse resistance.",
+  items: [
+   { t:"Zod validation on API routes", s:["Send malformed payloads to /api/orders, /api/quotes, /api/reviews, /api/messages."], e:"400 with consistent error shape; no crash.", tag:"critical" },
+   { t:"Guest checkout (no account)", s:["Place an order without creating a customer account."], e:"Works; optional account creation offered after order." },
+   { t:"Order-status lookup", s:["Use /order-status with a valid reference, then an invalid one."], e:"Valid shows status; invalid handled gracefully." },
+   { t:"XSS in free-text fields", s:["Enter <code>&lt;script&gt;</code> in about, notes, review text, message."], e:"Rendered as text, not executed." },
+   { t:"SQL/Injection via params", s:["Tamper with slug/location/cuisine params."], e:"No injection; safe handling." },
+   { t:"Large/invalid quantities", s:["Order quantity 0, negative, or huge."], e:"Validated; totals stay correct." },
+   { t:"Concurrent stock", s:["Two near-simultaneous orders for the last stock unit."], e:"Stock not oversold (best-effort)." },
+   { t:"Reserved + duplicate slug (re-test under load)", s:["Re-confirm slug rules hold after edits."], e:"Constraints hold." },
+   { t:"Legal pages reachable", s:["Open /terms, /privacy, /cookies, /faq."], e:"All render; FAQ has 10 caterer + 6 customer entries." },
+   { t:"404 handling", s:["Visit a non-existent /{slug} and a bad route."], e:"Graceful not-found page." },
+  ]
+ },
+ {
+  id: "pending", emoji: "🚧", name: "23 · Known Pending (verify status, don't expect pass)",
+  desc: "These are NOT yet built per CLAUDE.md — confirm current state and decide if blocking.",
+  items: [
+   { t:"Order reminder cron (24h/48h)", s:["Confirm whether the reminder/auto-cancel cron exists."], e:"Currently PENDING — log as not-built unless implemented." },
+   { t:"Review request email (1 day after event)", s:["Confirm trigger existence."], e:"Currently PENDING." },
+   { t:"Google Analytics tag in layout", s:["Check if GA tag is added to the layout (env var exists)."], e:"Currently PENDING — tag not added yet." },
+   { t:"Google Fonts via next/font", s:["Check if selected fonts actually load."], e:"Currently PENDING — fonts selected but not loaded." },
+   { t:"No-webhook card status (session verify)", s:["Check if success_url uses {CHECKOUT_SESSION_ID} + /api/orders/verify-payment, replacing the webhook case."], e:"Confirm whether the planned migration is done or still webhook-based.", tag:"payment" },
+  ]
+ },
+];
+
+/* ============================================================
+   RENDER + PERSISTENCE
+   ============================================================ */
+const STORAGE_KEY = "caterfy_qa_checklist_v1";
+const state = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); // { "secId.idx": {done, note} }
+
+function keyFor(sec, i){ return sec + "." + i; }
+
+function save(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  flash();
+}
+let flashT;
+function flash(){
+  const f = document.getElementById("flash");
+  f.classList.add("show");
+  clearTimeout(flashT);
+  flashT = setTimeout(()=>f.classList.remove("show"), 900);
+}
+
+function totalItems(){ return DATA.reduce((n,s)=>n+s.items.length,0); }
+function doneItems(){ return Object.values(state).filter(v=>v&&v.done).length; }
+
+function renderSections(){
+  const root = document.getElementById("sections");
+  root.innerHTML = "";
+  DATA.forEach(sec=>{
+    const det = document.createElement("details");
+    det.className = "section";
+    det.dataset.sec = sec.id;
+    det.open = false;
+
+    const summary = document.createElement("summary");
+    summary.innerHTML = `
+      <span class="sec-caret">▶</span>
+      <span class="sec-emoji">${sec.emoji}</span>
+      <span>${sec.name}</span>
+      <span class="sec-minibar"><span data-mini="${sec.id}"></span></span>
+      <span class="sec-count" data-count="${sec.id}"></span>`;
+    det.appendChild(summary);
+
+    const body = document.createElement("div");
+    body.className = "sec-body";
+    const desc = document.createElement("p");
+    desc.className = "sec-desc";
+    desc.textContent = sec.desc;
+    body.appendChild(desc);
+
+    sec.items.forEach((it, i)=>{
+      const k = keyFor(sec.id, i);
+      const saved = state[k] || {};
+      const row = document.createElement("div");
+      row.className = "item" + (saved.done ? " done" : "");
+      row.dataset.key = k;
+      row.dataset.tags = (it.tag||"");
+      row.dataset.text = (it.t + " " + it.s.join(" ") + " " + it.e).toLowerCase();
+
+      const tags = (it.tag||"").split(/\s+/).filter(Boolean)
+        .map(t=>`<span class="tag ${t}">${t}</span>`).join("");
+
+      row.innerHTML = `
+        <input type="checkbox" ${saved.done?"checked":""} aria-label="done" />
+        <div>
+          <div class="item-title">${it.t}${tags}</div>
+          <ol class="item-steps">${it.s.map(x=>`<li>${x}</li>`).join("")}</ol>
+          <div class="item-expect">${it.e}</div>
+          <textarea class="item-note" placeholder="Notes / bug log…">${saved.note||""}</textarea>
+        </div>`;
+
+      const cb = row.querySelector('input[type="checkbox"]');
+      cb.addEventListener("change", ()=>{
+        state[k] = Object.assign({}, state[k], { done: cb.checked });
+        row.classList.toggle("done", cb.checked);
+        save(); updateProgress();
+      });
+      const note = row.querySelector("textarea");
+      let nt;
+      note.addEventListener("input", ()=>{
+        clearTimeout(nt);
+        nt = setTimeout(()=>{
+          state[k] = Object.assign({}, state[k], { note: note.value });
+          save();
+        }, 400);
+      });
+
+      body.appendChild(row);
+    });
+
+    det.appendChild(body);
+    root.appendChild(det);
+  });
+}
+
+function updateProgress(){
+  const total = totalItems();
+  const done = doneItems();
+  const pct = total ? Math.round(done/total*100) : 0;
+  document.getElementById("globalBar").style.width = pct + "%";
+  document.getElementById("doneCount").textContent = done;
+  document.getElementById("totalCount").textContent = total;
+  document.getElementById("pctNum").textContent = pct + "%";
+
+  DATA.forEach(sec=>{
+    const tot = sec.items.length;
+    let d = 0;
+    sec.items.forEach((_,i)=>{ if((state[keyFor(sec.id,i)]||{}).done) d++; });
+    const mini = document.querySelector(`[data-mini="${sec.id}"]`);
+    const count = document.querySelector(`[data-count="${sec.id}"]`);
+    if(mini) mini.style.width = (tot? d/tot*100:0) + "%";
+    if(count) count.textContent = `${d}/${tot}`;
+  });
+}
+
+/* ---- Filtering / search ---- */
+let activeFilter = "all";
+function applyFilter(){
+  const q = document.getElementById("search").value.trim().toLowerCase();
+  document.querySelectorAll(".section").forEach(det=>{
+    let anyVisible = false;
+    det.querySelectorAll(".item").forEach(row=>{
+      const k = row.dataset.key;
+      const done = (state[k]||{}).done;
+      const tags = row.dataset.tags;
+      let show = true;
+      if(activeFilter==="open" && done) show=false;
+      if(activeFilter==="done" && !done) show=false;
+      if(activeFilter==="critical" && !/critical/.test(tags)) show=false;
+      if(activeFilter==="payment" && !/payment/.test(tags)) show=false;
+      if(q && !row.dataset.text.includes(q)) show=false;
+      row.classList.toggle("hidden", !show);
+      if(show) anyVisible = true;
+    });
+    det.classList.toggle("hidden", !anyVisible);
+    if((q || activeFilter!=="all") && anyVisible) det.open = true;
+  });
+}
+
+/* ---- Wire up toolbar ---- */
+document.getElementById("search").addEventListener("input", applyFilter);
+document.querySelectorAll(".chip").forEach(chip=>{
+  chip.addEventListener("click", ()=>{
+    document.querySelectorAll(".chip").forEach(c=>c.classList.remove("active"));
+    chip.classList.add("active");
+    activeFilter = chip.dataset.filter;
+    applyFilter();
+  });
+});
+document.getElementById("expandAll").addEventListener("click", ()=>{
+  document.querySelectorAll(".section").forEach(d=>d.open=true);
+});
+document.getElementById("collapseAll").addEventListener("click", ()=>{
+  document.querySelectorAll(".section").forEach(d=>d.open=false);
+});
+document.getElementById("resetAll").addEventListener("click", ()=>{
+  if(confirm("Reset ALL checkboxes and notes? This clears your saved progress.")){
+    for(const k in state) delete state[k];
+    localStorage.removeItem(STORAGE_KEY);
+    renderSections(); updateProgress(); applyFilter();
+  }
+});
+
+/* ---- Export ---- */
+function pad2(n){ return String(n).padStart(2,"0"); }
+function stamp(){
+  const d = new Date();
+  return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}_${pad2(d.getHours())}${pad2(d.getMinutes())}`;
+}
+function downloadMd(filename, text){
+  const blob = new Blob([text], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+
+// "Issues" = any item that has a note, OR is unchecked but its note is non-empty.
+// Primary signal is the note. We also flag unchecked critical/payment items even without a note.
+function buildIssuesReport(){
+  const total = totalItems(), done = doneItems();
+  let out = `# Caterfy — Test Issues\n\n`;
+  out += `Generated: ${new Date().toLocaleString()}\n`;
+  out += `Progress: ${done}/${total} checks passing (${total?Math.round(done/total*100):0}%)\n\n`;
+  out += `> Items below were flagged during testing — each has a tester note and/or is an un-passed critical/payment check.\n\n`;
+
+  let count = 0;
+  DATA.forEach(sec=>{
+    const rows = [];
+    sec.items.forEach((it,i)=>{
+      const k = keyFor(sec.id,i);
+      const v = state[k] || {};
+      const note = (v.note||"").trim();
+      const tag = it.tag||"";
+      const isUnpassedKey = !v.done && /(critical|payment)/.test(tag);
+      if(note){
+        rows.push({ it, v, note, status: v.done ? "✅ passing (note attached)" : "❌ FAILED / open" });
+        count++;
+      } else if(isUnpassedKey){
+        rows.push({ it, v, note:"(no note — un-passed "+tag+" check)", status:"⚠️ not yet passing" });
+        count++;
+      }
+    });
+    if(rows.length){
+      out += `## ${sec.emoji} ${sec.name}\n\n`;
+      rows.forEach(r=>{
+        const tags = (r.it.tag? ` _[${r.it.tag}]_`:"");
+        out += `### ${r.status} — ${r.it.t}${tags}\n`;
+        out += `- **Expected:** ${stripTags(r.it.e)}\n`;
+        out += `- **Note:** ${r.note}\n\n`;
+      });
+    }
+  });
+
+  if(count===0){
+    out += `_No issues flagged yet. Add notes to items as you test, then export again._\n`;
+  } else {
+    out = out.replace("> Items below", `> ${count} item(s) flagged.\n>\n> Items below`);
+  }
+  return out;
+}
+
+function buildFullReport(){
+  const total = totalItems(), done = doneItems();
+  let out = `# Caterfy — Full Test Report\n\n`;
+  out += `Generated: ${new Date().toLocaleString()}\n`;
+  out += `Progress: ${done}/${total} checks passing (${total?Math.round(done/total*100):0}%)\n\n`;
+  DATA.forEach(sec=>{
+    let d=0; sec.items.forEach((_,i)=>{ if((state[keyFor(sec.id,i)]||{}).done) d++; });
+    out += `## ${sec.emoji} ${sec.name}  (${d}/${sec.items.length})\n\n`;
+    sec.items.forEach((it,i)=>{
+      const v = state[keyFor(sec.id,i)] || {};
+      const box = v.done ? "[x]" : "[ ]";
+      const tags = (it.tag? ` _[${it.tag}]_`:"");
+      out += `- ${box} **${it.t}**${tags}\n`;
+      out += `    - Expected: ${stripTags(it.e)}\n`;
+      if((v.note||"").trim()) out += `    - 📝 Note: ${v.note.trim()}\n`;
+    });
+    out += `\n`;
+  });
+  return out;
+}
+
+function stripTags(s){ return s.replace(/<[^>]+>/g,"").replace(/&lt;/g,"<").replace(/&gt;/g,">"); }
+
+document.getElementById("exportIssues").addEventListener("click", ()=>{
+  downloadMd(`caterfy-test-issues_${stamp()}.md`, buildIssuesReport());
+});
+document.getElementById("exportFull").addEventListener("click", ()=>{
+  downloadMd(`caterfy-test-report_${stamp()}.md`, buildFullReport());
+});
+
+/* ---- Init ---- */
+renderSections();
+updateProgress();
+</script>
+</body>
+</html>

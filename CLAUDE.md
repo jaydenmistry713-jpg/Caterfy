@@ -582,6 +582,18 @@ DELETE FROM caterers WHERE id = '[user-id]';
 
 10. **Payment Failure**: Retry after 3 days, final warning, offline on day 4. Data preserved.
 
+## Testing Checklist
+
+`testing-checklist.html` (repo root) is a self-contained, interactive QA checklist covering every feature area (auth, onboarding, site builder, all 4 templates, menu/stock, orders, quotes, payments/Stripe, subscriptions, invoices, discounts, reviews, availability, messages, settings/business modes, directory, admin, emails, responsive, performance/RLS, edge cases/security, and known-pending items — ~140 checks across 24 sections).
+
+- **Local memory**: checkbox state and per-item notes persist in browser `localStorage` (key `caterfy_qa_checklist_v1`). Open the file directly in a browser — no build step or server needed.
+- **Each item** has numbered steps plus a `✓ Expect` line describing the correct result. Tag chips mark `critical` / `payment` / `email` items.
+- **Filter/search**: chips for All / Open / Done / Critical / Payments, plus live text search.
+- **Export buttons** produce timestamped Markdown:
+  - *Export issues* → `caterfy-test-issues_<date>.md`: only items with a tester note, plus any un-passed critical/payment checks. This is the fix-ready handoff format.
+  - *Export full report* → `caterfy-test-report_<date>.md`: the complete checklist with `[x]/[ ]` state and notes.
+- **Workflow for fixing flagged issues**: the tester saves an exported `.md` into the repo root, then Claude reads it and works through each flagged item. (Notes live only in the tester's browser `localStorage` and are not visible to Claude until exported to a file.)
+
 ## Templates
 
 All four templates share:
