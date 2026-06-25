@@ -46,6 +46,18 @@
   }
   .subtitle { color: var(--muted); font-size: 13px; margin: 4px 0 0; }
 
+  .tester-row {
+    margin-top: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 8px 12px;
+  }
+  .tester-row .tester-label { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .tester-row select {
+    background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+    padding: 7px 10px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; min-width: 150px;
+  }
+  .tester-row .tester-hint { font-size: 12px; color: var(--muted); margin-left: auto; }
+
   .progress-wrap { margin-top: 12px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
   .bar { flex: 1; min-width: 220px; height: 12px; background: var(--panel-2); border-radius: 999px; overflow: hidden; border: 1px solid var(--border); }
   .bar > span { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--green)); transition: width .35s ease; }
@@ -132,6 +144,7 @@
   @media (max-width: 600px) {
     .title-row h1 { font-size: 17px; }
     main { padding: 14px; }
+    .tester-row .tester-hint { display: none; }
   }
 </style>
 </head>
@@ -141,7 +154,14 @@
     <h1>🍽️ Caterfy — Comprehensive Testing Checklist</h1>
     <span class="badge">Test Mode</span>
   </div>
-  <p class="subtitle">Work top-to-bottom. Every checkbox state and note is saved locally in your browser — close and reopen anytime.</p>
+  <p class="subtitle">Work top-to-bottom. Every checkbox state and note is saved locally in your browser, per tester — close and reopen anytime.</p>
+
+  <div class="tester-row">
+    <span class="tester-label">👤 Tester:</span>
+    <select id="testerSelect" aria-label="Select tester profile"></select>
+    <button class="btn" id="renameTester">Rename</button>
+    <span class="tester-hint">Each tester has their own independent checklist, saved on this device.</span>
+  </div>
 
   <div class="progress-wrap">
     <div class="bar"><span id="globalBar"></span></div>
@@ -167,14 +187,14 @@
 
 <main>
   <p class="legend">
-    <b>How to use:</b> Each item has a <b>step-by-step</b> procedure and a <code>✓ Expect</code> line describing the correct result. Tick the box only when the actual behaviour matches the expectation. Use the note field under any item to log bugs, screenshots refs, or env details. Tags: <span class="tag critical">critical</span> must pass before launch · <span class="tag payment">payment</span> involves money/Stripe · <span class="tag email">email</span> involves Resend delivery. <b>Test cards:</b> <code>4242 4242 4242 4242</code> (success), <code>4000 0000 0000 9995</code> (declined).
+    <b>How to use:</b> Pick (or add) your tester name above — your ticks and notes are saved separately from anyone else who uses this page on this device. Each item has a <b>step-by-step</b> procedure and a <code>✓ Expect</code> line describing the correct result. Tick the box only when the actual behaviour matches the expectation. Use the note field under any item to log bugs, screenshots refs, or env details. Tags: <span class="tag critical">critical</span> must pass before launch · <span class="tag payment">payment</span> involves money/Stripe · <span class="tag email">email</span> involves Resend delivery. <b>Test cards:</b> <code>4242 4242 4242 4242</code> (success), <code>4000 0000 0000 9995</code> (declined).
   </p>
 
   <div id="sections"></div>
 </main>
 
 <footer>
-  Caterfy QA Checklist · saved to <code>localStorage</code> on this device/browser only · generated for testing in Test Mode.
+  Caterfy QA Checklist · progress saved to <code>localStorage</code> per tester, on this device/browser only · generated for testing in Test Mode.
 </footer>
 
 <div class="saved-flash" id="flash">Saved ✓</div>
@@ -493,15 +513,73 @@ const DATA = [
 ];
 
 /* ============================================================
-   RENDER + PERSISTENCE
+   TESTER PROFILES + PERSISTENCE
+   Each tester gets an independent slice of progress, namespaced
+   by name, stored in this browser's localStorage. State key:
+     caterfy_qa_checklist_v1::<tester>
    ============================================================ */
-const STORAGE_KEY = "caterfy_qa_checklist_v1";
-const state = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); // { "secId.idx": {done, note} }
+const BASE_KEY = "caterfy_qa_checklist_v1";
+const TESTERS_KEY = "caterfy_qa_testers";       // JSON array of tester names
+const ACTIVE_KEY = "caterfy_qa_active_tester";  // currently selected tester name
+
+function loadTesters(){
+  try { return JSON.parse(localStorage.getItem(TESTERS_KEY) || "[]"); }
+  catch { return []; }
+}
+function saveTesters(list){ localStorage.setItem(TESTERS_KEY, JSON.stringify(list)); }
+
+function stateKeyFor(tester){ return BASE_KEY + "::" + tester; }
+
+// Determine the active tester, prompting for a name on first ever use.
+function ensureTester(){
+  let testers = loadTesters();
+  let active = localStorage.getItem(ACTIVE_KEY);
+
+  // One-time migration: if an old single-profile checklist exists, fold it
+  // into a "Default" tester so prior progress isn't lost.
+  const legacy = localStorage.getItem(BASE_KEY);
+  if(legacy !== null && !testers.includes("Default")){
+    localStorage.setItem(stateKeyFor("Default"), legacy);
+    localStorage.removeItem(BASE_KEY);
+    testers.push("Default");
+    saveTesters(testers);
+    if(!active) active = "Default";
+  }
+
+  if(testers.length === 0 || !active || !testers.includes(active)){
+    let name = (active && testers.includes(active)) ? active : promptForName(testers);
+    if(!testers.includes(name)){ testers.push(name); saveTesters(testers); }
+    active = name;
+    localStorage.setItem(ACTIVE_KEY, active);
+  }
+  return active;
+}
+
+function promptForName(existing){
+  let name = "";
+  while(!name){
+    name = (prompt("Enter your tester name (your checks are saved separately under this name):", "") || "").trim();
+    if(!name){ name = ""; continue; }
+    if(existing.includes(name)){
+      // Existing name is fine — just resume it.
+      break;
+    }
+  }
+  return name;
+}
+
+let TESTER = ensureTester();
+let state = loadState();
+
+function loadState(){
+  try { return JSON.parse(localStorage.getItem(stateKeyFor(TESTER)) || "{}"); }
+  catch { return {}; }
+}
 
 function keyFor(sec, i){ return sec + "." + i; }
 
 function save(){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  localStorage.setItem(stateKeyFor(TESTER), JSON.stringify(state));
   flash();
 }
 let flashT;
@@ -514,6 +592,62 @@ function flash(){
 
 function totalItems(){ return DATA.reduce((n,s)=>n+s.items.length,0); }
 function doneItems(){ return Object.values(state).filter(v=>v&&v.done).length; }
+
+/* ---- Tester selector UI ---- */
+function renderTesterSelect(){
+  const sel = document.getElementById("testerSelect");
+  const testers = loadTesters();
+  sel.innerHTML = "";
+  testers.forEach(name=>{
+    const opt = document.createElement("option");
+    opt.value = name; opt.textContent = name;
+    if(name === TESTER) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  const addOpt = document.createElement("option");
+  addOpt.value = "__add__"; addOpt.textContent = "➕ Add new tester…";
+  sel.appendChild(addOpt);
+}
+
+function switchTester(name){
+  TESTER = name;
+  localStorage.setItem(ACTIVE_KEY, name);
+  state = loadState();
+  renderSections();
+  updateProgress();
+  applyFilter();
+}
+
+document.getElementById("testerSelect").addEventListener("change", (e)=>{
+  const val = e.target.value;
+  if(val === "__add__"){
+    const testers = loadTesters();
+    const name = promptForName(testers);
+    if(!testers.includes(name)){ testers.push(name); saveTesters(testers); }
+    renderTesterSelect();
+    switchTester(name);
+  } else {
+    switchTester(val);
+  }
+});
+
+document.getElementById("renameTester").addEventListener("click", ()=>{
+  const current = TESTER;
+  const next = (prompt("Rename this tester profile:", current) || "").trim();
+  if(!next || next === current) return;
+  const testers = loadTesters();
+  if(testers.includes(next)){ alert("A tester named \"" + next + "\" already exists."); return; }
+  // Move state under the new name.
+  const data = localStorage.getItem(stateKeyFor(current)) || "{}";
+  localStorage.setItem(stateKeyFor(next), data);
+  localStorage.removeItem(stateKeyFor(current));
+  const idx = testers.indexOf(current);
+  if(idx >= 0) testers[idx] = next; else testers.push(next);
+  saveTesters(testers);
+  localStorage.setItem(ACTIVE_KEY, next);
+  TESTER = next;
+  renderTesterSelect();
+});
 
 function renderSections(){
   const root = document.getElementById("sections");
@@ -646,9 +780,9 @@ document.getElementById("collapseAll").addEventListener("click", ()=>{
   document.querySelectorAll(".section").forEach(d=>d.open=false);
 });
 document.getElementById("resetAll").addEventListener("click", ()=>{
-  if(confirm("Reset ALL checkboxes and notes? This clears your saved progress.")){
+  if(confirm("Reset ALL checkboxes and notes for tester \"" + TESTER + "\"? This only clears this tester's progress.")){
     for(const k in state) delete state[k];
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(stateKeyFor(TESTER));
     renderSections(); updateProgress(); applyFilter();
   }
 });
@@ -659,6 +793,7 @@ function stamp(){
   const d = new Date();
   return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}_${pad2(d.getHours())}${pad2(d.getMinutes())}`;
 }
+function safeName(s){ return s.replace(/[^a-z0-9._-]+/gi,"-").replace(/^-+|-+$/g,"").toLowerCase() || "tester"; }
 function downloadMd(filename, text){
   const blob = new Blob([text], { type: "text/markdown;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -674,6 +809,7 @@ function downloadMd(filename, text){
 function buildIssuesReport(){
   const total = totalItems(), done = doneItems();
   let out = `# Caterfy — Test Issues\n\n`;
+  out += `Tester: ${TESTER}\n`;
   out += `Generated: ${new Date().toLocaleString()}\n`;
   out += `Progress: ${done}/${total} checks passing (${total?Math.round(done/total*100):0}%)\n\n`;
   out += `> Items below were flagged during testing — each has a tester note and/or is an un-passed critical/payment check.\n\n`;
@@ -717,6 +853,7 @@ function buildIssuesReport(){
 function buildFullReport(){
   const total = totalItems(), done = doneItems();
   let out = `# Caterfy — Full Test Report\n\n`;
+  out += `Tester: ${TESTER}\n`;
   out += `Generated: ${new Date().toLocaleString()}\n`;
   out += `Progress: ${done}/${total} checks passing (${total?Math.round(done/total*100):0}%)\n\n`;
   DATA.forEach(sec=>{
@@ -738,13 +875,14 @@ function buildFullReport(){
 function stripTags(s){ return s.replace(/<[^>]+>/g,"").replace(/&lt;/g,"<").replace(/&gt;/g,">"); }
 
 document.getElementById("exportIssues").addEventListener("click", ()=>{
-  downloadMd(`caterfy-test-issues_${stamp()}.md`, buildIssuesReport());
+  downloadMd(`caterfy-test-issues_${safeName(TESTER)}_${stamp()}.md`, buildIssuesReport());
 });
 document.getElementById("exportFull").addEventListener("click", ()=>{
-  downloadMd(`caterfy-test-report_${stamp()}.md`, buildFullReport());
+  downloadMd(`caterfy-test-report_${safeName(TESTER)}_${stamp()}.md`, buildFullReport());
 });
 
 /* ---- Init ---- */
+renderTesterSelect();
 renderSections();
 updateProgress();
 </script>

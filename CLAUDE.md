@@ -584,14 +584,16 @@ DELETE FROM caterers WHERE id = '[user-id]';
 
 ## Testing Checklist
 
-`testing-checklist.html` (repo root) is a self-contained, interactive QA checklist covering every feature area (auth, onboarding, site builder, all 4 templates, menu/stock, orders, quotes, payments/Stripe, subscriptions, invoices, discounts, reviews, availability, messages, settings/business modes, directory, admin, emails, responsive, performance/RLS, edge cases/security, and known-pending items — ~140 checks across 24 sections).
+`public/testing-checklist.html` is a self-contained, interactive QA checklist covering every feature area (auth, onboarding, site builder, all 4 templates, menu/stock, orders, quotes, payments/Stripe, subscriptions, invoices, discounts, reviews, availability, messages, settings/business modes, directory, admin, emails, responsive, performance/RLS, edge cases/security, and known-pending items — ~140 checks across 24 sections).
 
-- **Local memory**: checkbox state and per-item notes persist in browser `localStorage` (key `caterfy_qa_checklist_v1`). Open the file directly in a browser — no build step or server needed.
+- **Deployed with the site**: lives in `public/`, so it ships with every Netlify deploy and is reachable on the live site at `/testing-checklist.html` (e.g. `https://caterfy.netlify.app/testing-checklist.html`). Both testers open the same URL; no build step or server needed locally either (open the file directly).
+- **Per-tester local storage**: each tester picks/adds their name in the header dropdown. Progress is namespaced per tester under `localStorage` key `caterfy_qa_checklist_v1::<tester>`, with the tester list in `caterfy_qa_testers` and the active tester in `caterfy_qa_active_tester`. Two people testing on separate devices each keep their own independent state automatically; if they share a browser, switching the dropdown swaps between their separate checklists. A `Rename` button renames a profile (moving its state). An old single-profile key (`caterfy_qa_checklist_v1`) is auto-migrated into a `Default` tester on first load.
 - **Each item** has numbered steps plus a `✓ Expect` line describing the correct result. Tag chips mark `critical` / `payment` / `email` items.
 - **Filter/search**: chips for All / Open / Done / Critical / Payments, plus live text search.
-- **Export buttons** produce timestamped Markdown:
-  - *Export issues* → `caterfy-test-issues_<date>.md`: only items with a tester note, plus any un-passed critical/payment checks. This is the fix-ready handoff format.
-  - *Export full report* → `caterfy-test-report_<date>.md`: the complete checklist with `[x]/[ ]` state and notes.
+- **Export buttons** produce timestamped Markdown (filenames include the tester name):
+  - *Export issues* → `caterfy-test-issues_<tester>_<date>.md`: only items with a tester note, plus any un-passed critical/payment checks. This is the fix-ready handoff format.
+  - *Export full report* → `caterfy-test-report_<tester>_<date>.md`: the complete checklist with `[x]/[ ]` state and notes.
+- **Reset** clears only the active tester's progress, not everyone's.
 - **Workflow for fixing flagged issues**: the tester saves an exported `.md` into the repo root, then Claude reads it and works through each flagged item. (Notes live only in the tester's browser `localStorage` and are not visible to Claude until exported to a file.)
 
 ## Templates
