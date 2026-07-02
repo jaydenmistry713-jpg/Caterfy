@@ -9,7 +9,7 @@ export default async function OrdersPage() {
 
   const { data: orders } = await supabase
     .from('orders')
-    .select('*')
+    .select('*, quotes(status, total, sent_at, accepted_at)')
     .eq('caterer_id', user.id)
     .order('created_at', { ascending: false })
 

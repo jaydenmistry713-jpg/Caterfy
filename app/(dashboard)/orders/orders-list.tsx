@@ -21,15 +21,20 @@ interface Props {
 }
 
 export default function OrdersList({ orders: initialOrders, caterererId }: Props) {
-  const [orders, setOrders] = useState(initialOrders)
+  const [orders, setOrders] = useState<any[]>(initialOrders)
   const [expanded, setExpanded] = useState<string | null>(null)
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [quotingOrder, setQuotingOrder] = useState<Order | null>(null)
   const [quoteLines, setQuoteLines] = useState([{ description: '', amount: '' }])
   const [quoteNotes, setQuoteNotes] = useState('')
   const [sendingQuote, setSendingQuote] = useState(false)
+  // Top-level split between one-off item orders and catering quote requests
+  const [typeFilter, setTypeFilter] = useState<'all' | 'fixed' | 'quote'>('all')
 
   const quoteTotal = quoteLines.reduce((sum, l) => sum + (parseFloat(l.amount) || 0), 0)
+
+  // Quote status for an order (from the joined quotes row), if any
+  const quoteStatusOf = (order: any): string | null => order?.quotes?.[0]?.status ?? null
 
   async function sendQuote() {
     if (!quotingOrder) return
@@ -49,6 +54,10 @@ export default function OrdersList({ orders: initialOrders, caterererId }: Props
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       toast({ title: 'Quote sent to customer!', variant: 'success' })
+      // Reflect "quote sent" on the order immediately (badge + button change)
+      setOrders((prev) => prev.map((o) => o.id === quotingOrder.id
+        ? { ...o, quotes: [{ status: 'sent', total: quoteTotal }] }
+        : o))
       setQuotingOrder(null)
       setQuoteLines([{ description: '', amount: '' }])
       setQuoteNotes('')
@@ -59,9 +68,10 @@ export default function OrdersList({ orders: initialOrders, caterererId }: Props
     }
   }
 
-  const pending = orders.filter((o) => o.status === 'pending')
-  const active = orders.filter((o) => ['accepted', 'awaiting_payment'].includes(o.status))
-  const completed = orders.filter((o) => ['completed', 'declined', 'cancelled'].includes(o.status))
+  const visible = orders.filter((o) => typeFilter === 'all' ? true : (o.order_type || 'fixed') === typeFilter)
+  const pending = visible.filter((o) => o.status === 'pending')
+  const active = visible.filter((o) => ['accepted', 'awaiting_payment'].includes(o.status))
+  const completed = visible.filter((o) => ['completed', 'declined', 'cancelled'].includes(o.status))
 
   async function deleteOrder(orderId: string) {
     const supabase = createClient()
@@ -115,7 +125,13 @@ export default function OrdersList({ orders: initialOrders, caterererId }: Props
                   {order.status}
                 </Badge>
                 {order.order_type === 'quote' && (
-                  <Badge variant="info">Quote</Badge>
+                  <Badge variant="info">Catering quote</Badge>
+                )}
+                {quoteStatusOf(order) === 'sent' && (
+                  <Badge variant="warning">Quote sent · awaiting confirmation</Badge>
+                )}
+                {quoteStatusOf(order) === 'accepted' && (
+                  <Badge variant="success">Quote accepted</Badge>
                 )}
               </div>
               <p className="text-sm text-gray-500">
@@ -133,7 +149,7 @@ export default function OrdersList({ orders: initialOrders, caterererId }: Props
                     onClick={(e) => { e.stopPropagation(); setQuotingOrder(order) }}
                     className="bg-blue-600 hover:bg-blue-700"
                   >
-                    <FileText className="h-3 w-3 mr-1" />Send Quote
+                    <FileText className="h-3 w-3 mr-1" />{quoteStatusOf(order) === 'sent' ? 'Update quote' : 'Send Quote'}
                   </Button>
                 ) : (
                   <Button
@@ -243,6 +259,21 @@ export default function OrdersList({ orders: initialOrders, caterererId }: Props
   }
 
   return (
+    <>
+    {/* Split one-off item orders from catering quote requests */}
+    <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1 mb-4">
+      {([['all', 'All'], ['fixed', 'Item orders'], ['quote', 'Catering quotes']] as const).map(([val, label]) => (
+        <button
+          key={val}
+          onClick={() => setTypeFilter(val)}
+          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            typeFilter === val ? 'bg-gray-900 text-white' : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
     <Tabs defaultValue="pending">
       <TabsList>
         <TabsTrigger value="pending">Pending ({pending.length})</TabsTrigger>
@@ -272,8 +303,23 @@ export default function OrdersList({ orders: initialOrders, caterererId }: Props
             <DialogTitle>Send Quote to {quotingOrder?.customer_name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {/* The customer's request — so you can quote against what they actually asked for */}
+            {quotingOrder && (
+              <div className="rounded-lg bg-gray-50 border border-gray-100 p-3 text-sm">
+                <p className="font-medium text-gray-700 mb-1">Their request</p>
+                <div className="text-gray-600 space-y-0.5">
+                  <p>Date: {formatDate(quotingOrder.event_date)}{quotingOrder.event_time ? ` at ${quotingOrder.event_time}` : ''}</p>
+                  {quotingOrder.event_location && <p>Location: {quotingOrder.event_location}</p>}
+                  {quotingOrder.guest_count && <p>Guests: {quotingOrder.guest_count}</p>}
+                  {quotingOrder.event_type && <p>Event: {quotingOrder.event_type}</p>}
+                  {quotingOrder.special_requests && <p className="mt-1"><span className="text-gray-500">Requirements:</span> {quotingOrder.special_requests}</p>}
+                  {quotingOrder.dietary_requirements && <p><span className="text-gray-500">Dietary:</span> {quotingOrder.dietary_requirements}</p>}
+                </div>
+              </div>
+            )}
             <div>
-              <Label>Line items</Label>
+              <Label>Items</Label>
+              <p className="text-xs text-gray-400 mb-1">Tip: you don't have to itemise — you can enter a single line (e.g. "Catering package") with one price if you'd rather not break down your costs.</p>
               <div className="space-y-2 mt-1">
                 {quoteLines.map((line, i) => (
                   <div key={i} className="flex gap-2">
@@ -306,7 +352,7 @@ export default function OrdersList({ orders: initialOrders, caterererId }: Props
                 ))}
               </div>
               <Button variant="ghost" size="sm" onClick={() => setQuoteLines((prev) => [...prev, { description: '', amount: '' }])} className="mt-2">
-                <Plus className="h-3.5 w-3.5 mr-1" />Add line
+                <Plus className="h-3.5 w-3.5 mr-1" />Add item
               </Button>
             </div>
 
@@ -340,5 +386,6 @@ export default function OrdersList({ orders: initialOrders, caterererId }: Props
         </DialogContent>
       </Dialog>
     </Tabs>
+    </>
   )
 }

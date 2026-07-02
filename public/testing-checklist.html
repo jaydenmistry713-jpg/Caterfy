@@ -329,6 +329,8 @@ const DATA = [
    { t:"Stock decrements / blocks", s:["Order an item with a stock limit down to zero, then try again."], e:"Cannot order beyond stock." },
    { t:"✅ FIX: Stock remaining decreases after an order", s:["Set an item's stock_limit to e.g. 5.","Place an order for 2 of that item.","Reload the public order form and re-open the item list."], e:"Remaining now shows 3 — the server decremented stock_limit after the order (previously it stayed at 5).", tag:"critical" },
    { t:"✅ FIX: Order confirmation email lists items", s:["Place a fixed order with 2–3 items.","Open the confirmation email the customer receives."], e:"The email includes a 'Your items' table listing each item × quantity and line total.", tag:"email" },
+   { t:"✅ FIX: Orders vs Catering separation", s:["/orders → use the All / Item orders / Catering quotes toggle."], e:"The list filters to just item orders or just catering quotes; Pending/Active/Completed counts update accordingly.", },
+   { t:"✅ FIX: Type a quantity on the order form", s:["On the order form, click into the quantity box and type a number."], e:"Quantity accepts typed input (not just +/−), clamped to stock limit when set.", },
   ]
  },
  {
@@ -342,6 +344,11 @@ const DATA = [
    { t:"Customer accept-quote link", s:["Open the quote email as customer, click accept."], e:"Quote status → accepted; reflected in caterer dashboard." },
    { t:"Quote line-item math", s:["Add several line items with decimals."], e:"Total sums correctly." },
    { t:"✅ FIX: Quote form has an event time field", s:["Open the 'Request a catering quote' form.","Look next to the Event date field."], e:"An 'Event time' input appears; the chosen time is saved to the order's event_time.", },
+   { t:"✅ FIX: Quote summary shows requirements", s:["Fill a quote request with requirements + dietary, reach the review step."], e:"The order summary lists the requirements, dietary, location and time — not just name/date.", },
+   { t:"✅ FIX: Quote builder shows the customer's request", s:["/orders → open a catering quote → Send/Update quote."], e:"A 'Their request' panel shows date/time/location/guests/requirements/dietary so you can quote accurately.", },
+   { t:"✅ FIX: Quote builder wording + package tip", s:["Open the quote builder."], e:"Says 'Items' and 'Add item' (not 'line items'/'Add line'); a tip explains you can enter a single line with one price for the whole package.", },
+   { t:"✅ FIX: Customer can accept a quote", s:["Send a quote.","As the customer, open the quote email → 'View & Accept Quote' → click 'Accept quote'."], e:"A clear Accept button appears on the status page; accepting sets the quote + order to accepted and explains the caterer will contact them for payment.", tag:"email" },
+   { t:"✅ FIX: Accepted quote reflects in dashboard", s:["After the customer accepts, refresh /orders."], e:"The order moves to Active and shows a 'Quote accepted' badge; before acceptance it shows 'Quote sent · awaiting confirmation'.", },
   ]
  },
  {

@@ -6,6 +6,7 @@ import { CheckCircle, Clock, XCircle, Package } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { stripe } from '@/lib/stripe'
 import { sendOrderAccepted } from '@/lib/resend/emails'
+import AcceptQuote from './accept-quote'
 import Link from 'next/link'
 
 // Reconcile a card payment on the success redirect (no webhook needed).
@@ -87,7 +88,7 @@ export default async function OrderStatusPage({ searchParams }: Props) {
   const supabase = await createClient()
   const { data: order } = await supabase
     .from('orders')
-    .select('*, caterer:caterers(business_name, email, phone, show_contact_publicly, slug)')
+    .select('*, caterer:caterers(business_name, email, phone, show_contact_publicly, slug), quotes(line_items, total, notes, status)')
     .eq('reference_number', ref)
     .single()
 
@@ -169,6 +170,29 @@ export default async function OrderStatusPage({ searchParams }: Props) {
                 ))}
               </div>
             )}
+
+            {(() => {
+              const quote = (order as any).quotes?.[0]
+              if (order.order_type === 'quote' && quote?.status === 'sent') {
+                return (
+                  <AcceptQuote
+                    referenceNumber={order.reference_number}
+                    lineItems={(quote.line_items as any[]) || []}
+                    total={Number(quote.total || 0)}
+                    notes={quote.notes}
+                  />
+                )
+              }
+              if (order.order_type === 'quote' && quote?.status === 'accepted') {
+                return (
+                  <div className="pt-4 border-t border-gray-100">
+                    <p className="text-sm font-medium text-green-700">✓ Quote accepted</p>
+                    <p className="text-sm text-gray-500">The caterer will be in touch to arrange payment and finalise your event.</p>
+                  </div>
+                )
+              }
+              return null
+            })()}
 
             {(order as any).caterer?.show_contact_publicly && (
               <div className="pt-4 border-t border-gray-100">

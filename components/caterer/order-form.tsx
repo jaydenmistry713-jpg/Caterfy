@@ -96,6 +96,18 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
     return selectedItems.find((i) => i.id === id)?.quantity || 0
   }
 
+  // Set an absolute quantity (from typing into the number box), respecting stock limit
+  function setQuantity(item: any, raw: string) {
+    const n = Math.max(0, Math.floor(Number(raw) || 0))
+    const capped = item.stock_limit != null ? Math.min(n, item.stock_limit) : n
+    setSelectedItems((prev) => {
+      const existing = prev.find((i) => i.id === item.id)
+      if (capped <= 0) return prev.filter((i) => i.id !== item.id)
+      if (existing) return prev.map((i) => i.id === item.id ? { ...i, quantity: capped } : i)
+      return [...prev, { id: item.id, name: item.name, price: item.price, price_unit: item.price_unit || 'flat', quantity: capped }]
+    })
+  }
+
   const subtotal = selectedItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const total = subtotal - (appliedDiscount?.amount || 0)
 
@@ -222,7 +234,14 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
                     </div>
                     <div className="flex items-center gap-2">
                       <button onClick={() => adjustQuantity(pkg, -1)} className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-sm hover:bg-gray-100">−</button>
-                      <span className="w-5 text-center text-sm">{getQty(pkg.id)}</span>
+                      <input
+                        type="number"
+                        min="0"
+                        inputMode="numeric"
+                        value={getQty(pkg.id)}
+                        onChange={(e) => setQuantity(pkg, e.target.value)}
+                        className="w-10 text-center text-sm border border-gray-200 rounded py-0.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
                       <button onClick={() => adjustQuantity(pkg, 1)} className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-sm hover:bg-gray-100">+</button>
                     </div>
                   </div>
@@ -268,7 +287,15 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
                         </div>
                         <div className="flex items-center gap-2">
                           <button onClick={() => adjustQuantity(item, -1)} className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-sm hover:bg-gray-100">−</button>
-                          <span className="w-5 text-center text-sm">{qty}</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max={item.stock_limit ?? undefined}
+                            inputMode="numeric"
+                            value={qty}
+                            onChange={(e) => setQuantity(item, e.target.value)}
+                            className="w-10 text-center text-sm border border-gray-200 rounded py-0.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          />
                           <button
                             onClick={() => adjustQuantity(item, 1)}
                             disabled={atLimit}
@@ -528,8 +555,12 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
                 <p><span className="text-gray-500">Name:</span> {form.customer_name}</p>
                 <p><span className="text-gray-500">Email:</span> {form.customer_email}</p>
                 <p><span className="text-gray-500">Date:</span> {new Date(form.event_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                {form.event_time && <p><span className="text-gray-500">Time:</span> {form.event_time}</p>}
                 {form.event_type && <p><span className="text-gray-500">Event:</span> {form.event_type}</p>}
                 {form.guest_count && <p><span className="text-gray-500">Guests:</span> {form.guest_count}</p>}
+                {orderType === 'quote' && form.event_location && <p><span className="text-gray-500">Location:</span> {form.event_location}</p>}
+                {orderType === 'quote' && form.special_requests && <p><span className="text-gray-500">Requirements:</span> {form.special_requests}</p>}
+                {orderType === 'quote' && form.dietary_requirements && <p><span className="text-gray-500">Dietary:</span> {form.dietary_requirements}</p>}
                 {orderType === 'fixed' && (
                   <div className="pt-1 space-y-0.5">
                     {appliedDiscount && (
