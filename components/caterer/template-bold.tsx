@@ -5,6 +5,7 @@ import StarRating from './star-rating'
 import OrderButton from './order-button'
 import CertificationBadges from './certification-badges'
 import SendMessageForm from './send-message-form'
+import StickyOrderBar from './sticky-order-bar'
 import { formatDate, formatPriceUnit } from '@/lib/utils'
 
 interface Props {
@@ -38,9 +39,15 @@ export default function CatererPageBold({ caterer, menuItems, packages, gallery,
     <div style={{ fontFamily: page?.body_font || 'inherit' }}>
       <CatererNav businessName={caterer.business_name} logoUrl={page?.logo_url} primaryColor={primaryColor} sections={sections} />
 
-      {/* Bold hero */}
-      <section className="py-20 px-4" style={{ backgroundColor: primaryColor }}>
-        <div className="max-w-7xl mx-auto">
+      {/* Bold hero — uses the hero image as a backdrop when one is set */}
+      <section className="relative py-20 px-4 overflow-hidden" style={{ backgroundColor: primaryColor }}>
+        {page?.hero_image_url && (
+          <>
+            <Image src={page.hero_image_url} alt={caterer.business_name} fill className="object-cover" />
+            <div className="absolute inset-0" style={{ background: primaryColor, opacity: 0.72 }} />
+          </>
+        )}
+        <div className="relative z-10 max-w-7xl mx-auto">
           <h1 className="text-6xl sm:text-8xl font-black text-white mb-4" style={headingStyle}>
             {caterer.business_name}
           </h1>
@@ -82,8 +89,9 @@ export default function CatererPageBold({ caterer, menuItems, packages, gallery,
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {packages.map((pkg) => (
                 <div key={pkg.id} className="rounded-2xl overflow-hidden border-2" style={{ borderColor: primaryColor }}>
-                  <div className="p-1" style={{ backgroundColor: primaryColor }}>
+                  <div className="p-1 flex justify-between items-center" style={{ backgroundColor: primaryColor }}>
                     <p className="text-white text-xs font-bold uppercase px-2">Package</p>
+                    {pkg.is_popular && <p className="text-xs font-bold uppercase px-2 text-white/90">★ Popular</p>}
                   </div>
                   <div className="p-5">
                     <h3 className="font-black text-xl text-gray-900 mb-1">{pkg.name}</h3>
@@ -165,6 +173,9 @@ export default function CatererPageBold({ caterer, menuItems, packages, gallery,
           Powered by Caterfy
         </a>
       </footer>
+      {page?.template_data?.sticky_bar && (
+        <StickyOrderBar accentColor={accentColor} phone={caterer.phone} showPhone={caterer.show_contact_publicly} />
+      )}
     </div>
   )
 }

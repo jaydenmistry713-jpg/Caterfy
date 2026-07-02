@@ -24,6 +24,16 @@ const TEMPLATES = [
   { id: 'linkpage', name: 'Link Page', desc: 'Dark, mobile-first with sticky bar and social links' },
 ]
 
+// Relative luminance (0 = black, 1 = white) for a #rrggbb hex colour
+function luminance(hex: string): number {
+  const h = (hex || '').replace('#', '')
+  if (h.length !== 6) return 1
+  const r = parseInt(h.slice(0, 2), 16) / 255
+  const g = parseInt(h.slice(2, 4), 16) / 255
+  const b = parseInt(h.slice(4, 6), 16) / 255
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
 interface Props {
   caterererId: string
   caterer: any
@@ -93,7 +103,12 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
     cta_label: td.cta_label || '',
     extras: td.extras || '',
     faqs: (td.faqs || []) as { q: string; a: string }[],
+    hero_overlay: typeof td.hero_overlay === 'number' ? td.hero_overlay : 40,
+    sticky_bar: td.sticky_bar ?? false,
   })
+
+  // Contact visibility lives on the caterer record but is edited here for convenience
+  const [showContact, setShowContact] = useState<boolean>(caterer?.show_contact_publicly ?? true)
 
   const [slug, setSlug] = useState(caterer?.slug || '')
   const [slugError, setSlugError] = useState<string | null>(null)
@@ -104,7 +119,7 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
       return
     }
     setDirty(true)
-  }, [form, heroUrl, logoUrl, slug, selectedCerts, templateData])
+  }, [form, heroUrl, logoUrl, slug, selectedCerts, templateData, showContact])
 
   function handleSlugChange(val: string) {
     const cleaned = slugify(val)
@@ -144,6 +159,8 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
           extras: templateData.extras || null,
           faqs: templateData.faqs.filter((f) => f.q && f.a),
           certifications: selectedCerts,
+          hero_overlay: templateData.hero_overlay,
+          sticky_bar: templateData.sticky_bar,
         },
       }
       if (page) {
@@ -154,12 +171,15 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
         if (error) throw error
       }
 
+      // Persist caterer-level settings edited here (slug + contact visibility)
+      const catererUpdate: any = { show_contact_publicly: showContact }
       if (slug !== caterer?.slug) {
         const err = validateSlug(slug)
         if (err) { toast({ title: err, variant: 'destructive' }); setSaving(false); return }
-        const { error } = await supabase.from('caterers').update({ slug }).eq('id', caterererId)
-        if (error) throw error
+        catererUpdate.slug = slug
       }
+      const { error: catErr } = await supabase.from('caterers').update(catererUpdate).eq('id', caterererId)
+      if (catErr) throw catErr
 
       toast({ title: 'Site saved!', variant: 'success' })
       setDirty(false)
@@ -479,6 +499,54 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
                     </div>
                   </div>
                 )}
+
+                {/* Modern: hero image darkening so overlaid text stays readable */}
+                {form.template === 'modern' && heroUrl && (
+                  <div className="pt-4 border-t border-gray-100">
+                    <Label>Hero image darkening ({templateData.hero_overlay}%)</Label>
+                    <p className="text-xs text-gray-500 mb-2">The Modern template overlays your business name on the hero image. Lower this to show more of the photo; raise it if text is hard to read.</p>
+                    <input
+                      type="range"
+                      min="0"
+                      max="80"
+                      value={templateData.hero_overlay}
+                      onChange={(e) => setTemplateData({ ...templateData, hero_overlay: Number(e.target.value) })}
+                      className="w-full"
+                    />
+                  </div>
+                )}
+
+                {/* Sticky order bar — available on all templates (built-in on Link Page) */}
+                {form.template !== 'linkpage' && (
+                  <div className="pt-4 border-t border-gray-100 flex items-start justify-between gap-4">
+                    <div>
+                      <Label>Sticky order bar</Label>
+                      <p className="text-xs text-gray-500 mt-0.5">Shows a bar fixed to the bottom of the screen with quick "Order now" / "Call" buttons as visitors scroll. (The Link Page template always has this.)</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setTemplateData({ ...templateData, sticky_bar: !templateData.sticky_bar })}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${templateData.sticky_bar ? 'bg-green-500' : 'bg-gray-300'}`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${templateData.sticky_bar ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
+                )}
+
+                {/* Contact visibility (stored on the caterer record) */}
+                <div className="pt-4 border-t border-gray-100 flex items-start justify-between gap-4">
+                  <div>
+                    <Label>Show contact details publicly</Label>
+                    <p className="text-xs text-gray-500 mt-0.5">When on, your phone and email are shown on your public page and order-status pages.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowContact((v) => !v)}
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${showContact ? 'bg-green-500' : 'bg-gray-300'}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showContact ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -513,20 +581,36 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
                   ))}
                 </div>
 
+                {/* Contrast guard: warn when text colours would be invisible on the background */}
+                {(luminance(form.background_color) > 0.85 && luminance(form.primary_color) > 0.85) && (
+                  <div className="flex gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                    <span>⚠️</span>
+                    <p>Your <strong>primary</strong> (text) colour is nearly as light as your <strong>background</strong>, so text may be unreadable. Pick a darker primary colour or a darker background.</p>
+                  </div>
+                )}
+
+                <p className="text-xs text-gray-500 bg-gray-50 rounded-lg p-3 leading-relaxed">
+                  <strong>Where each colour is used:</strong> Primary = main text &amp; headings. Secondary = muted/supporting text.
+                  Accent = buttons, links, prices &amp; highlights. Background = page background.
+                  Not every template uses all four — Bold leans on Primary for its colour blocks, and the Link Page is dark and driven almost entirely by the Accent colour.
+                </p>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label>Heading font</Label>
                     <Select value={form.heading_font} onValueChange={(v) => setForm({ ...form, heading_font: v })}>
                       <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                      <SelectContent>{GOOGLE_FONTS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
+                      <SelectContent>{GOOGLE_FONTS.map((f) => <SelectItem key={f} value={f}><span style={{ fontFamily: `'${f}', sans-serif` }}>{f}</span></SelectItem>)}</SelectContent>
                     </Select>
+                    <p className="mt-2 text-lg text-gray-800" style={{ fontFamily: `'${form.heading_font}', sans-serif` }}>The quick brown fox</p>
                   </div>
                   <div>
                     <Label>Body font</Label>
                     <Select value={form.body_font} onValueChange={(v) => setForm({ ...form, body_font: v })}>
                       <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                      <SelectContent>{GOOGLE_FONTS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
+                      <SelectContent>{GOOGLE_FONTS.map((f) => <SelectItem key={f} value={f}><span style={{ fontFamily: `'${f}', sans-serif` }}>{f}</span></SelectItem>)}</SelectContent>
                     </Select>
+                    <p className="mt-2 text-sm text-gray-700" style={{ fontFamily: `'${form.body_font}', sans-serif` }}>The quick brown fox jumps over the lazy dog.</p>
                   </div>
                 </div>
 
@@ -563,7 +647,8 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
           </TabsContent>
         </Tabs>
 
-        <div className="flex justify-end">
+        <div className="flex items-center justify-end gap-4">
+          <p className="text-xs text-gray-400">Changes only appear on your live site after you save.</p>
           <Button onClick={save} disabled={saving || !dirty} size="lg">
             {saving ? 'Saving...' : 'Save Changes'}
           </Button>

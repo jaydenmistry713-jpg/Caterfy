@@ -6,6 +6,7 @@ import OrderButton from './order-button'
 import ExpandableMenuItem from './expandable-menu-item'
 import CertificationBadges from './certification-badges'
 import SendMessageForm from './send-message-form'
+import StickyOrderBar from './sticky-order-bar'
 import { formatDate } from '@/lib/utils'
 
 interface Props {
@@ -48,7 +49,14 @@ export default function CatererPageModern({ caterer, menuItems, packages, galler
         ) : (
           <div className="absolute inset-0" style={{ background: primaryColor }} />
         )}
-        <div className="absolute inset-0" style={{ background: `${primaryColor}cc` }} />
+        <div
+          className="absolute inset-0"
+          style={{
+            background: primaryColor,
+            // Configurable darkening (template_data.hero_overlay, 0–80%). Full block when there's no photo.
+            opacity: page?.hero_image_url ? (typeof page?.template_data?.hero_overlay === 'number' ? page.template_data.hero_overlay / 100 : 0.4) : 0.8,
+          }}
+        />
         <div className="relative z-10 text-center px-4">
           <h1 className="text-5xl font-bold text-white mb-4" style={headingStyle}>{caterer.business_name}</h1>
           {page?.tagline && <p className="text-xl text-white/80 max-w-2xl">{page.tagline}</p>}
@@ -78,7 +86,10 @@ export default function CatererPageModern({ caterer, menuItems, packages, galler
                 {packages.map((pkg) => (
                   <div key={pkg.id} className="p-5 rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
                     <div className="flex justify-between mb-2">
-                      <h3 className="font-bold text-gray-900">{pkg.name}</h3>
+                      <h3 className="font-bold text-gray-900">
+                        {pkg.name}
+                        {pkg.is_popular && <span className="ml-2 text-[10px] font-bold uppercase tracking-wide text-white px-1.5 py-0.5 rounded align-middle" style={{ backgroundColor: accentColor }}>Popular</span>}
+                      </h3>
                       <span className="font-bold text-lg" style={{ color: accentColor }}>£{Number(pkg.price).toFixed(2)}</span>
                     </div>
                     {pkg.description && <p className="text-sm text-gray-500">{pkg.description}</p>}
@@ -164,6 +175,9 @@ export default function CatererPageModern({ caterer, menuItems, packages, galler
           Powered by Caterfy
         </a>
       </footer>
+      {page?.template_data?.sticky_bar && (
+        <StickyOrderBar accentColor={accentColor} phone={caterer.phone} showPhone={caterer.show_contact_publicly} />
+      )}
     </div>
   )
 }

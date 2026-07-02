@@ -218,6 +218,7 @@ const DATA = [
    { t:"✅ FIX: Migration 008 applied", s:["In Supabase SQL editor, run <code>supabase/migrations/008_bank_transfer_payment_method.sql</code>."], e:"orders_payment_method_check now allows 'bank_transfer'; public can SELECT blocked_dates (needed for the order form).", tag:"critical" },
    { t:"✅ FIX: ADMIN_PASSWORD env var set", s:["Add <code>ADMIN_PASSWORD=your-strong-password</code> to Netlify env vars (and .env.local for local testing).","Redeploy."], e:"Admin login works with that password; without it, the admin panel is locked and login returns a 'not configured' message.", tag:"critical" },
    { t:"✅ FIX: Migration 009 applied (per meal)", s:["In Supabase SQL editor, run <code>supabase/migrations/009_price_unit_per_meal.sql</code>."], e:"menu_items_price_unit_check now allows 'per meal'.", },
+   { t:"✅ FIX: Migration 010 applied (popular package)", s:["In Supabase SQL editor, run <code>supabase/migrations/010_package_is_popular.sql</code>."], e:"packages.is_popular column exists.", },
   ]
  },
  {
@@ -266,6 +267,12 @@ const DATA = [
    { t:"Save button only active when dirty", s:["Open editor without changes → Save should be inactive.","Make a change → Save becomes active.","Save → button resets to inactive."], e:"Save reflects unsaved-changes state accurately." },
    { t:"Certifications selectable & rendered", s:["Content tab → select several of the 10 certifications.","Save, view public page hero."], e:"Selected badges render in the hero on all 4 templates; stored in template_data.certifications." },
    { t:"Link Page-specific fields", s:["With Link Page template, edit chips, badges, instagram, CTA label, extras, FAQs in Content tab.","Save and view."], e:"All Link Page fields render in the right sections." },
+   { t:"✅ FIX: 'Changes appear after saving' note", s:["Look near the Save Changes button."], e:"A note clarifies changes only appear on the live site after saving.", },
+   { t:"✅ FIX: Contact visibility toggle in editor", s:["Content tab → 'Show contact details publicly' toggle → save."], e:"Toggling it updates show_contact_publicly (mirrors the Settings toggle); reflected on the public page.", },
+   { t:"✅ FIX: Colour guidance + white-on-white guard", s:["Branding tab → set primary and background both near white."], e:"A warning appears that text may be unreadable; a note explains where each colour is used and which templates use them.", },
+   { t:"✅ FIX: Font previews", s:["Branding tab → change heading/body font."], e:"Each dropdown option and a sample line render in that font (once Google Fonts load, see pending).", },
+   { t:"✅ FIX: Modern hero darkening control", s:["Modern template + hero image → Content tab → 'Hero image darkening' slider → save."], e:"The overlay over the hero image lightens/darkens with the slider so the photo is more visible.", },
+   { t:"✅ FIX: Sticky order bar toggle", s:["Content tab (non-Link-Page) → enable 'Sticky order bar' → save → view public page on mobile width."], e:"A fixed bottom bar with 'Order now' (scrolls to order) + 'Call' appears on Classic/Modern/Bold.", },
   ]
  },
  {
@@ -281,6 +288,10 @@ const DATA = [
    { t:"'Powered by Caterfy' footer", s:["Scroll to footer on each template."], e:"Footer present on all four templates." },
    { t:"Certification badges in hero", s:["With certifications set, check each template's hero."], e:"Badges visible on all 4." },
    { t:"Sticky bottom bar (Link Page)", s:["On mobile width, view Link Page."], e:"Sticky 'Order Now' + 'Call' bar stays at the bottom." },
+   { t:"✅ FIX: Bold template hero image", s:["Set a hero image, view the Bold template."], e:"The hero image appears as the hero backdrop (darkened for legibility), not only in the about section.", },
+   { t:"✅ FIX: Popular badge is caterer-controlled + on all templates", s:["Requires migration 010.","Menu → edit a package → tick 'Mark as Popular' → save.","View each template."], e:"Only the package you marked shows a 'Popular' badge, on Classic/Modern/Bold/Link Page (no longer auto-applied to the middle card).", },
+   { t:"✅ FIX: Link Page long package description", s:["Give a package a long description, view the Link Page packages."], e:"The card no longer blows out — description is clamped (full text on hover/long-press) and stays readable.", },
+   { t:"✅ FIX: Link Page sticky label in catering-only", s:["Set business mode to catering_only, view Link Page."], e:"The sticky bar button reads 'Request a Quote' (not 'Order Now') and scrolls to the quote section.", },
   ]
  },
  {

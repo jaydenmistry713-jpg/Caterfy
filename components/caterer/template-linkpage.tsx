@@ -299,7 +299,8 @@ export default function CatererPageLinkPage({ caterer, menuItems, packages, gall
               </span>
               <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(packages.length, 3)}, 1fr)`, gap: 8, margin: '0 16px 8px' }}>
                 {packages.slice(0, 3).map((pkg: any, i: number) => {
-                  const isFeatured = i === 1 && packages.length >= 3
+                  // Caterer decides what's "Popular"; fall back to the middle card of three
+                  const isFeatured = pkg.is_popular ?? (i === 1 && packages.length >= 3)
                   return (
                     <div
                       key={pkg.id}
@@ -326,7 +327,10 @@ export default function CatererPageLinkPage({ caterer, menuItems, packages, gall
                       <span style={{ fontFamily: 'Georgia, serif', fontSize: 24, fontWeight: 600, color: isFeatured ? accent : '#ffffff', display: 'block', marginBottom: 7, lineHeight: 1 }}>
                         £{parseFloat(pkg.price).toFixed(2)}
                       </span>
-                      <span style={{ fontSize: 10, color: muted, lineHeight: 1.6 }}>
+                      <span
+                        title={pkg.description || undefined}
+                        style={{ fontSize: 10, color: mid, lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+                      >
                         {pkg.description || (pkg.min_guests ? `${pkg.min_guests}–${pkg.max_guests} guests` : '')}
                       </span>
                     </div>
@@ -485,7 +489,7 @@ export default function CatererPageLinkPage({ caterer, menuItems, packages, gall
         {/* STICKY BAR */}
         <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 460, background: 'rgba(12,11,9,0.96)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', borderTop: `1px solid ${border}`, padding: '10px 16px', display: 'flex', gap: 8, zIndex: 100 }}>
           <a href="#order" style={{ flex: 1, padding: '12px 10px', borderRadius: 10, fontSize: 12, fontWeight: 500, border: 'none', cursor: 'pointer', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, background: accent, color: '#fff' }}>
-            Order Now
+            {caterer.business_mode === 'catering_only' ? 'Request a Quote' : (td.cta_label || 'Order Now')}
           </a>
           {caterer.phone && (
             <a href={`tel:${caterer.phone}`} style={{ flex: 1, padding: '12px 10px', borderRadius: 10, fontSize: 12, fontWeight: 500, border: `1px solid ${border}`, cursor: 'pointer', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, background: card, color: off }}>

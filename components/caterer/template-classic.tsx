@@ -7,6 +7,7 @@ import OrderButton from './order-button'
 import ExpandableMenuItem from './expandable-menu-item'
 import CertificationBadges from './certification-badges'
 import SendMessageForm from './send-message-form'
+import StickyOrderBar from './sticky-order-bar'
 import { formatDate } from '@/lib/utils'
 
 interface Props {
@@ -106,7 +107,10 @@ export default function CatererPageClassic({ caterer, menuItems, packages, galle
                   {packages.map((pkg) => (
                     <div key={pkg.id} className="flex justify-between items-start border-b border-gray-100 pb-4">
                       <div>
-                        <p className="font-semibold text-gray-900">{pkg.name}</p>
+                        <p className="font-semibold text-gray-900">
+                          {pkg.name}
+                          {pkg.is_popular && <span className="ml-2 text-[10px] font-bold uppercase tracking-wide text-white px-1.5 py-0.5 rounded" style={{ backgroundColor: accentColor }}>Popular</span>}
+                        </p>
                         {pkg.description && <p className="text-sm text-gray-500 mt-0.5">{pkg.description}</p>}
                         {(pkg.min_guests || pkg.max_guests) && (
                           <p className="text-xs text-gray-400 mt-0.5">
@@ -267,6 +271,9 @@ export default function CatererPageClassic({ caterer, menuItems, packages, galle
           Order Now
         </a>
       </div>
+      {page?.template_data?.sticky_bar && (
+        <StickyOrderBar accentColor={accentColor} phone={caterer.phone} showPhone={caterer.show_contact_publicly} />
+      )}
     </div>
   )
 }

@@ -43,7 +43,7 @@ export default function MenuEditor({ caterererId, initialItems, initialPackages 
   const [categoryChoice, setCategoryChoice] = useState('')
   const [newCategory, setNewCategory] = useState('')
   const [pkgForm, setPkgForm] = useState({
-    name: '', description: '', price: '', min_guests: '', max_guests: '', is_available: true,
+    name: '', description: '', price: '', min_guests: '', max_guests: '', is_available: true, is_popular: false,
   })
   const [confirmDelete, setConfirmDelete] = useState<{ type: 'item' | 'package'; id: string; name: string } | null>(null)
 
@@ -149,6 +149,7 @@ export default function MenuEditor({ caterererId, initialItems, initialPackages 
       min_guests: pkgForm.min_guests ? parseInt(pkgForm.min_guests) : null,
       max_guests: pkgForm.max_guests ? parseInt(pkgForm.max_guests) : null,
       is_available: pkgForm.is_available,
+      is_popular: pkgForm.is_popular,
     }
 
     if (editingPackage) {
@@ -233,7 +234,7 @@ export default function MenuEditor({ caterererId, initialItems, initialPackages 
 
         <TabsContent value="packages">
           <div className="flex justify-end mb-4">
-            <Button onClick={() => { setEditingPackage(null); setPkgForm({ name: '', description: '', price: '', min_guests: '', max_guests: '', is_available: true }); setPackageDialog(true) }}>
+            <Button onClick={() => { setEditingPackage(null); setPkgForm({ name: '', description: '', price: '', min_guests: '', max_guests: '', is_available: true, is_popular: false }); setPackageDialog(true) }}>
               <Plus className="h-4 w-4 mr-2" />Add Package
             </Button>
           </div>
@@ -252,7 +253,7 @@ export default function MenuEditor({ caterererId, initialItems, initialPackages 
                         <button onClick={() => togglePackageAvailability(pkg)} title={pkg.is_available ? 'Deactivate (hide from public page)' : 'Activate'} className="text-gray-400 hover:text-gray-700">
                           {pkg.is_available ? <ToggleRight className="h-5 w-5 text-green-500" /> : <ToggleLeft className="h-5 w-5" />}
                         </button>
-                        <button onClick={() => { setEditingPackage(pkg); setPkgForm({ name: pkg.name, description: pkg.description || '', price: String(pkg.price), min_guests: pkg.min_guests ? String(pkg.min_guests) : '', max_guests: pkg.max_guests ? String(pkg.max_guests) : '', is_available: pkg.is_available }); setPackageDialog(true) }}>
+                        <button onClick={() => { setEditingPackage(pkg); setPkgForm({ name: pkg.name, description: pkg.description || '', price: String(pkg.price), min_guests: pkg.min_guests ? String(pkg.min_guests) : '', max_guests: pkg.max_guests ? String(pkg.max_guests) : '', is_available: pkg.is_available, is_popular: pkg.is_popular || false }); setPackageDialog(true) }}>
                           <Pencil className="h-4 w-4 text-gray-400 hover:text-gray-700" />
                         </button>
                         <button onClick={() => setConfirmDelete({ type: 'package', id: pkg.id, name: pkg.name })} className="text-gray-400 hover:text-red-500">
@@ -378,6 +379,10 @@ export default function MenuEditor({ caterererId, initialItems, initialPackages 
                 <Input className="mt-1" type="number" min="1" value={pkgForm.max_guests} onChange={(e) => setPkgForm({ ...pkgForm, max_guests: e.target.value })} />
               </div>
             </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={pkgForm.is_popular} onChange={(e) => setPkgForm({ ...pkgForm, is_popular: e.target.checked })} className="rounded" />
+              <span className="text-sm text-gray-700">Mark as “Popular” (shows a badge on your public page)</span>
+            </label>
             <div className="flex justify-end gap-3">
               <Button variant="outline" onClick={() => setPackageDialog(false)}>Cancel</Button>
               <Button onClick={savePackage} disabled={saving}>{saving ? 'Saving...' : 'Save'}</Button>

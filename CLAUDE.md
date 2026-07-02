@@ -519,6 +519,7 @@ Migrations live in `supabase/migrations/` and must be run manually in Supabase S
 - `007_bank_transfer.sql` — adds bank_transfer_details TEXT and show_bank_details_on_invoice BOOLEAN to caterers
 - `008_bank_transfer_payment_method.sql` — updates orders_payment_method_check to allow 'bank_transfer'; adds public SELECT policy on blocked_dates (so the order form can read them)
 - `009_price_unit_per_meal.sql` — updates menu_items_price_unit_check to allow 'per meal'
+- `010_package_is_popular.sql` — adds is_popular BOOLEAN to packages (caterer-chosen 'Popular' badge)
 
 ### Deleting a test account (SQL order)
 ```sql
