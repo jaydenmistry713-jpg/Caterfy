@@ -379,6 +379,11 @@ RESEND_API_KEY=
 # App
 NEXT_PUBLIC_APP_URL=https://caterfy.com
 
+# Admin panel (/mistuzzo) — required for admin login
+ADMIN_PASSWORD=
+# Optional: overrides the key used to sign the admin cookie (defaults to service-role key)
+ADMIN_SECRET=
+
 # Google Analytics
 NEXT_PUBLIC_GA_MEASUREMENT_ID=
 ```
@@ -435,8 +440,8 @@ All phases are implemented and the app builds successfully (Next.js 16, 37 route
 - Stripe Billing subscription flow (£10/month, checkout + portal)
 - Stripe Connect onboarding for caterer payouts (simplified 3-step flow); Payments page shows Stripe fee info (1.2% + 20p), catering quote disclaimer, and requires agreement checkbox before connecting
 - Stripe webhooks (subscription lifecycle, payment events)
-- Resend email notifications (orders, quotes, reviews, auth, invoices)
-- Admin dashboard at `/mistuzzo`
+- Resend email notifications (orders, quotes, reviews, auth, invoices); order confirmation + acceptance emails include an itemised "Your items" table
+- Admin dashboard at `/mistuzzo` — **password-protected** via cookie auth (`lib/admin/auth.ts`, login at `/mistuzzo/login`, `POST/DELETE /api/admin/login`). Requires `ADMIN_PASSWORD` env var; cookie is an HMAC of the password keyed by `ADMIN_SECRET` (falls back to the service-role key). "View site" links go to the caterer's real `/{slug}` page
 - Directory with location + cuisine filters
 - Order status lookup page (`/order-status`)
 - Customer review submission page (`/review`)
@@ -465,11 +470,11 @@ All phases are implemented and the app builds successfully (Next.js 16, 37 route
 - Review request email trigger (1 day after event date)
 - Google Analytics wired up (env var exists, tag not added to layout yet)
 - Google Fonts loading (fonts selected in site editor but not loaded via next/font)
-- **Card payment status update (no-webhook approach)**: Currently `checkout.session.completed` webhook marks orders as paid, but this requires Stripe webhook setup. Replace with session-verification on the success redirect:
-  1. Change `success_url` in `app/api/orders/route.ts` to include `{CHECKOUT_SESSION_ID}`: `/order-status?ref={ref}&session_id={CHECKOUT_SESSION_ID}`
-  2. In the `/order-status` page, if `session_id` query param is present, call a new API route `/api/orders/verify-payment` that retrieves the session from Stripe (`stripe.checkout.sessions.retrieve(session_id)`), checks `payment_status === 'paid'`, and updates the order's `payment_status` to `'paid'` + stores `stripe_payment_intent_id`
-  3. Remove the `checkout.session.completed` case from `app/api/webhooks/stripe/route.ts` (subscription webhook events are still needed)
-  - This removes the webhook dependency for order payments entirely — status updates happen when the customer lands on the success page
+- ~~**Card payment status update (no-webhook approach)**~~ **DONE (July 2026)**: Card orders now reconcile on the success redirect without needing a webhook.
+  - `success_url` in `app/api/orders/route.ts` includes `&session_id={CHECKOUT_SESSION_ID}`
+  - The `/order-status` page reconciles server-side when `session_id` is present (`reconcileCardPayment`): retrieves the Stripe session, and if `payment_status === 'paid'` sets the order `payment_status='paid'`, `status='accepted'` (auto-accept), `accepted_at`, `stripe_payment_intent_id`, then emails the customer the acceptance + review link once (guarded against duplicates by checking current `payment_status`)
+  - A standalone `/api/orders/verify-payment` route does the same for any client-side caller
+  - The `checkout.session.completed` webhook case was **kept** (now also auto-accepts) for resilience if a webhook is configured — it's idempotent with the redirect path
 
 ## Deployment & Infrastructure Notes
 
@@ -512,6 +517,7 @@ Migrations live in `supabase/migrations/` and must be run manually in Supabase S
 - `005_template_constraint.sql` — updates caterer_pages_template_check to include 'linkpage'
 - `006_business_mode_stock_limit.sql` — adds business_mode to caterers; adds stock_limit to menu_items
 - `007_bank_transfer.sql` — adds bank_transfer_details TEXT and show_bank_details_on_invoice BOOLEAN to caterers
+- `008_bank_transfer_payment_method.sql` — updates orders_payment_method_check to allow 'bank_transfer'; adds public SELECT policy on blocked_dates (so the order form can read them)
 
 ### Deleting a test account (SQL order)
 ```sql

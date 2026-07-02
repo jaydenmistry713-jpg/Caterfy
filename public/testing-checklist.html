@@ -215,6 +215,8 @@ const DATA = [
    { t:"Database migrations applied", s:["In Supabase SQL editor, confirm migrations 001–007 have all been run.","Spot-check columns: <code>caterers.business_mode</code>, <code>caterers.bank_transfer_details</code>, <code>menu_items.stock_limit</code>, <code>caterer_pages.template_data</code>."], e:"All expected columns/tables exist.", tag:"critical" },
    { t:"Stripe in test mode", s:["Open Stripe dashboard, confirm the 'Test mode' toggle is ON.","Confirm Stripe Connect is activated (dashboard.stripe.com/connect)."], e:"Test mode active; Connect enabled.", tag:"payment" },
    { t:"Supabase Auth redirect URLs", s:["Supabase → Authentication → URL Configuration.","Site URL = deployed URL; redirect includes <code>/api/auth/callback</code>."], e:"URLs match the deployed domain." },
+   { t:"✅ FIX: Migration 008 applied", s:["In Supabase SQL editor, run <code>supabase/migrations/008_bank_transfer_payment_method.sql</code>."], e:"orders_payment_method_check now allows 'bank_transfer'; public can SELECT blocked_dates (needed for the order form).", tag:"critical" },
+   { t:"✅ FIX: ADMIN_PASSWORD env var set", s:["Add <code>ADMIN_PASSWORD=your-strong-password</code> to Netlify env vars (and .env.local for local testing).","Redeploy."], e:"Admin login works with that password; without it, the admin panel is locked and login returns a 'not configured' message.", tag:"critical" },
   ]
  },
  {
@@ -319,6 +321,8 @@ const DATA = [
    { t:"Delete order", s:["Expand an order and click delete."], e:"Available on all orders; order removed." },
    { t:"Empty-time fields handled", s:["Place an order leaving event_time blank."], e:"Empty strings convert to null; no DB error (regression 2bbde5b)." },
    { t:"Stock decrements / blocks", s:["Order an item with a stock limit down to zero, then try again."], e:"Cannot order beyond stock." },
+   { t:"✅ FIX: Stock remaining decreases after an order", s:["Set an item's stock_limit to e.g. 5.","Place an order for 2 of that item.","Reload the public order form and re-open the item list."], e:"Remaining now shows 3 — the server decremented stock_limit after the order (previously it stayed at 5).", tag:"critical" },
+   { t:"✅ FIX: Order confirmation email lists items", s:["Place a fixed order with 2–3 items.","Open the confirmation email the customer receives."], e:"The email includes a 'Your items' table listing each item × quantity and line total.", tag:"email" },
   ]
  },
  {
@@ -331,6 +335,7 @@ const DATA = [
    { t:"Caterer builds a quote", s:["/orders → open the quote request → open the quote builder dialog.","Add line items (description + amount), notes, send."], e:"Quote total computed; status updates; customer emailed.", tag:"email" },
    { t:"Customer accept-quote link", s:["Open the quote email as customer, click accept."], e:"Quote status → accepted; reflected in caterer dashboard." },
    { t:"Quote line-item math", s:["Add several line items with decimals."], e:"Total sums correctly." },
+   { t:"✅ FIX: Quote form has an event time field", s:["Open the 'Request a catering quote' form.","Look next to the Event date field."], e:"An 'Event time' input appears; the chosen time is saved to the order's event_time.", },
   ]
  },
  {
@@ -347,6 +352,8 @@ const DATA = [
    { t:"Bank details on invoice toggle", s:["Toggle 'show bank details on invoice' in Settings → Payments.","Send an invoice both ways."], e:"Bank details included on invoice emails only when toggle is on.", tag:"email" },
    { t:"Pay later (offline)", s:["Place an order with pay-later."], e:"Order created with offline method; no Stripe redirect." },
    { t:"Stripe Connect onboarding", s:["Payments page → read fee info (1.2% + 20p), disclaimer, tick agreement checkbox → Connect.","Complete the 3-step Connect flow."], e:"Cannot connect without ticking agreement; Connect completes; stripe_connect_id saved.", tag:"payment" },
+   { t:"✅ FIX: Bank transfer order saves (no constraint error)", s:["Requires migration 008.","Place a fixed order choosing 'Bank transfer'."], e:"Order saves with no <code>orders_payment_method_check</code> error; bank details shown on the confirmation screen.", tag:"payment critical" },
+   { t:"✅ FIX: Card payment marks Paid + auto-accepts on return", s:["Place a card order, pay with <code>4242 4242 4242 4242</code>.","Let Stripe redirect you back to /order-status."], e:"Order-status shows Payment: Paid; the order is auto-Accepted (no manual accept). In /orders the caterer sees it as accepted + paid, with no accept/decline buttons.", tag:"payment critical" },
   ]
  },
  {
@@ -359,6 +366,7 @@ const DATA = [
    { t:"invoice.payment_succeeded", s:["Trigger a successful subscription invoice."], e:"Recorded; status stays active." },
    { t:"invoice.payment_failed handling", s:["Simulate a failed payment."], e:"Status → past_due; failure handling per retry policy (retry day 3, warning, offline day 4)." },
    { t:"Cancellation", s:["Cancel the subscription via portal."], e:"subscription_status → cancelled; subscription_ends_at set; data preserved." },
+   { t:"✅ FIX: subscription_ends_at populated on cancel", s:["Cancel via the billing portal.","Check <code>caterers.subscription_ends_at</code> in the DB."], e:"subscription_ends_at is a real date (not null) — read from the subscription's period end / cancel date, including the subscription.deleted event.", tag:"payment" },
   ]
  },
  {
@@ -381,6 +389,7 @@ const DATA = [
    { t:"Max uses / expiry enforced", s:["Exhaust max_uses or use an expired code."], e:"Rejected; uses_count increments correctly on valid use." },
    { t:"Validate endpoint", s:["Confirm /api/discount-codes/validate is called and returns consistent shape."], e:"Valid/invalid responses are correct." },
    { t:"Edit & delete codes", s:["Edit a code's value; delete a code."], e:"Full CRUD works." },
+   { t:"✅ FIX: Max uses enforced across orders", s:["Create a code with max_uses = 1.","Use it successfully on one order.","Start a new order and try the same code again."], e:"First use succeeds and increments uses_count to 1; the second attempt is rejected as 'reached its usage limit'.", },
   ]
  },
  {
@@ -391,6 +400,7 @@ const DATA = [
    { t:"Review shows on public page", s:["View the caterer page reviews section."], e:"Approved review renders with rating + text." },
    { t:"Caterer responds to review", s:["/reviews → add a response."], e:"caterer_response + caterer_responded_at saved; shown publicly." },
    { t:"Rating constraint", s:["Attempt to submit rating 0 or 6 (via tampering)."], e:"Rejected by CHECK constraint." },
+   { t:"✅ FIX: Review shows first name only", s:["Place an order under a full name (e.g. 'Jayden Mistry').","Submit a review from that order's review link.","View the public reviews section."], e:"The review is attributed to the first name only ('Jayden'), not the full name.", },
   ]
  },
  {
@@ -400,6 +410,8 @@ const DATA = [
    { t:"Block a date", s:["/availability → block a specific date with a reason."], e:"Date saved to blocked_dates." },
    { t:"Blocked date unselectable on order form", s:["On the order form, try to pick a blocked date."], e:"Blocked date cannot be selected for the event." },
    { t:"Unblock a date", s:["Remove a blocked date."], e:"Date becomes selectable again." },
+   { t:"✅ FIX: Reason field removed from Block Dates", s:["Open /availability → Block Dates."], e:"Only a date picker + 'Block' button — no reason field.", },
+   { t:"✅ FIX: Blocked date rejected on order form", s:["Block a date.","On the public order AND quote forms, try to select that date."], e:"Selecting a blocked date is refused in the form (toast) and the /api/orders route also rejects it server-side.", },
   ]
  },
  {
@@ -421,6 +433,7 @@ const DATA = [
    { t:"Accepting orders toggle", s:["Set is_accepting_orders = false."], e:"Order options hidden/disabled on public page." },
    { t:"Contact visibility", s:["Toggle show_contact_publicly."], e:"Contact info shown/hidden accordingly." },
    { t:"Max orders per week", s:["Set max_orders_per_week and exceed it (if enforced)."], e:"Behaviour matches intended limit." },
+   { t:"✅ FIX: Max orders per week is enforced", s:["Set max orders per week = 1 (Availability → Capacity).","Place one order for a date that week.","Try a second order with an event date in the same Mon–Sun week."], e:"The second order is blocked with 'fully booked for that week'. Declined/cancelled orders don't count toward the limit.", },
   ]
  },
  {
@@ -433,6 +446,11 @@ const DATA = [
    { t:"Homepage directory search", s:["From the homepage, run a search."], e:"Routes to the correct directory results." },
    { t:"Distance calculation", s:["Confirm distance uses city-centre coordinates from locations."], e:"Distances are computed centre-to-centre." },
    { t:"Unpublished caterers excluded", s:["A caterer with no slug/page should not appear."], e:"Hidden from directory." },
+   { t:"✅ FIX: Cuisine filter excludes non-matching caterers", s:["Filter the directory by a cuisine that none of your caterers offer."], e:"No caterers are shown (previously every caterer still appeared because the empty match fell through to no filter).", },
+   { t:"✅ FIX: Sidebar filters actually filter", s:["On /directory, tick a cuisine / event type / dietary option, then Apply.","Try combinations."], e:"Results are restricted to caterers matching ALL chosen groups (the sidebar previously set params the page ignored). Multiple groups intersect.", },
+   { t:"✅ FIX: Location filter in sidebar", s:["Use the new Location dropdown, pick a city, Apply."], e:"Only caterers in that location are shown (via ?location=slug).", },
+   { t:"✅ FIX: Apply button shows loading", s:["Click Apply Filters."], e:"Button shows 'Applying…' with a spinner during navigation, so it's clear the click registered.", },
+   { t:"✅ FIX: Back-to-home on directory", s:["Open /directory."], e:"A 'Back to home' link appears above the heading and returns to /.", },
   ]
  },
  {
@@ -442,6 +460,8 @@ const DATA = [
    { t:"Admin route loads", s:["Visit /mistuzzo and authenticate as admin."], e:"Admin dashboard renders.", tag:"critical" },
    { t:"Admin protected", s:["Visit /mistuzzo while unauthenticated."], e:"Blocked / requires admin auth." },
    { t:"Admin data views", s:["Browse caterers / settings in admin."], e:"Data displays; actions work as designed." },
+   { t:"✅ FIX: Admin requires login", s:["Visit /mistuzzo while not logged in as admin."], e:"Redirected to /mistuzzo/login; correct password logs in (8h cookie), wrong password rejected. A 'Log out' button clears the session.", tag:"critical" },
+   { t:"✅ FIX: Admin 'View site' link works", s:["In the Recent Caterers table, click 'View site'."], e:"Opens the caterer's real public page at /{slug} in a new tab (no more 404). Caterers without a slug show 'No site'.", },
   ]
  },
  {
@@ -458,6 +478,7 @@ const DATA = [
    { t:"Customer: quote received", s:["Send a quote."], e:"Customer receives quote email with accept link.", tag:"email" },
    { t:"Invoice email", s:["Send an invoice."], e:"Customer receives invoice (bank details if configured).", tag:"email" },
    { t:"Auth emails", s:["Trigger signup verification + welcome."], e:"Verification + welcome emails delivered.", tag:"email" },
+   { t:"✅ FIX: Acceptance email lists items", s:["Accept a fixed order (or complete a card payment which auto-accepts).","Open the acceptance email."], e:"The 'Order accepted' email includes a 'Your items' table with each item × quantity and line total.", tag:"email" },
   ]
  },
  {
@@ -470,6 +491,7 @@ const DATA = [
    { t:"Order/quote forms on mobile", s:["Complete an order and a quote on a phone-sized viewport."], e:"Forms usable; inputs reachable; no zoom traps." },
    { t:"Cross-browser smoke", s:["Open the app in Chrome, Safari, and Firefox."], e:"Core flows work in each." },
    { t:"Loading skeleton", s:["Navigate between dashboard pages."], e:"Suspense loading skeleton (app/(dashboard)/loading.tsx) shows during transitions." },
+   { t:"✅ FIX: No iOS zoom on form focus", s:["On an iPhone (Safari), tap into the order/quote form fields."], e:"The page no longer auto-zooms — inputs/textarea/selects render at 16px on mobile (text-base sm:text-sm).", },
   ]
  },
  {

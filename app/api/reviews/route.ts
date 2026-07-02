@@ -40,9 +40,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Review already submitted for this order' }, { status: 400 })
     }
 
+    // Only publish the customer's first name — a full name is too personal on a public page.
+    const firstName = validated.customer_name.trim().split(/\s+/)[0] || validated.customer_name.trim()
+
     const { data: review, error } = await supabase
       .from('reviews')
-      .insert(validated)
+      .insert({ ...validated, customer_name: firstName })
       .select()
       .single()
 

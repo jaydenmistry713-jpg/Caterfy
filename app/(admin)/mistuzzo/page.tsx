@@ -1,13 +1,21 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { isAdminAuthenticated } from '@/lib/admin/auth'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
+import AdminLogoutButton from './logout-button'
 import { Users, ShoppingBag, Star, TrendingUp } from 'lucide-react'
 
-export default async function AdminDashboardPage() {
-  const supabase = await createClient()
+// Auth is cookie-based, so this page must render per-request (never prerendered).
+export const dynamic = 'force-dynamic'
 
-  // Protected by URL obscurity during development
+export default async function AdminDashboardPage() {
+  // Require admin authentication (cookie-based; see lib/admin/auth.ts)
+  if (!(await isAdminAuthenticated())) {
+    redirect('/mistuzzo/login')
+  }
+
+  const supabase = await createClient()
 
   const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
 
@@ -21,14 +29,17 @@ export default async function AdminDashboardPage() {
 
   const { data: recentCaterers } = await supabase
     .from('caterers')
-    .select('id, business_name, email, subscription_status, created_at')
+    .select('id, business_name, email, subscription_status, created_at, slug')
     .order('created_at', { ascending: false })
     .limit(10)
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-8">Caterfy Admin</h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">Caterfy Admin</h1>
+          <AdminLogoutButton />
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <Card>
@@ -111,7 +122,11 @@ export default async function AdminDashboardPage() {
                       </td>
                       <td className="py-3 text-gray-500">{new Date(c.created_at).toLocaleDateString('en-GB')}</td>
                       <td className="py-3">
-                        <Link href={`/mistuzzo/caterers/${c.id}`} className="text-blue-600 hover:underline text-xs">View</Link>
+                        {c.slug ? (
+                          <Link href={`/${c.slug}`} target="_blank" className="text-blue-600 hover:underline text-xs">View site</Link>
+                        ) : (
+                          <span className="text-gray-400 text-xs">No site</span>
+                        )}
                       </td>
                     </tr>
                   ))}

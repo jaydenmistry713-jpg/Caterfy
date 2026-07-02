@@ -37,12 +37,48 @@ export async function POST(request: NextRequest) {
     // Get caterer details
     const { data: caterer } = await supabase
       .from('caterers')
-      .select('email, business_name, auto_accept_orders, is_accepting_orders, stripe_connect_id, slug')
+      .select('email, business_name, auto_accept_orders, is_accepting_orders, stripe_connect_id, slug, max_orders_per_week')
       .eq('id', validated.caterer_id)
       .single()
 
     if (!caterer?.is_accepting_orders) {
       return NextResponse.json({ error: 'This caterer is not currently accepting orders' }, { status: 400 })
+    }
+
+    // Reject dates the caterer has blocked as unavailable
+    if (validated.event_date) {
+      const { data: blocked } = await supabase
+        .from('blocked_dates')
+        .select('id')
+        .eq('caterer_id', validated.caterer_id)
+        .eq('date', validated.event_date)
+        .maybeSingle()
+      if (blocked) {
+        return NextResponse.json({ error: 'The caterer is unavailable on this date. Please choose another date.' }, { status: 400 })
+      }
+    }
+
+    // Enforce max orders per week (based on the event date's Mon–Sun week)
+    if (caterer.max_orders_per_week && validated.event_date) {
+      const eventDate = new Date(validated.event_date + 'T00:00:00')
+      const day = eventDate.getUTCDay() // 0 = Sun
+      const mondayOffset = day === 0 ? -6 : 1 - day
+      const weekStart = new Date(eventDate)
+      weekStart.setUTCDate(eventDate.getUTCDate() + mondayOffset)
+      const weekEnd = new Date(weekStart)
+      weekEnd.setUTCDate(weekStart.getUTCDate() + 6)
+      const toISODate = (d: Date) => d.toISOString().split('T')[0]
+
+      const { count } = await supabase
+        .from('orders')
+        .select('id', { count: 'exact', head: true })
+        .eq('caterer_id', validated.caterer_id)
+        .gte('event_date', toISODate(weekStart))
+        .lte('event_date', toISODate(weekEnd))
+        .not('status', 'in', '(declined,cancelled)')
+      if ((count ?? 0) >= caterer.max_orders_per_week) {
+        return NextResponse.json({ error: 'The caterer is fully booked for that week. Please choose another date.' }, { status: 400 })
+      }
     }
 
     const status = caterer.auto_accept_orders && validated.order_type === 'fixed' ? 'accepted' : 'pending'
@@ -70,6 +106,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
+    // Decrement stock for fixed orders (menu items with a stock_limit set)
+    if (validated.order_type === 'fixed' && Array.isArray(validated.items)) {
+      for (const it of validated.items as any[]) {
+        if (!it?.item_id || !it?.quantity) continue
+        const { data: menuItem } = await supabase
+          .from('menu_items')
+          .select('stock_limit')
+          .eq('id', it.item_id)
+          .eq('caterer_id', validated.caterer_id)
+          .maybeSingle()
+        if (menuItem && menuItem.stock_limit != null) {
+          const newStock = Math.max(0, menuItem.stock_limit - Number(it.quantity))
+          await supabase.from('menu_items').update({ stock_limit: newStock }).eq('id', it.item_id)
+        }
+      }
+    }
+
+    // Increment usage count for an applied discount code
+    if (validated.discount_code) {
+      const { data: dc } = await supabase
+        .from('discount_codes')
+        .select('id, uses_count')
+        .eq('caterer_id', validated.caterer_id)
+        .ilike('code', validated.discount_code)
+        .maybeSingle()
+      if (dc) {
+        await supabase.from('discount_codes').update({ uses_count: (dc.uses_count ?? 0) + 1 }).eq('id', dc.id)
+      }
+    }
+
     // Send emails
     try {
       await Promise.all([
@@ -87,6 +153,7 @@ export async function POST(request: NextRequest) {
           total: validated.total || undefined,
           order_type: validated.order_type,
           payment_method: validated.payment_method,
+          items: validated.items as any,
         }),
       ])
     } catch (emailErr) {
@@ -115,7 +182,7 @@ export async function POST(request: NextRequest) {
           quantity: 1,
         }],
         mode: 'payment',
-        success_url: `${process.env.NEXT_PUBLIC_APP_URL}/order-status?ref=${validated.reference_number}`,
+        success_url: `${process.env.NEXT_PUBLIC_APP_URL}/order-status?ref=${validated.reference_number}&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/${caterer.slug}`,
         metadata: {
           order_id: order.id,

@@ -25,10 +25,35 @@ export async function POST(request: NextRequest) {
       const customerId = sub.customer as string
       const { data: caterer } = await supabase.from('caterers').select('id').eq('stripe_customer_id', customerId).single()
       if (caterer) {
+        // current_period_end moved onto subscription items in recent Stripe API
+        // versions, so fall back to the item value (and cancel_at) to avoid a null.
+        const periodEnd =
+          (sub as any).current_period_end ??
+          (sub as any).items?.data?.[0]?.current_period_end ??
+          (sub as any).cancel_at ??
+          null
         await supabase.from('caterers').update({
           subscription_status: sub.status === 'trialing' ? 'trialling' : sub.status === 'active' ? 'active' : sub.status === 'canceled' ? 'cancelled' : 'past_due',
           trial_ends_at: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
-          subscription_ends_at: (sub as any).current_period_end ? new Date((sub as any).current_period_end * 1000).toISOString() : null,
+          subscription_ends_at: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+        }).eq('id', caterer.id)
+      }
+      break
+    }
+
+    case 'customer.subscription.deleted': {
+      const sub = event.data.object as Stripe.Subscription
+      const customerId = sub.customer as string
+      const { data: caterer } = await supabase.from('caterers').select('id').eq('stripe_customer_id', customerId).single()
+      if (caterer) {
+        const endedAt =
+          (sub as any).ended_at ??
+          (sub as any).current_period_end ??
+          (sub as any).items?.data?.[0]?.current_period_end ??
+          Math.floor(Date.now() / 1000)
+        await supabase.from('caterers').update({
+          subscription_status: 'cancelled',
+          subscription_ends_at: new Date(endedAt * 1000).toISOString(),
         }).eq('id', caterer.id)
       }
       break
@@ -64,8 +89,11 @@ export async function POST(request: NextRequest) {
       const session = event.data.object as Stripe.Checkout.Session
       const orderId = session.metadata?.order_id
       if (orderId && session.payment_status === 'paid') {
+        // A paid card order needs no manual accept — auto-accept it too.
         await supabase.from('orders').update({
           payment_status: 'paid',
+          status: 'accepted',
+          accepted_at: new Date().toISOString(),
           stripe_payment_intent_id: typeof session.payment_intent === 'string' ? session.payment_intent : null,
         }).eq('id', orderId)
       }

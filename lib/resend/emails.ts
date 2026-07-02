@@ -2,6 +2,26 @@ import { resend, FROM_EMAIL, ORDERS_EMAIL } from './index'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://caterfy.com'
 
+type OrderLineItem = { name: string; quantity: number; price: number; price_unit?: string }
+
+// Renders an order's items as an email-safe table. Returns '' when there are none
+// (e.g. quote requests, which have no line items).
+function itemsTable(items?: OrderLineItem[] | null) {
+  if (!items || !Array.isArray(items) || items.length === 0) return ''
+  const rows = items
+    .map(
+      (i) =>
+        `<tr><td style="padding: 8px; border-bottom: 1px solid #eee;">${i.name} × ${i.quantity}</td><td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">£${(Number(i.price) * Number(i.quantity)).toFixed(2)}</td></tr>`
+    )
+    .join('')
+  return `
+    <p style="font-weight: bold; margin: 24px 0 4px 0;">Your items</p>
+    <table style="width: 100%; border-collapse: collapse; margin: 4px 0 8px 0;">
+      <tbody>${rows}</tbody>
+    </table>
+  `
+}
+
 function baseTemplate(content: string) {
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -91,6 +111,7 @@ export async function sendOrderConfirmationToCustomer(
     total?: number
     order_type: string
     payment_method?: string
+    items?: OrderLineItem[] | null
   }
 ) {
   return resend.emails.send({
@@ -107,6 +128,7 @@ export async function sendOrderConfirmationToCustomer(
         ${order.total ? `<tr><td style="padding: 8px; border-bottom: 1px solid #eee; color: #666;">Total</td><td style="padding: 8px; border-bottom: 1px solid #eee;">£${order.total.toFixed(2)}</td></tr>` : ''}
         <tr><td style="padding: 8px; color: #666;">Payment</td><td style="padding: 8px;">${order.payment_method === 'offline' ? 'Pay later — the caterer will contact you to arrange payment once your order is confirmed' : 'Card — awaiting acceptance'}</td></tr>
       </table>
+      ${itemsTable(order.items)}
       <div style="text-align: center; margin: 30px 0;">
         <a href="${APP_URL}/order-status?ref=${order.reference_number}" style="background: #1a1a1a; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold;">Track Order Status</a>
       </div>
@@ -116,7 +138,7 @@ export async function sendOrderConfirmationToCustomer(
 
 export async function sendOrderAccepted(
   to: string,
-  order: { reference_number: string; business_name: string; id: string }
+  order: { reference_number: string; business_name: string; id: string; items?: OrderLineItem[] | null }
 ) {
   return resend.emails.send({
     from: ORDERS_EMAIL,
@@ -125,6 +147,7 @@ export async function sendOrderAccepted(
     html: baseTemplate(`
       <h2>Your order has been accepted! 🎉</h2>
       <p><strong>${order.business_name}</strong> has accepted your order (${order.reference_number}).</p>
+      ${itemsTable(order.items)}
       <p>They will be in touch to confirm the details. If you paid by card, your card will now be charged.</p>
       <p style="margin-top: 24px; color: #666; font-size: 14px;">Once your event is over, we'd love to hear how it went!</p>
       <div style="text-align: center; margin: 20px 0;">

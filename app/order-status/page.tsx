@@ -1,10 +1,51 @@
 import { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import { CheckCircle, Clock, XCircle, Package } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
+import { stripe } from '@/lib/stripe'
+import { sendOrderAccepted } from '@/lib/resend/emails'
 import Link from 'next/link'
+
+// Reconcile a card payment on the success redirect (no webhook needed).
+// Marks the order paid + auto-accepts it and emails the customer once.
+async function reconcileCardPayment(ref: string, sessionId: string) {
+  try {
+    const service = await createServiceClient()
+    const { data: order } = await service
+      .from('orders')
+      .select('id, payment_status, customer_email, reference_number, items, caterers(business_name)')
+      .eq('reference_number', ref)
+      .single()
+    if (!order || order.payment_status === 'paid') return
+
+    const session = await stripe.checkout.sessions.retrieve(sessionId)
+    if (session.payment_status !== 'paid') return
+
+    await service
+      .from('orders')
+      .update({
+        payment_status: 'paid',
+        status: 'accepted',
+        accepted_at: new Date().toISOString(),
+        stripe_payment_intent_id:
+          typeof session.payment_intent === 'string' ? session.payment_intent : null,
+      })
+      .eq('id', order.id)
+
+    try {
+      await sendOrderAccepted(order.customer_email, {
+        id: order.id,
+        reference_number: order.reference_number,
+        business_name: (order as any).caterers?.business_name || '',
+        items: (order as any).items,
+      })
+    } catch {}
+  } catch (err) {
+    console.error('Card payment reconcile failed:', err)
+  }
+}
 
 export const metadata: Metadata = { title: 'Order Status — Caterfy' }
 
@@ -19,11 +60,16 @@ const STATUS_INFO: Record<string, { label: string; icon: any; color: string; des
 }
 
 interface Props {
-  searchParams: Promise<{ ref?: string; email?: string }>
+  searchParams: Promise<{ ref?: string; email?: string; session_id?: string }>
 }
 
 export default async function OrderStatusPage({ searchParams }: Props) {
-  const { ref, email } = await searchParams
+  const { ref, email, session_id } = await searchParams
+
+  // If we came back from Stripe Checkout, reconcile the payment before rendering.
+  if (ref && session_id) {
+    await reconcileCardPayment(ref, session_id)
+  }
 
   if (!ref) {
     return (

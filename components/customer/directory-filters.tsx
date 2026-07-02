@@ -1,26 +1,36 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
 import { Cuisine, EventType, DietaryOption } from '@/types'
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
+
+interface LocationOption { id: string; name: string; slug: string }
 
 interface Props {
   cuisines: Cuisine[]
   eventTypes: EventType[]
   dietaryOptions: DietaryOption[]
+  locations?: LocationOption[]
 }
 
-export default function DirectoryFilters({ cuisines, eventTypes, dietaryOptions }: Props) {
+export default function DirectoryFilters({ cuisines, eventTypes, dietaryOptions, locations = [] }: Props) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const [isPending, startTransition] = useTransition()
 
-  const [selectedCuisines, setSelectedCuisines] = useState<string[]>([])
-  const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>([])
-  const [selectedDietary, setSelectedDietary] = useState<string[]>([])
-  const [minRating, setMinRating] = useState<number>(0)
+  const fromParam = (key: string) => {
+    const v = searchParams.get(key)
+    return v ? v.split(',').filter(Boolean) : []
+  }
+
+  // Seed from the URL so the sidebar reflects the currently-applied filters.
+  const [selectedCuisines, setSelectedCuisines] = useState<string[]>(() => fromParam('cuisines'))
+  const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>(() => fromParam('events'))
+  const [selectedDietary, setSelectedDietary] = useState<string[]>(() => fromParam('dietary'))
+  const [minRating, setMinRating] = useState<number>(() => Number(searchParams.get('rating') || 0))
+  const [location, setLocation] = useState<string>(() => searchParams.get('location') || '')
   const [showAll, setShowAll] = useState({ cuisines: false, events: false, dietary: false })
 
   function toggleItem(arr: string[], setArr: (v: string[]) => void, id: string) {
@@ -33,7 +43,8 @@ export default function DirectoryFilters({ cuisines, eventTypes, dietaryOptions 
     if (selectedEventTypes.length) params.set('events', selectedEventTypes.join(','))
     if (selectedDietary.length) params.set('dietary', selectedDietary.join(','))
     if (minRating > 0) params.set('rating', String(minRating))
-    router.push(`/directory?${params.toString()}`)
+    if (location) params.set('location', location)
+    startTransition(() => router.push(`/directory?${params.toString()}`))
   }
 
   function clearFilters() {
@@ -41,7 +52,8 @@ export default function DirectoryFilters({ cuisines, eventTypes, dietaryOptions 
     setSelectedEventTypes([])
     setSelectedDietary([])
     setMinRating(0)
-    router.push('/directory')
+    setLocation('')
+    startTransition(() => router.push('/directory'))
   }
 
   const FilterSection = ({
@@ -95,6 +107,22 @@ export default function DirectoryFilters({ cuisines, eventTypes, dietaryOptions 
         </button>
       </div>
 
+      {locations.length > 0 && (
+        <div className="mb-6">
+          <h4 className="font-semibold text-gray-900 mb-3 text-sm uppercase tracking-wide">Location</h4>
+          <select
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            className="w-full h-10 rounded-lg border border-gray-300 bg-white px-3 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+          >
+            <option value="">Anywhere</option>
+            {locations.map((l) => (
+              <option key={l.id} value={l.slug}>{l.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <FilterSection
         title="Cuisine"
         items={cuisines}
@@ -138,7 +166,9 @@ export default function DirectoryFilters({ cuisines, eventTypes, dietaryOptions 
         </div>
       </div>
 
-      <Button onClick={applyFilters} className="w-full">Apply Filters</Button>
+      <Button onClick={applyFilters} className="w-full" disabled={isPending}>
+        {isPending ? <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Applying…</> : 'Apply Filters'}
+      </Button>
     </div>
   )
 }

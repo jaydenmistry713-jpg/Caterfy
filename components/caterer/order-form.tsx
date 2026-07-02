@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -35,6 +36,7 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
   const [loading, setLoading] = useState(false)
 
   const [selectedItems, setSelectedItems] = useState<OrderItem[]>([])
+  const [blockedDates, setBlockedDates] = useState<string[]>([])
   const [categoryFilter, setCategoryFilter] = useState<string>('All')
   const [showExtraDetails, setShowExtraDetails] = useState(false)
   const [discountCode, setDiscountCode] = useState('')
@@ -54,6 +56,24 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
     additional_comments: '',
     payment_method: caterer.stripe_connect_id ? 'card' : 'offline',
   })
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase
+      .from('blocked_dates')
+      .select('date')
+      .eq('caterer_id', caterer.id)
+      .then(({ data }) => setBlockedDates((data || []).map((d: any) => d.date)))
+  }, [caterer.id])
+
+  function handleDateChange(value: string) {
+    if (value && blockedDates.includes(value)) {
+      toast({ title: 'Date unavailable', description: 'The caterer is not available on this date. Please choose another.', variant: 'destructive' })
+      setForm((f) => ({ ...f, event_date: '' }))
+      return
+    }
+    setForm((f) => ({ ...f, event_date: value }))
+  }
 
   function adjustQuantity(item: any, delta: number) {
     setSelectedItems((prev) => {
@@ -306,7 +326,7 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
               </div>
               <div className="col-span-2">
                 <Label>Date *</Label>
-                <Input className="mt-1" type="date" min={new Date().toISOString().split('T')[0]} value={form.event_date} onChange={(e) => setForm({ ...form, event_date: e.target.value })} />
+                <Input className="mt-1" type="date" min={new Date().toISOString().split('T')[0]} value={form.event_date} onChange={(e) => handleDateChange(e.target.value)} />
               </div>
               <div className="col-span-2">
                 <Label>Delivery address</Label>
@@ -367,7 +387,11 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
               </div>
               <div>
                 <Label>Event date *</Label>
-                <Input className="mt-1" type="date" min={new Date().toISOString().split('T')[0]} value={form.event_date} onChange={(e) => setForm({ ...form, event_date: e.target.value })} />
+                <Input className="mt-1" type="date" min={new Date().toISOString().split('T')[0]} value={form.event_date} onChange={(e) => handleDateChange(e.target.value)} />
+              </div>
+              <div>
+                <Label>Event time</Label>
+                <Input className="mt-1" type="time" value={form.event_time} onChange={(e) => setForm({ ...form, event_time: e.target.value })} />
               </div>
               <div>
                 <Label>Number of guests *</Label>

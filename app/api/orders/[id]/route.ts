@@ -26,7 +26,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       })
       .eq('id', id)
       .eq('caterer_id', user.id)
-      .select('id, reference_number, customer_email, customer_name, caterers(business_name)')
+      .select('id, reference_number, customer_email, customer_name, items, caterers(business_name)')
       .single()
 
     if (error || !order) {
@@ -41,6 +41,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           id: order.id,
           reference_number: order.reference_number,
           business_name: businessName,
+          items: (order as any).items,
         })
       } else if (status === 'declined') {
         await sendOrderDeclined(order.customer_email, {

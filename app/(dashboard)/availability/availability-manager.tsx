@@ -21,7 +21,6 @@ export default function AvailabilityManager({ caterererId, caterer: initialCater
   const [caterer, setCaterer] = useState(initialCaterer)
   const [blockedDates, setBlockedDates] = useState(initialDates)
   const [newDate, setNewDate] = useState('')
-  const [newReason, setNewReason] = useState('')
   const [saving, setSaving] = useState(false)
 
   async function toggleAcceptingOrders() {
@@ -49,13 +48,12 @@ export default function AvailabilityManager({ caterererId, caterer: initialCater
     const supabase = createClient()
     const { data, error } = await supabase
       .from('blocked_dates')
-      .insert({ caterer_id: caterererId, date: newDate, reason: newReason || null })
+      .insert({ caterer_id: caterererId, date: newDate })
       .select()
       .single()
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return }
     setBlockedDates((prev) => [...prev, data].sort((a, b) => a.date.localeCompare(b.date)))
     setNewDate('')
-    setNewReason('')
     toast({ title: 'Date blocked', variant: 'success' })
   }
 
@@ -148,11 +146,6 @@ export default function AvailabilityManager({ caterererId, caterer: initialCater
               onChange={(e) => setNewDate(e.target.value)}
               min={new Date().toISOString().split('T')[0]}
               className="w-auto"
-            />
-            <Input
-              placeholder="Reason (optional)"
-              value={newReason}
-              onChange={(e) => setNewReason(e.target.value)}
             />
             <Button onClick={addBlockedDate}>
               <Plus className="h-4 w-4 mr-1" />Block

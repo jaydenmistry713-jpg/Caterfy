@@ -1,4 +1,6 @@
 import { Metadata } from 'next'
+import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import DirectoryFilters from '@/components/customer/directory-filters'
 import CatererCard from '@/components/customer/caterer-card'
@@ -29,32 +31,54 @@ export default async function DirectoryPage({
     .eq('subscription_status', 'active')
     .order('created_at', { ascending: false })
 
-  if (params.cuisine) {
-    const { data: cuisine } = await supabase
-      .from('cuisines')
-      .select('id')
-      .eq('slug', params.cuisine)
-      .single()
-    if (cuisine) {
-      const { data: catererIds } = await supabase
-        .from('caterer_cuisines')
-        .select('caterer_id')
-        .eq('cuisine_id', cuisine.id)
-      if (catererIds?.length) {
-        query = query.in('id', catererIds.map((c) => c.caterer_id))
-      }
-    }
+  // Sentinel UUID that no caterer will have — used to force an empty result set
+  // when a filter matches nobody (instead of falling through to "show everyone").
+  const NO_MATCH = '00000000-0000-0000-0000-000000000000'
+  const asList = (v?: string | string[]) => (typeof v === 'string' && v ? v.split(',').filter(Boolean) : [])
+
+  // Sidebar filters pass comma-separated reference IDs (cuisines/events/dietary).
+  // A caterer must match ALL selected groups, so we intersect the matching id sets.
+  const idsFor = async (table: string, column: string, values: string[]): Promise<string[]> => {
+    const { data } = await supabase.from(table).select('caterer_id').in(column, values)
+    return Array.from(new Set((data || []).map((r: any) => r.caterer_id)))
+  }
+
+  const groups: string[][] = []
+  if (asList(params.cuisines).length) groups.push(await idsFor('caterer_cuisines', 'cuisine_id', asList(params.cuisines)))
+  if (asList(params.events).length) groups.push(await idsFor('caterer_event_types', 'event_type_id', asList(params.events)))
+  if (asList(params.dietary).length) groups.push(await idsFor('caterer_dietary_options', 'dietary_option_id', asList(params.dietary)))
+
+  // Legacy single-slug entry (e.g. links to ?cuisine=slug)
+  if (params.cuisine && typeof params.cuisine === 'string') {
+    const { data: cuisine } = await supabase.from('cuisines').select('id').eq('slug', params.cuisine).single()
+    groups.push(cuisine ? await idsFor('caterer_cuisines', 'cuisine_id', [cuisine.id]) : [NO_MATCH])
+  }
+
+  if (groups.length) {
+    const intersection = groups.reduce((acc, g) => acc.filter((id) => g.includes(id)))
+    query = query.in('id', intersection.length ? intersection : [NO_MATCH])
+  }
+
+  // Location filter (by slug from the sidebar dropdown)
+  if (params.location && typeof params.location === 'string') {
+    const { data: loc } = await supabase.from('locations').select('id').eq('slug', params.location).limit(1).maybeSingle()
+    query = loc ? query.eq('location_id', loc.id) : query.in('id', [NO_MATCH])
   }
 
   const { data: caterers } = await query.limit(20)
   const { data: cuisines } = await supabase.from('cuisines').select('*').order('name')
   const { data: eventTypes } = await supabase.from('event_types').select('*').order('name')
   const { data: dietaryOptions } = await supabase.from('dietary_options').select('*').order('name')
+  const { data: locations } = await supabase.from('locations').select('id, name, slug').order('name')
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-200 py-8 px-4">
         <div className="max-w-7xl mx-auto">
+          <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 mb-4">
+            <ArrowLeft className="h-4 w-4" />
+            Back to home
+          </Link>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Find a Caterer</h1>
           <p className="text-gray-500">Browse {caterers?.length || 0} caterers on Caterfy</p>
         </div>
@@ -67,6 +91,7 @@ export default async function DirectoryPage({
               cuisines={cuisines || []}
               eventTypes={eventTypes || []}
               dietaryOptions={dietaryOptions || []}
+              locations={locations || []}
             />
           </aside>
 
