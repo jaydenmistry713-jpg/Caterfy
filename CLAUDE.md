@@ -408,7 +408,7 @@ NEXT_PUBLIC_GA_MEASUREMENT_ID=
 All phases are implemented and the app builds successfully (Next.js 16, 37 routes).
 
 ### Completed
-- Landing page with directory search
+- Marketing landing page (caterer-first, redesigned July 2026) — see "Marketing Landing Page" section below
 - Caterer signup/login with email verification (Supabase Auth)
 - 14-day trial on signup, caterer record auto-created on email verify
 - Site builder: 4 templates (Classic, Modern, Bold, Link Page), branding, content, image uploads, URL slug
@@ -455,7 +455,7 @@ All phases are implemented and the app builds successfully (Next.js 16, 37 route
 - Expandable menu item descriptions: descriptions hidden by default on Classic and Modern templates; chevron appears for items with a description; click/tap to expand. LinkPage accordion items also expand descriptions on tap.
 - Food certifications: 10 UK accreditations (Halal, Hygiene 5★, Kosher, FSA, Vegan Society, SALSA, BRC, ISO 22000, Organic, Allergen Aware) selectable in Site Editor → Content; rendered as badges in the hero section of all 4 templates. Stored in `caterer_pages.template_data.certifications`.
 - Send message form on all caterer public pages (Contact section); submits to `/api/messages` which emails the caterer (with reply-to set) and sends an auto-reply to the customer
-- Homepage payment methods section showing: Visa, Mastercard, Amex, Apple Pay, Google Pay, Bank Transfer, Pay Later
+- Payment methods (Visa, Mastercard, Amex, Apple Pay, Google Pay, Bank Transfer, Pay Later) supported at checkout; the old homepage payment-methods strip was removed in the July 2026 landing page redesign
 - Bank transfer payment option: caterer enters account details in Settings → Payments; shown to customers at checkout on fixed orders; bank details shown on order confirmation and optionally auto-included on invoice emails (toggle in Settings → Payments)
 - Site editor Save Changes button only active when unsaved changes exist; resets after successful save
 - Dashboard performance: `getUser()` in `lib/supabase/server.ts` is wrapped with React `cache()` so `auth.getUser()` fires once per request even though layout and page both call it; all dashboard pages use this cached helper instead of calling `supabase.auth.getUser()` directly
@@ -595,6 +595,21 @@ DELETE FROM caterers WHERE id = '[user-id]';
   - *Export full report* → `caterfy-test-report_<tester>_<date>.md`: the complete checklist with `[x]/[ ]` state and notes.
 - **Reset** clears only the active tester's progress, not everyone's.
 - **Workflow for fixing flagged issues**: the tester saves an exported `.md` into the repo root, then Claude reads it and works through each flagged item. (Notes live only in the tester's browser `localStorage` and are not visible to Claude until exported to a file.)
+
+## Marketing Landing Page
+
+The homepage (`app/(marketing)/page.tsx`) is a caterer-first marketing page (redesigned July 2026). It is fully static (no Supabase query — customers reach the directory via nav/footer links to `/directory`).
+
+**Design system** (scoped under `.mk-root` in `app/(marketing)/marketing.css`, applied by the marketing layout so it also reskins nav/footer on `/faq`, `/terms`, etc.):
+- Tokens: `--basil #182A20` (dark green), `--cream #F7F2E7` (page bg), `--cream-2 #EFE7D6`, `--marigold #E8A33D` (primary accent), `--marigold-deep #C9852A`, `--tomato #D25B43` (used very sparingly), `--ink #22261F`, `--ink-soft #5B6156`
+- Fonts via `next/font/google` in `app/(marketing)/layout.tsx`: Young Serif (display), Figtree (body), IBM Plex Mono (eyebrows/micro-copy) — marketing pages only
+- Pill buttons (`.mk-btn` + gold/basil/ghost variants), 14px-radius cards, mono uppercase eyebrows with 22px rule, alternating cream/basil sections, lucide icons at strokeWidth 1.7
+
+**Page sections**: sticky blur nav → hero (two-col, live editor demo right) → basil trust-strip marquee (fictional caterer names) → features grid (wide Site Editor card + 10 cards using real dashboard terminology) → "How it works" 01/02/03 on basil → pricing (single real £10/mo plan, count-up stats) → testimonial (illustrative, fictional) → basil final-CTA panel with animated SVG steam lines → single-row footer.
+
+**Hero editor demo** (`components/marketing/hero-demo.tsx`, client): fake browser window with a mini caterer site ("The Willow Pantry"). Swatches switch between the 4 real templates (Classic/Modern/Bold/Link Page, accents from the editor's real preset palette) via CSS custom properties with 0.45s transitions; the business-name input live-updates the mini-site name and the URL-bar slug (uses `slugify` from `lib/utils`).
+
+**Motion**: staggered hero entrance (`.mk-enter-*`), IntersectionObserver scroll reveals (`components/marketing/reveal.tsx`, unobserves after firing), count-up stats (`components/marketing/count-up.tsx`), CSS marquee (pauses on hover), steam-line dash animation — all gated behind `prefers-reduced-motion` (reduced-motion users get static content).
 
 ## Templates
 
