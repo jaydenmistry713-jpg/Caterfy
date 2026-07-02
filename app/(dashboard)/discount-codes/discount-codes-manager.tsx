@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from '@/lib/utils/use-toast'
-import { Plus, Trash2, Tag } from 'lucide-react'
+import { Plus, Trash2, Tag, Pencil } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
 interface DiscountCode {
@@ -34,6 +34,7 @@ interface Props {
 export default function DiscountCodesManager({ caterererId, initialCodes }: Props) {
   const [codes, setCodes] = useState(initialCodes)
   const [showCreate, setShowCreate] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({
     code: '',
@@ -46,33 +47,56 @@ export default function DiscountCodesManager({ caterererId, initialCodes }: Prop
 
   function resetForm() {
     setForm({ code: '', discount_type: 'percent', discount_value: '', min_order_value: '', max_uses: '', expires_at: '' })
+    setEditingId(null)
   }
 
-  async function createCode() {
+  function openEdit(code: DiscountCode) {
+    setEditingId(code.id)
+    setForm({
+      code: code.code,
+      discount_type: code.discount_type,
+      discount_value: String(code.discount_value),
+      min_order_value: code.min_order_value != null ? String(code.min_order_value) : '',
+      max_uses: code.max_uses != null ? String(code.max_uses) : '',
+      expires_at: code.expires_at ? code.expires_at.split('T')[0] : '',
+    })
+    setShowCreate(true)
+  }
+
+  async function saveCode() {
     if (!form.code || !form.discount_value) return
     setSaving(true)
     const supabase = createClient()
-    const { data, error } = await supabase
-      .from('discount_codes')
-      .insert({
-        caterer_id: caterererId,
-        code: form.code.trim().toUpperCase(),
-        discount_type: form.discount_type,
-        discount_value: parseFloat(form.discount_value),
-        min_order_value: form.min_order_value ? parseFloat(form.min_order_value) : null,
-        max_uses: form.max_uses ? parseInt(form.max_uses) : null,
-        expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : null,
-      })
-      .select()
-      .single()
+    const payload = {
+      caterer_id: caterererId,
+      code: form.code.trim().toUpperCase(),
+      discount_type: form.discount_type,
+      discount_value: parseFloat(form.discount_value),
+      min_order_value: form.min_order_value ? parseFloat(form.min_order_value) : null,
+      max_uses: form.max_uses ? parseInt(form.max_uses) : null,
+      expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : null,
+    }
 
-    if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' })
+    if (editingId) {
+      const { data, error } = await supabase.from('discount_codes').update(payload).eq('id', editingId).select().single()
+      if (error) {
+        toast({ title: 'Error', description: error.message, variant: 'destructive' })
+      } else {
+        setCodes((prev) => prev.map((c) => c.id === editingId ? { ...c, ...data } : c))
+        setShowCreate(false)
+        resetForm()
+        toast({ title: 'Discount code updated', variant: 'success' })
+      }
     } else {
-      setCodes((prev) => [data, ...prev])
-      setShowCreate(false)
-      resetForm()
-      toast({ title: 'Discount code created', variant: 'success' })
+      const { data, error } = await supabase.from('discount_codes').insert(payload).select().single()
+      if (error) {
+        toast({ title: 'Error', description: error.message, variant: 'destructive' })
+      } else {
+        setCodes((prev) => [data, ...prev])
+        setShowCreate(false)
+        resetForm()
+        toast({ title: 'Discount code created', variant: 'success' })
+      }
     }
     setSaving(false)
   }
@@ -129,6 +153,9 @@ export default function DiscountCodesManager({ caterererId, initialCodes }: Prop
                     </p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
+                    <Button size="sm" variant="outline" onClick={() => openEdit(code)}>
+                      <Pencil className="h-3.5 w-3.5 mr-1" />Edit
+                    </Button>
                     <Button size="sm" variant="outline" onClick={() => toggleActive(code.id, code.is_active)}>
                       {code.is_active ? 'Disable' : 'Enable'}
                     </Button>
@@ -151,7 +178,7 @@ export default function DiscountCodesManager({ caterererId, initialCodes }: Prop
       <Dialog open={showCreate} onOpenChange={(open) => { setShowCreate(open); if (!open) resetForm() }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Create Discount Code</DialogTitle>
+            <DialogTitle>{editingId ? 'Edit Discount Code' : 'Create Discount Code'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -227,10 +254,10 @@ export default function DiscountCodesManager({ caterererId, initialCodes }: Prop
             <div className="flex justify-end gap-3 pt-2">
               <Button variant="outline" onClick={() => { setShowCreate(false); resetForm() }}>Cancel</Button>
               <Button
-                onClick={createCode}
+                onClick={saveCode}
                 disabled={saving || !form.code || !form.discount_value}
               >
-                {saving ? 'Creating...' : 'Create Code'}
+                {saving ? 'Saving...' : editingId ? 'Save Changes' : 'Create Code'}
               </Button>
             </div>
           </div>

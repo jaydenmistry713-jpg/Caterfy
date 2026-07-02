@@ -2,7 +2,8 @@ import { createClient, getUser } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import SettingsForm from './settings-form'
 
-export default async function SettingsPage() {
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  const { tab } = await searchParams
   const user = await getUser()
   if (!user) redirect('/login')
   const supabase = await createClient()
@@ -33,6 +34,7 @@ export default async function SettingsPage() {
         cuisines={cuisinesRes.data || []}
         eventTypes={eventTypesRes.data || []}
         dietaryOptions={dietaryRes.data || []}
+        initialTab={tab}
       />
     </div>
   )

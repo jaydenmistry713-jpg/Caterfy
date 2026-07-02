@@ -20,9 +20,10 @@ interface Props {
   cuisines: Cuisine[]
   eventTypes: EventType[]
   dietaryOptions: DietaryOption[]
+  initialTab?: string
 }
 
-export default function SettingsForm({ caterererId, caterer, locations, cuisines, eventTypes, dietaryOptions }: Props) {
+export default function SettingsForm({ caterererId, caterer, locations, cuisines, eventTypes, dietaryOptions, initialTab }: Props) {
   const [saving, setSaving] = useState(false)
   const [savingBank, setSavingBank] = useState(false)
   const [bankDetails, setBankDetails] = useState(caterer?.bank_transfer_details || '')
@@ -105,8 +106,11 @@ export default function SettingsForm({ caterererId, caterer, locations, cuisines
     }
   }
 
+  const validTabs = ['profile', 'categories', 'contact', 'payments', 'subscription']
+  const defaultTab = initialTab && validTabs.includes(initialTab) ? initialTab : 'profile'
+
   return (
-    <Tabs defaultValue="profile">
+    <Tabs defaultValue={defaultTab}>
       <TabsList className="flex-wrap">
         <TabsTrigger value="profile">Business Profile</TabsTrigger>
         <TabsTrigger value="categories">Categories</TabsTrigger>

@@ -378,6 +378,7 @@ const DATA = [
    { t:"Stripe Connect onboarding", s:["Payments page → read fee info (1.2% + 20p), disclaimer, tick agreement checkbox → Connect.","Complete the 3-step Connect flow."], e:"Cannot connect without ticking agreement; Connect completes; stripe_connect_id saved.", tag:"payment" },
    { t:"✅ FIX: Bank transfer order saves (no constraint error)", s:["Requires migration 008.","Place a fixed order choosing 'Bank transfer'."], e:"Order saves with no <code>orders_payment_method_check</code> error; bank details shown on the confirmation screen.", tag:"payment critical" },
    { t:"✅ FIX: Card payment marks Paid + auto-accepts on return", s:["Place a card order, pay with <code>4242 4242 4242 4242</code>.","Let Stripe redirect you back to /order-status."], e:"Order-status shows Payment: Paid; the order is auto-Accepted (no manual accept). In /orders the caterer sees it as accepted + paid, with no accept/decline buttons.", tag:"payment critical" },
+   { t:"✅ FIX: Connect step mentions your website URL", s:["Payments page (not connected) → read step 2."], e:"It tells you to enter your Caterfy page URL (caterfy.com/your-slug) as the Stripe business website, and to pick Food & Beverage / Catering as the industry.", tag:"payment" },
   ]
  },
  {
@@ -391,6 +392,7 @@ const DATA = [
    { t:"invoice.payment_failed handling", s:["Simulate a failed payment."], e:"Status → past_due; failure handling per retry policy (retry day 3, warning, offline day 4)." },
    { t:"Cancellation", s:["Cancel the subscription via portal."], e:"subscription_status → cancelled; subscription_ends_at set; data preserved." },
    { t:"✅ FIX: subscription_ends_at populated on cancel", s:["Cancel via the billing portal.","Check <code>caterers.subscription_ends_at</code> in the DB."], e:"subscription_ends_at is a real date (not null) — read from the subscription's period end / cancel date, including the subscription.deleted event.", tag:"payment" },
+   { t:"✅ FIX: Dashboard subscription link is clearer", s:["On the dashboard trial banner, click 'Set up your subscription'."], e:"Goes straight to Settings → Subscription tab (via ?tab=subscription), not the generic profile page.", },
   ]
  },
  {
@@ -414,6 +416,7 @@ const DATA = [
    { t:"Validate endpoint", s:["Confirm /api/discount-codes/validate is called and returns consistent shape."], e:"Valid/invalid responses are correct." },
    { t:"Edit & delete codes", s:["Edit a code's value; delete a code."], e:"Full CRUD works." },
    { t:"✅ FIX: Max uses enforced across orders", s:["Create a code with max_uses = 1.","Use it successfully on one order.","Start a new order and try the same code again."], e:"First use succeeds and increments uses_count to 1; the second attempt is rejected as 'reached its usage limit'.", },
+   { t:"✅ FIX: Edit a discount code", s:["/discount-codes → click Edit on a code, change a value, Save Changes."], e:"The code updates in place (full edit, not just enable/disable/delete).", },
   ]
  },
  {
@@ -425,6 +428,8 @@ const DATA = [
    { t:"Caterer responds to review", s:["/reviews → add a response."], e:"caterer_response + caterer_responded_at saved; shown publicly." },
    { t:"Rating constraint", s:["Attempt to submit rating 0 or 6 (via tampering)."], e:"Rejected by CHECK constraint." },
    { t:"✅ FIX: Review shows first name only", s:["Place an order under a full name (e.g. 'Jayden Mistry').","Submit a review from that order's review link.","View the public reviews section."], e:"The review is attributed to the first name only ('Jayden'), not the full name.", },
+   { t:"✅ FIX: Caterer response shows on all templates", s:["Respond to a review in /reviews.","View the public page on Classic, Modern, Bold AND Link Page."], e:"The response now renders under the review on all four templates (previously only Classic).", },
+   { t:"✅ FIX: Copy review link", s:["/reviews → click 'Copy review link'."], e:"Copies a shareable link to your public reviews section (caterfy.com/your-slug#reviews).", },
   ]
  },
  {
@@ -551,7 +556,7 @@ const DATA = [
   items: [
    { t:"Order reminder cron (24h/48h)", s:["Confirm whether the reminder/auto-cancel cron exists."], e:"Currently PENDING — log as not-built unless implemented." },
    { t:"Review request email (1 day after event)", s:["Confirm trigger existence."], e:"Currently PENDING." },
-   { t:"Google Analytics tag in layout", s:["Check if GA tag is added to the layout (env var exists)."], e:"Currently PENDING — tag not added yet." },
+   { t:"Google Analytics tag in layout", s:["Set NEXT_PUBLIC_GA_MEASUREMENT_ID, load any page, check network for gtag/js."], e:"✅ DONE — GA gtag loads in the root layout when NEXT_PUBLIC_GA_MEASUREMENT_ID is set (via next/script)." },
    { t:"Google Fonts via next/font", s:["Check if selected fonts actually load."], e:"Currently PENDING — fonts selected but not loaded." },
    { t:"No-webhook card status (session verify)", s:["Check if success_url uses {CHECKOUT_SESSION_ID} + /api/orders/verify-payment, replacing the webhook case."], e:"Confirm whether the planned migration is done or still webhook-based.", tag:"payment" },
   ]

@@ -143,6 +143,12 @@ export default function CatererPageBold({ caterer, menuItems, packages, gallery,
                   <StarRating rating={r.rating} />
                   {r.review_text && <p className="text-gray-700 mt-2">{r.review_text}</p>}
                   <p className="text-xs text-gray-400 mt-3 font-semibold uppercase">{r.customer_name}</p>
+                  {r.caterer_response && (
+                    <div className="mt-3 pl-3 border-l-2 border-gray-200">
+                      <p className="text-xs font-medium text-gray-500">Response from {caterer.business_name}</p>
+                      <p className="text-sm text-gray-600 mt-0.5">{r.caterer_response}</p>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

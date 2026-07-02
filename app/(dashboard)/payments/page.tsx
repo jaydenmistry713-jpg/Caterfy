@@ -70,7 +70,7 @@ export default async function PaymentsPage() {
             <div className="space-y-4">
               {[
                 { n: 1, title: 'Click Connect Stripe below', body: "You'll be taken to a secure Stripe form. Have your bank sort code and account number ready." },
-                { n: 2, title: 'Complete the Stripe form', body: "Select your country, business type (Individual for sole traders), industry (Food & Beverage / Catering), and enter your bank account details for payouts." },
+                { n: 2, title: 'Complete the Stripe form', body: `Select your country and business type (Individual for sole traders). For industry choose Food & Beverage / Catering. When Stripe asks for your business website, enter your Caterfy page URL${caterer?.slug ? `: caterfy.com/${caterer.slug}` : ' (caterfy.com/your-slug)'}. Then enter your bank details for payouts.` },
                 { n: 3, title: "You're done", body: "You'll be redirected back here automatically. Your payment account will be connected and your site can start taking card payments." },
               ].map(({ n, title, body }) => (
                 <div key={n} className="flex gap-4">

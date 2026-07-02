@@ -83,7 +83,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             <p className="font-medium text-yellow-800">Free trial active</p>
             <p className="text-sm text-yellow-700">
               Your trial ends on {formatDate(caterer.trial_ends_at)}.{' '}
-              <Link href="/settings" className="underline">Add payment details</Link> to continue.
+              <Link href="/settings?tab=subscription" className="underline font-medium">Set up your subscription</Link> to keep your site live.
             </p>
           </div>
         </div>

@@ -427,6 +427,12 @@ export default function CatererPageLinkPage({ caterer, menuItems, packages, gall
                       {review.event_type && <span style={{ fontSize: 11, color: muted }}>{review.event_type}</span>}
                     </div>
                   </div>
+                  {review.caterer_response && (
+                    <div style={{ marginTop: 12, paddingLeft: 12, borderLeft: `2px solid ${border}` }}>
+                      <span style={{ fontSize: 11, color: muted, display: 'block', marginBottom: 2 }}>Response from {caterer.business_name}</span>
+                      <span style={{ fontSize: 13, color: mid, lineHeight: 1.6 }}>{review.caterer_response}</span>
+                    </div>
+                  )}
                 </div>
               ))}
               <div style={{ height: 1, background: border, margin: '16px 20px' }} />
