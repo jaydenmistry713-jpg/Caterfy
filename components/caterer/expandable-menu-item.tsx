@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import Image from 'next/image'
+import { formatPriceUnit } from '@/lib/utils'
 
 interface Props {
   item: any
@@ -38,7 +39,7 @@ export default function ExpandableMenuItem({ item, variant = 'classic', accentCo
             <p className="text-xs text-gray-500 mt-1 leading-relaxed">{item.description}</p>
           )}
           <p className="text-sm font-semibold mt-1" style={accentColor ? { color: accentColor } : {}}>
-            £{Number(item.price).toFixed(2)} {item.price_unit}
+            £{Number(item.price).toFixed(2)} {formatPriceUnit(item.price_unit)}
           </p>
         </div>
       </div>
@@ -72,7 +73,9 @@ export default function ExpandableMenuItem({ item, variant = 'classic', accentCo
       </div>
       <p className="font-semibold text-gray-900 ml-4 flex-shrink-0">
         £{Number(item.price).toFixed(2)}
-        <span className="text-xs text-gray-400 font-normal"> /{item.price_unit}</span>
+        {formatPriceUnit(item.price_unit) && (
+          <span className="text-xs text-gray-400 font-normal"> {formatPriceUnit(item.price_unit)}</span>
+        )}
       </p>
     </div>
   )

@@ -12,7 +12,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from '@/lib/utils/use-toast'
+import { formatPriceUnit } from '@/lib/utils'
 import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight } from 'lucide-react'
+
+const ADD_NEW_CATEGORY = '__add_new__'
 
 interface Props {
   caterererId: string
@@ -31,38 +34,53 @@ export default function MenuEditor({ caterererId, initialItems, initialPackages 
 
   const [itemForm, setItemForm] = useState<{
     name: string; category: string; description: string; price: string;
-    price_unit: 'per person' | 'per item' | 'flat'; is_available: boolean; stock_limit: string;
+    price_unit: 'per person' | 'per item' | 'per meal' | 'flat'; is_available: boolean; stock_limit: string;
   }>({
     name: '', category: '', description: '', price: '', price_unit: 'per person', is_available: true, stock_limit: '',
   })
+  // Category picker state: which category is selected in the dropdown, and the
+  // free-text value when "Add new category" is chosen.
+  const [categoryChoice, setCategoryChoice] = useState('')
+  const [newCategory, setNewCategory] = useState('')
   const [pkgForm, setPkgForm] = useState({
     name: '', description: '', price: '', min_guests: '', max_guests: '', is_available: true,
   })
+  const [confirmDelete, setConfirmDelete] = useState<{ type: 'item' | 'package'; id: string; name: string } | null>(null)
+
+  // Existing categories to offer in the dropdown
+  const existingCategories = Array.from(new Set(items.map((i) => i.category).filter(Boolean))) as string[]
 
   function openEditItem(item: any) {
     setEditingItem(item)
     setItemForm({
       name: item.name, category: item.category || '', description: item.description || '',
-      price: String(item.price), price_unit: item.price_unit as 'per person' | 'per item' | 'flat',
+      price: String(item.price), price_unit: item.price_unit as 'per person' | 'per item' | 'per meal' | 'flat',
       is_available: item.is_available, stock_limit: item.stock_limit != null ? String(item.stock_limit) : '',
     })
+    // Seed the category picker: known category → select it; unknown/blank → treat as new
+    setCategoryChoice(item.category && existingCategories.includes(item.category) ? item.category : (item.category ? ADD_NEW_CATEGORY : ''))
+    setNewCategory(item.category && !existingCategories.includes(item.category) ? item.category : '')
     setItemDialog(true)
   }
 
   function openNewItem() {
     setEditingItem(null)
     setItemForm({ name: '', category: '', description: '', price: '', price_unit: 'per person', is_available: true, stock_limit: '' })
+    setCategoryChoice('')
+    setNewCategory('')
     setItemDialog(true)
   }
 
   async function saveItem() {
     if (!itemForm.name || !itemForm.price) return
+    // Resolve the chosen category (dropdown value, or the typed value when adding new)
+    const resolvedCategory = categoryChoice === ADD_NEW_CATEGORY ? newCategory.trim() : categoryChoice
     setSaving(true)
     const supabase = createClient()
     const data = {
       caterer_id: caterererId,
       name: itemForm.name,
-      category: itemForm.category || null,
+      category: resolvedCategory || null,
       description: itemForm.description || null,
       price: parseFloat(itemForm.price),
       price_unit: itemForm.price_unit,
@@ -103,6 +121,20 @@ export default function MenuEditor({ caterererId, initialItems, initialPackages 
     await supabase.from('packages').delete().eq('id', id)
     setPackages((prev) => prev.filter((p) => p.id !== id))
     toast({ title: 'Package deleted' })
+  }
+
+  async function togglePackageAvailability(pkg: any) {
+    const supabase = createClient()
+    await supabase.from('packages').update({ is_available: !pkg.is_available }).eq('id', pkg.id)
+    setPackages((prev) => prev.map((p) => p.id === pkg.id ? { ...p, is_available: !p.is_available } : p))
+  }
+
+  // Runs the actual delete once confirmed in the dialog
+  async function performConfirmedDelete() {
+    if (!confirmDelete) return
+    if (confirmDelete.type === 'item') await deleteItem(confirmDelete.id)
+    else await deletePackage(confirmDelete.id)
+    setConfirmDelete(null)
   }
 
   async function savePackage() {
@@ -173,7 +205,7 @@ export default function MenuEditor({ caterererId, initialItems, initialPackages 
                             </div>
                             {item.description && <p className="text-sm text-gray-500">{item.description}</p>}
                             <p className="text-sm font-medium text-gray-700">
-                              £{Number(item.price).toFixed(2)} {item.price_unit}
+                              £{Number(item.price).toFixed(2)} {formatPriceUnit(item.price_unit)}
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
@@ -185,7 +217,7 @@ export default function MenuEditor({ caterererId, initialItems, initialPackages 
                             <button onClick={() => openEditItem(item)} className="text-gray-400 hover:text-gray-700">
                               <Pencil className="h-4 w-4" />
                             </button>
-                            <button onClick={() => deleteItem(item.id)} className="text-gray-400 hover:text-red-500">
+                            <button onClick={() => setConfirmDelete({ type: 'item', id: item.id, name: item.name })} className="text-gray-400 hover:text-red-500">
                               <Trash2 className="h-4 w-4" />
                             </button>
                           </div>
@@ -215,12 +247,15 @@ export default function MenuEditor({ caterererId, initialItems, initialPackages 
                 <Card key={pkg.id}>
                   <CardContent className="pt-4">
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold text-gray-900">{pkg.name}</h3>
+                      <h3 className={`font-semibold ${pkg.is_available ? 'text-gray-900' : 'text-gray-400 line-through'}`}>{pkg.name}</h3>
                       <div className="flex gap-2">
+                        <button onClick={() => togglePackageAvailability(pkg)} title={pkg.is_available ? 'Deactivate (hide from public page)' : 'Activate'} className="text-gray-400 hover:text-gray-700">
+                          {pkg.is_available ? <ToggleRight className="h-5 w-5 text-green-500" /> : <ToggleLeft className="h-5 w-5" />}
+                        </button>
                         <button onClick={() => { setEditingPackage(pkg); setPkgForm({ name: pkg.name, description: pkg.description || '', price: String(pkg.price), min_guests: pkg.min_guests ? String(pkg.min_guests) : '', max_guests: pkg.max_guests ? String(pkg.max_guests) : '', is_available: pkg.is_available }); setPackageDialog(true) }}>
                           <Pencil className="h-4 w-4 text-gray-400 hover:text-gray-700" />
                         </button>
-                        <button onClick={() => deletePackage(pkg.id)} className="text-gray-400 hover:text-red-500">
+                        <button onClick={() => setConfirmDelete({ type: 'package', id: pkg.id, name: pkg.name })} className="text-gray-400 hover:text-red-500">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
@@ -253,7 +288,24 @@ export default function MenuEditor({ caterererId, initialItems, initialPackages 
             </div>
             <div>
               <Label>Category</Label>
-              <Input className="mt-1" value={itemForm.category} onChange={(e) => setItemForm({ ...itemForm, category: e.target.value })} placeholder="e.g. Main Dishes" />
+              <Select value={categoryChoice} onValueChange={setCategoryChoice}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Select a category" /></SelectTrigger>
+                <SelectContent>
+                  {existingCategories.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                  <SelectItem value={ADD_NEW_CATEGORY}>+ Add new category…</SelectItem>
+                </SelectContent>
+              </Select>
+              {categoryChoice === ADD_NEW_CATEGORY && (
+                <Input
+                  className="mt-2"
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                  placeholder="New category name (e.g. Main Dishes)"
+                  autoFocus
+                />
+              )}
             </div>
             <div>
               <Label>Description</Label>
@@ -271,6 +323,7 @@ export default function MenuEditor({ caterererId, initialItems, initialPackages 
                   <SelectContent>
                     <SelectItem value="per person">per person</SelectItem>
                     <SelectItem value="per item">per item</SelectItem>
+                    <SelectItem value="per meal">per meal</SelectItem>
                     <SelectItem value="flat">flat rate</SelectItem>
                   </SelectContent>
                 </Select>
@@ -332,6 +385,49 @@ export default function MenuEditor({ caterererId, initialItems, initialPackages 
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete confirmation */}
+      <Dialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete {confirmDelete?.type === 'package' ? 'package' : 'item'}?</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Are you sure you want to permanently delete <strong>{confirmDelete?.name}</strong>? This can't be undone.
+            </p>
+            <p className="text-sm text-gray-500">
+              Tip: to keep it but hide it from your public page, use the toggle to deactivate it instead — all its
+              details are retained.
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setConfirmDelete(null)}>Cancel</Button>
+              {confirmDelete && (
+                <Button
+                  onClick={() => { togglePackageOrItemDeactivate(confirmDelete) }}
+                  variant="outline"
+                >
+                  Deactivate instead
+                </Button>
+              )}
+              <Button onClick={performConfirmedDelete} className="bg-red-600 hover:bg-red-700 text-white">
+                Delete
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   )
+
+  function togglePackageOrItemDeactivate(target: { type: 'item' | 'package'; id: string }) {
+    if (target.type === 'item') {
+      const item = items.find((i) => i.id === target.id)
+      if (item && item.is_available) toggleItemAvailability(item)
+    } else {
+      const pkg = packages.find((p) => p.id === target.id)
+      if (pkg && pkg.is_available) togglePackageAvailability(pkg)
+    }
+    setConfirmDelete(null)
+  }
 }

@@ -6,6 +6,7 @@ import { ChevronDown, Phone, Mail, Share2, User, List } from 'lucide-react'
 import OrderButton from './order-button'
 import { CERTIFICATIONS } from './certification-badges'
 import SendMessageForm from './send-message-form'
+import { formatPriceUnit } from '@/lib/utils'
 
 interface LinkPageData {
   chips?: string[]
@@ -47,8 +48,8 @@ function LpMenuItem({ item, accent, off, muted, last }: { item: any; accent: str
       </div>
       <span style={{ fontFamily: 'Georgia, serif', fontSize: 15, color: accent, flexShrink: 0 }}>
         £{parseFloat(item.price).toFixed(2)}
-        {item.price_unit && item.price_unit !== 'flat' && (
-          <span style={{ fontSize: 10, color: muted }}> /{item.price_unit === 'per person' ? 'pp' : 'ea'}</span>
+        {formatPriceUnit(item.price_unit) && (
+          <span style={{ fontSize: 10, color: muted }}> {formatPriceUnit(item.price_unit)}</span>
         )}
       </span>
     </div>

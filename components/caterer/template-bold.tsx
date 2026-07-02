@@ -5,7 +5,7 @@ import StarRating from './star-rating'
 import OrderButton from './order-button'
 import CertificationBadges from './certification-badges'
 import SendMessageForm from './send-message-form'
-import { formatDate } from '@/lib/utils'
+import { formatDate, formatPriceUnit } from '@/lib/utils'
 
 interface Props {
   caterer: any
@@ -104,7 +104,7 @@ export default function CatererPageBold({ caterer, menuItems, packages, gallery,
                     {item.description && <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>}
                     <p className="font-black text-xl mt-2" style={{ color: primaryColor }}>
                       £{Number(item.price).toFixed(2)}
-                      <span className="text-sm font-normal text-gray-400"> /{item.price_unit}</span>
+                      {formatPriceUnit(item.price_unit) && <span className="text-sm font-normal text-gray-400"> {formatPriceUnit(item.price_unit)}</span>}
                     </p>
                   </div>
                 </div>

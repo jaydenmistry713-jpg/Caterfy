@@ -13,6 +13,26 @@ export function formatPrice(amount: number, currency: 'GBP' | 'USD' = 'GBP'): st
   }).format(amount)
 }
 
+// Human-readable suffix shown after a price on public pages.
+// 'flat' shows nothing (just the price); everything else is spelled out in full.
+export function formatPriceUnit(unit?: string | null): string {
+  switch (unit) {
+    case 'per person':
+      return 'per person'
+    case 'per item':
+      return 'per item'
+    case 'per meal':
+      return 'per meal'
+    case 'flat':
+    case '':
+    case null:
+    case undefined:
+      return ''
+    default:
+      return unit
+  }
+}
+
 export function formatDate(date: string | Date): string {
   const d = typeof date === 'string' ? new Date(date) : date
   return new Intl.DateTimeFormat('en-GB', {

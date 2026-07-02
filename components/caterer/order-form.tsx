@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { toast } from '@/lib/utils/use-toast'
-import { generateOrderReference } from '@/lib/utils'
+import { generateOrderReference, formatPriceUnit } from '@/lib/utils'
 import { CheckCircle, Tag, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
 
 interface OrderItem {
@@ -261,7 +261,7 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
                       <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-100">
                         <div>
                           <p className="font-medium text-sm">{item.name}</p>
-                          <p className="text-xs text-gray-500">£{Number(item.price).toFixed(2)} {item.price_unit}</p>
+                          <p className="text-xs text-gray-500">£{Number(item.price).toFixed(2)} {formatPriceUnit(item.price_unit)}</p>
                           {item.stock_limit != null && (
                             <p className="text-xs text-orange-500">{item.stock_limit - qty} remaining</p>
                           )}

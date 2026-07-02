@@ -217,6 +217,7 @@ const DATA = [
    { t:"Supabase Auth redirect URLs", s:["Supabase → Authentication → URL Configuration.","Site URL = deployed URL; redirect includes <code>/api/auth/callback</code>."], e:"URLs match the deployed domain." },
    { t:"✅ FIX: Migration 008 applied", s:["In Supabase SQL editor, run <code>supabase/migrations/008_bank_transfer_payment_method.sql</code>."], e:"orders_payment_method_check now allows 'bank_transfer'; public can SELECT blocked_dates (needed for the order form).", tag:"critical" },
    { t:"✅ FIX: ADMIN_PASSWORD env var set", s:["Add <code>ADMIN_PASSWORD=your-strong-password</code> to Netlify env vars (and .env.local for local testing).","Redeploy."], e:"Admin login works with that password; without it, the admin panel is locked and login returns a 'not configured' message.", tag:"critical" },
+   { t:"✅ FIX: Migration 009 applied (per meal)", s:["In Supabase SQL editor, run <code>supabase/migrations/009_price_unit_per_meal.sql</code>."], e:"menu_items_price_unit_check now allows 'per meal'.", },
   ]
  },
  {
@@ -294,6 +295,11 @@ const DATA = [
    { t:"Stock limit set & enforced", s:["Set <code>stock_limit</code> on an item.","On the order form, try to order more than the limit."], e:"'X remaining' shown; cannot exceed stock; NULL = unlimited.", tag:"critical" },
    { t:"Availability toggle", s:["Mark an item unavailable."], e:"Hidden/disabled on the public order form." },
    { t:"Category filter pills on order form", s:["Create items across 2+ categories.","Open the order form."], e:"Category pill filters appear (only when 2+ categories) and filter items." },
+   { t:"✅ FIX: Category is a dropdown + add-new", s:["Add/edit a menu item.","Open the Category field."], e:"Existing categories appear in a dropdown; '+ Add new category…' reveals a text box to name a new one. Prevents typos/duplicate categories.", },
+   { t:"✅ FIX: Delete asks for confirmation + offers deactivate", s:["Delete a menu item or package."], e:"A confirmation dialog appears with Cancel / 'Deactivate instead' / Delete. Deactivate hides it from the public page but keeps all its details.", },
+   { t:"✅ FIX: Packages can be deactivated", s:["On a package card, click the green toggle."], e:"Package is hidden from the public page (kept in the editor, struck through) — same as menu items.", },
+   { t:"✅ FIX: 'per meal' price unit", s:["Requires migration 009.","Add an item and pick price unit 'per meal'."], e:"Saves without error and shows '£X per meal' on the public page.", },
+   { t:"✅ FIX: Price unit wording on public pages", s:["View items priced 'per person', 'per item', 'per meal', and 'flat' on each template."], e:"Fully worded ('per person' not 'pp', 'per item' not 'ea'); 'flat' shows just the price with no unit word.", },
   ]
  },
  {

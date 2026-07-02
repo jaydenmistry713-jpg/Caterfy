@@ -518,6 +518,7 @@ Migrations live in `supabase/migrations/` and must be run manually in Supabase S
 - `006_business_mode_stock_limit.sql` — adds business_mode to caterers; adds stock_limit to menu_items
 - `007_bank_transfer.sql` — adds bank_transfer_details TEXT and show_bank_details_on_invoice BOOLEAN to caterers
 - `008_bank_transfer_payment_method.sql` — updates orders_payment_method_check to allow 'bank_transfer'; adds public SELECT policy on blocked_dates (so the order form can read them)
+- `009_price_unit_per_meal.sql` — updates menu_items_price_unit_check to allow 'per meal'
 
 ### Deleting a test account (SQL order)
 ```sql
