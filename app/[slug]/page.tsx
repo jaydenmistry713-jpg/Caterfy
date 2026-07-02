@@ -65,8 +65,22 @@ export default async function CatererPage({ params }: Props) {
 
   const template = caterer.page?.template || 'classic'
 
-  if (template === 'modern') return <CatererPageModern {...data} />
-  if (template === 'bold') return <CatererPageBold {...data} />
-  if (template === 'linkpage') return <CatererPageLinkPage {...data} />
-  return <CatererPageClassic {...data} />
+  // Load the caterer's selected Google Fonts so heading/body font choices actually render.
+  const fonts = Array.from(new Set([caterer.page?.heading_font, caterer.page?.body_font].filter(Boolean)))
+  const fontHref = fonts.length
+    ? `https://fonts.googleapis.com/css2?${fonts.map((f: string) => `family=${encodeURIComponent(f).replace(/%20/g, '+')}:wght@400;500;600;700`).join('&')}&display=swap`
+    : null
+
+  const page =
+    template === 'modern' ? <CatererPageModern {...data} /> :
+    template === 'bold' ? <CatererPageBold {...data} /> :
+    template === 'linkpage' ? <CatererPageLinkPage {...data} /> :
+    <CatererPageClassic {...data} />
+
+  return (
+    <>
+      {fontHref && <link rel="stylesheet" href={fontHref} />}
+      {page}
+    </>
+  )
 }

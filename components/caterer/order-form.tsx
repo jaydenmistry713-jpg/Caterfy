@@ -422,7 +422,16 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
               </div>
               <div>
                 <Label>Number of guests *</Label>
-                <Input className="mt-1" type="number" min="1" value={form.guest_count} onChange={(e) => setForm({ ...form, guest_count: e.target.value })} placeholder="Approx." />
+                <Input className="mt-1" type="number" min={caterer.min_catering_guests || 1} max={caterer.max_catering_guests || undefined} value={form.guest_count} onChange={(e) => setForm({ ...form, guest_count: e.target.value })} placeholder="Approx." />
+                {(caterer.min_catering_guests || caterer.max_catering_guests) && (
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {caterer.min_catering_guests && caterer.max_catering_guests
+                      ? `This caterer takes ${caterer.min_catering_guests}–${caterer.max_catering_guests} guests`
+                      : caterer.min_catering_guests
+                        ? `Minimum ${caterer.min_catering_guests} guests`
+                        : `Maximum ${caterer.max_catering_guests} guests`}
+                  </p>
+                )}
               </div>
               <div>
                 <Label>Event type *</Label>
@@ -452,7 +461,16 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
             <div className="flex justify-between">
               <div />
               <Button
-                onClick={() => setStep(2)}
+                onClick={() => {
+                  const g = parseInt(form.guest_count)
+                  if (caterer.min_catering_guests && g < caterer.min_catering_guests) {
+                    toast({ title: `Minimum ${caterer.min_catering_guests} guests`, description: 'Please increase your guest count.', variant: 'destructive' }); return
+                  }
+                  if (caterer.max_catering_guests && g > caterer.max_catering_guests) {
+                    toast({ title: `Maximum ${caterer.max_catering_guests} guests`, description: 'Please reduce your guest count or contact the caterer directly.', variant: 'destructive' }); return
+                  }
+                  setStep(2)
+                }}
                 disabled={!form.customer_name || !form.customer_email || !form.customer_phone || !form.event_date}
                 style={{ backgroundColor: accentColor }}
               >

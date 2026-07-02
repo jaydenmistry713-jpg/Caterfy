@@ -34,6 +34,8 @@ export default function SettingsForm({ caterererId, caterer, locations, cuisines
     location_id: caterer?.location_id || '',
     show_contact_publicly: caterer?.show_contact_publicly ?? true,
     business_mode: caterer?.business_mode || 'full',
+    min_catering_guests: caterer?.min_catering_guests ?? '',
+    max_catering_guests: caterer?.max_catering_guests ?? '',
   })
 
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>(
@@ -54,7 +56,12 @@ export default function SettingsForm({ caterererId, caterer, locations, cuisines
     setSaving(true)
     const supabase = createClient()
     try {
-      const { error } = await supabase.from('caterers').update(profile).eq('id', caterererId)
+      const payload = {
+        ...profile,
+        min_catering_guests: profile.min_catering_guests === '' ? null : Number(profile.min_catering_guests),
+        max_catering_guests: profile.max_catering_guests === '' ? null : Number(profile.max_catering_guests),
+      }
+      const { error } = await supabase.from('caterers').update(payload).eq('id', caterererId)
       if (error) throw error
 
       // Update cuisines
@@ -167,6 +174,23 @@ export default function SettingsForm({ caterererId, caterer, locations, cuisines
                 ))}
               </div>
             </div>
+
+            {profile.business_mode !== 'items_only' && (
+              <div>
+                <Label>Catering guest range (optional)</Label>
+                <p className="text-xs text-gray-500 mb-2">Limit the number of guests you'll take for catering quote requests. Leave blank for no limit.</p>
+                <div className="grid grid-cols-2 gap-4 max-w-xs">
+                  <div>
+                    <Label className="text-xs text-gray-500">Minimum</Label>
+                    <Input className="mt-1" type="number" min="1" placeholder="e.g. 10" value={profile.min_catering_guests} onChange={(e) => setProfile({ ...profile, min_catering_guests: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-500">Maximum</Label>
+                    <Input className="mt-1" type="number" min="1" placeholder="e.g. 200" value={profile.max_catering_guests} onChange={(e) => setProfile({ ...profile, max_catering_guests: e.target.value })} />
+                  </div>
+                </div>
+              </div>
+            )}
 
             <Button onClick={saveProfile} disabled={saving}>
               {saving ? 'Saving...' : 'Save Profile'}

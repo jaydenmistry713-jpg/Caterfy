@@ -6,7 +6,7 @@ import { GalleryImage } from '@/types'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from '@/lib/utils/use-toast'
-import { Upload, Trash2, ImageIcon } from 'lucide-react'
+import { Upload, Trash2, ImageIcon, ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface Props {
   caterererId: string
@@ -19,7 +19,21 @@ const MIN_IMAGES = 3
 export default function GalleryManager({ caterererId, initialImages }: Props) {
   const [images, setImages] = useState(initialImages)
   const [uploading, setUploading] = useState(false)
+  const [dragIndex, setDragIndex] = useState<number | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  // Reorder images and persist the new sort_order to the DB (used by drag-drop and the move buttons)
+  async function reorder(from: number, to: number) {
+    if (to < 0 || to >= images.length || from === to) return
+    const next = [...images]
+    const [moved] = next.splice(from, 1)
+    next.splice(to, 0, moved)
+    setImages(next)
+    const supabase = createClient()
+    await Promise.all(
+      next.map((img, i) => supabase.from('gallery_images').update({ sort_order: i }).eq('id', img.id))
+    )
+  }
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || [])
@@ -125,10 +139,20 @@ export default function GalleryManager({ caterererId, initialImages }: Props) {
           <p className="text-sm text-gray-400 mt-1">JPG, PNG, WebP up to 5MB each</p>
         </div>
       ) : (
+        <>
+        <p className="text-xs text-gray-400 mb-3">Drag photos to reorder, or use the arrows on each photo. The order here is the order shown on your public page.</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {images.map((image) => (
-            <div key={image.id} className="group relative">
-              <div className="relative aspect-square rounded-xl overflow-hidden bg-gray-100">
+          {images.map((image, index) => (
+            <div
+              key={image.id}
+              className={`group relative ${dragIndex === index ? 'opacity-50' : ''}`}
+              draggable
+              onDragStart={() => setDragIndex(index)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={() => { if (dragIndex !== null) reorder(dragIndex, index); setDragIndex(null) }}
+              onDragEnd={() => setDragIndex(null)}
+            >
+              <div className="relative aspect-square rounded-xl overflow-hidden bg-gray-100 cursor-move">
                 <Image
                   src={image.image_url}
                   alt={image.caption || 'Gallery photo'}
@@ -141,6 +165,25 @@ export default function GalleryManager({ caterererId, initialImages }: Props) {
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
+                {/* Move buttons — work on touch devices where drag is awkward */}
+                <div className="absolute bottom-2 inset-x-2 flex justify-between">
+                  <button
+                    onClick={() => reorder(index, index - 1)}
+                    disabled={index === 0}
+                    className="bg-black/60 text-white rounded-full p-1 disabled:opacity-0"
+                    aria-label="Move earlier"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={() => reorder(index, index + 1)}
+                    disabled={index === images.length - 1}
+                    className="bg-black/60 text-white rounded-full p-1 disabled:opacity-0"
+                    aria-label="Move later"
+                  >
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -154,6 +197,7 @@ export default function GalleryManager({ caterererId, initialImages }: Props) {
             </div>
           )}
         </div>
+        </>
       )}
     </div>
   )

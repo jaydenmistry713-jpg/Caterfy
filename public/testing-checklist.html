@@ -219,6 +219,7 @@ const DATA = [
    { t:"✅ FIX: ADMIN_PASSWORD env var set", s:["Add <code>ADMIN_PASSWORD=your-strong-password</code> to Netlify env vars (and .env.local for local testing).","Redeploy."], e:"Admin login works with that password; without it, the admin panel is locked and login returns a 'not configured' message.", tag:"critical" },
    { t:"✅ FIX: Migration 009 applied (per meal)", s:["In Supabase SQL editor, run <code>supabase/migrations/009_price_unit_per_meal.sql</code>."], e:"menu_items_price_unit_check now allows 'per meal'.", },
    { t:"✅ FIX: Migration 010 applied (popular package)", s:["In Supabase SQL editor, run <code>supabase/migrations/010_package_is_popular.sql</code>."], e:"packages.is_popular column exists.", },
+   { t:"✅ FIX: Migration 011 applied (catering guest range)", s:["In Supabase SQL editor, run <code>supabase/migrations/011_catering_guest_range.sql</code>."], e:"caterers.min_catering_guests and max_catering_guests columns exist.", },
   ]
  },
  {
@@ -319,6 +320,7 @@ const DATA = [
   items: [
    { t:"Upload gallery image", s:["/gallery → upload an image."], e:"Stored at <code>gallery/{catererId}/{timestamp}</code>; appears in grid." },
    { t:"Multiple images & ordering", s:["Upload several images; reorder if supported."], e:"Order persists and reflects on public page gallery." },
+   { t:"✅ FIX: Gallery reorder (drag + buttons)", s:["/gallery → drag a photo to a new spot (desktop), or use the ‹ › arrows (mobile).","Reload the page and the public gallery."], e:"New order persists (sort_order saved) and shows on the public page.", },
    { t:"Delete gallery image", s:["Delete an image."], e:"Removed from manager and public page." },
    { t:"Gallery renders per template", s:["View gallery on Classic (grid), Modern (masonry), Bold (carousel), Link Page (strip)."], e:"Each template's gallery layout renders correctly." },
   ]
@@ -360,6 +362,7 @@ const DATA = [
    { t:"✅ FIX: Quote builder wording + package tip", s:["Open the quote builder."], e:"Says 'Items' and 'Add item' (not 'line items'/'Add line'); a tip explains you can enter a single line with one price for the whole package.", },
    { t:"✅ FIX: Customer can accept a quote", s:["Send a quote.","As the customer, open the quote email → 'View & Accept Quote' → click 'Accept quote'."], e:"A clear Accept button appears on the status page; accepting sets the quote + order to accepted and explains the caterer will contact them for payment.", tag:"email" },
    { t:"✅ FIX: Accepted quote reflects in dashboard", s:["After the customer accepts, refresh /orders."], e:"The order moves to Active and shows a 'Quote accepted' badge; before acceptance it shows 'Quote sent · awaiting confirmation'.", },
+   { t:"✅ FIX: Min/max catering guest count", s:["Requires migration 011.","Settings → Business Profile → set catering guest range (e.g. 10–200), save.","On the quote form, enter guests outside the range."], e:"The range is shown as a hint under the guest field and enforced on Continue (blocked with a message when out of range).", },
   ]
  },
  {
@@ -403,6 +406,7 @@ const DATA = [
    { t:"Generate invoice from order", s:["Generate an invoice from an accepted/completed order."], e:"Line items pre-filled from the order." },
    { t:"Send invoice email", s:["Click send on an invoice."], e:"Customer receives invoice email; bank details included if configured.", tag:"email" },
    { t:"Mark invoice paid", s:["Mark an invoice as paid."], e:"status → paid; paid_at set." },
+   { t:"✅ FIX: 'Emailed' indicator on invoices", s:["Send an invoice, then look at its row."], e:"An 'Emailed {date}' badge appears and the button changes to 'Resend' — so you don't send twice.", tag:"email" },
   ]
  },
  {
@@ -557,7 +561,7 @@ const DATA = [
    { t:"Order reminder cron (24h/48h)", s:["Confirm whether the reminder/auto-cancel cron exists."], e:"Currently PENDING — log as not-built unless implemented." },
    { t:"Review request email (1 day after event)", s:["Confirm trigger existence."], e:"Currently PENDING." },
    { t:"Google Analytics tag in layout", s:["Set NEXT_PUBLIC_GA_MEASUREMENT_ID, load any page, check network for gtag/js."], e:"✅ DONE — GA gtag loads in the root layout when NEXT_PUBLIC_GA_MEASUREMENT_ID is set (via next/script)." },
-   { t:"Google Fonts via next/font", s:["Check if selected fonts actually load."], e:"Currently PENDING — fonts selected but not loaded." },
+   { t:"Google Fonts via next/font", s:["Pick distinctive heading/body fonts in the site editor, save, view your public page."], e:"✅ DONE — the public page loads the selected Google Fonts (via a fonts.googleapis.com stylesheet) so heading/body fonts render as chosen." },
    { t:"No-webhook card status (session verify)", s:["Check if success_url uses {CHECKOUT_SESSION_ID} + /api/orders/verify-payment, replacing the webhook case."], e:"Confirm whether the planned migration is done or still webhook-based.", tag:"payment" },
   ]
  },

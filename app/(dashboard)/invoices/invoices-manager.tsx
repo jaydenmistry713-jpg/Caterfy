@@ -131,6 +131,8 @@ export default function InvoicesManager({ caterererId, businessName, initialInvo
       const res = await fetch(`/api/invoices/${id}/send`, { method: 'POST' })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
+      // Record that it's been emailed so we can show a "Sent" indicator and avoid duplicate sends
+      setInvoices((prev) => prev.map((inv) => inv.id === id ? { ...inv, sent_at: new Date().toISOString() } as any : inv))
       toast({ title: 'Invoice sent!', description: 'Email delivered to customer.', variant: 'success' })
     } catch (err: any) {
       toast({ title: 'Failed to send', description: err.message, variant: 'destructive' })
@@ -171,6 +173,9 @@ export default function InvoicesManager({ caterererId, businessName, initialInvo
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-gray-900">{inv.invoice_number}</p>
                       <Badge variant={inv.status === 'paid' ? 'success' : 'warning'}>{inv.status}</Badge>
+                      {(inv as any).sent_at && (
+                        <Badge variant="info">Emailed {formatDate((inv as any).sent_at)}</Badge>
+                      )}
                     </div>
                     <p className="text-sm text-gray-500">{inv.customer_name} · £{Number(inv.total).toFixed(2)}</p>
                     {inv.due_date && <p className="text-xs text-gray-400">Due: {formatDate(inv.due_date)}</p>}
@@ -185,7 +190,7 @@ export default function InvoicesManager({ caterererId, businessName, initialInvo
                       {sendingId === inv.id
                         ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
                         : <Send className="h-3.5 w-3.5 mr-1" />}
-                      Send
+                      {(inv as any).sent_at ? 'Resend' : 'Send'}
                     </Button>
                     {inv.status === 'unpaid' && (
                       <Button size="sm" variant="outline" onClick={() => markPaid(inv.id)}>
