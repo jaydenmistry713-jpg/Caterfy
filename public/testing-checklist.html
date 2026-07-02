@@ -563,6 +563,11 @@ const DATA = [
    { t:"Google Analytics tag in layout", s:["Set NEXT_PUBLIC_GA_MEASUREMENT_ID, load any page, check network for gtag/js."], e:"✅ DONE — GA gtag loads in the root layout when NEXT_PUBLIC_GA_MEASUREMENT_ID is set (via next/script)." },
    { t:"Google Fonts via next/font", s:["Pick distinctive heading/body fonts in the site editor, save, view your public page."], e:"✅ DONE — the public page loads the selected Google Fonts (via a fonts.googleapis.com stylesheet) so heading/body fonts render as chosen." },
    { t:"No-webhook card status (session verify)", s:["Check if success_url uses {CHECKOUT_SESSION_ID} + /api/orders/verify-payment, replacing the webhook case."], e:"Confirm whether the planned migration is done or still webhook-based.", tag:"payment" },
+   { t:"🔲 TODO: Live preview in site editor", s:["Editor currently only shows changes after Save + reload."], e:"NOT BUILT — needs a live-rendering preview of the selected template as you edit. (Largest remaining item.)" },
+   { t:"🔲 TODO: Inline card checkout", s:["Card payments currently redirect to Stripe Checkout."], e:"NOT BUILT — take card payment on the order page via Stripe Embedded Checkout / Payment Element instead of redirecting.", tag:"payment" },
+   { t:"🔲 TODO: Move bank details to Payments page", s:["Bank-transfer details are still edited in Settings → Payments tab."], e:"NOT BUILT — relocate the bank-details editor onto the Payments page (Connect URL hint is already there)." },
+   { t:"🔲 TODO: Expanded admin actions", s:["Admin is password-protected + 'View site' works, but views are read-only."], e:"NOT BUILT — richer /mistuzzo management (edit/suspend caterers, view orders, change settings)." },
+   { t:"🔲 TODO: Order ↔ invoice paid cross-indicator", s:["Invoices show emailed/paid; orders don't reflect a related invoice's paid state."], e:"NOT BUILT — surface invoice paid state on the order row + seamless bank-transfer-order → invoice hand-off." },
   ]
  },
 ];

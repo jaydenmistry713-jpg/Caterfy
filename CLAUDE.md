@@ -468,8 +468,16 @@ All phases are implemented and the app builds successfully (Next.js 16, 37 route
 ### Pending / Not Yet Built
 - Order reminder cron (email caterer after 24hr, auto-cancel at 48hr)
 - Review request email trigger (1 day after event date)
-- Google Analytics wired up (env var exists, tag not added to layout yet)
-- Google Fonts loading (fonts selected in site editor but not loaded via next/font)
+- ~~Google Analytics~~ **DONE**: gtag loads in `app/layout.tsx` when `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set
+- ~~Google Fonts loading~~ **DONE**: `app/[slug]/page.tsx` injects a `fonts.googleapis.com` stylesheet for the caterer's selected heading/body fonts
+
+### QA follow-ups from tester feedback — STILL TO BUILD (surface in next checklist review)
+These are the larger items deliberately not yet built after the July 2026 tester-feedback fix waves. They are also listed in `public/testing-checklist.html` section 23 (Known Pending):
+1. **Live preview in the site editor** — render the selected template live as the caterer edits (currently changes only show after Save + reload). Largest item.
+2. **Inline card checkout** — take card payment on the order page (Stripe Embedded Checkout / Payment Element) instead of redirecting to Stripe Checkout.
+3. **Move bank-transfer details from Settings → Payments** — the bank-details editor still lives in Settings → Payments tab; the tester wants it on the Payments page (the Connect URL hint is already there).
+4. **Expanded admin actions** at `/mistuzzo` — admin is now password-protected and "View site" is fixed, but richer management (edit/suspend caterers, view orders, change settings) beyond read-only views isn't built.
+5. **Order ↔ invoice paid cross-indicator** — invoices show emailed/paid status, but an invoice's paid state is not surfaced back onto the related order row (and there's no seamless bank-transfer-order → invoice hand-off).
 - ~~**Card payment status update (no-webhook approach)**~~ **DONE (July 2026)**: Card orders now reconcile on the success redirect without needing a webhook.
   - `success_url` in `app/api/orders/route.ts` includes `&session_id={CHECKOUT_SESSION_ID}`
   - The `/order-status` page reconciles server-side when `session_id` is present (`reconcileCardPayment`): retrieves the Stripe session, and if `payment_status === 'paid'` sets the order `payment_status='paid'`, `status='accepted'` (auto-accept), `accepted_at`, `stripe_payment_intent_id`, then emails the customer the acceptance + review link once (guarded against duplicates by checking current `payment_status`)
