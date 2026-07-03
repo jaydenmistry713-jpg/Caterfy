@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { createClient } from '@/lib/supabase/client'
+import { deleteStoredImages, objectPathFromPublicUrl } from '@/lib/supabase/storage'
 import { toast } from '@/lib/utils/use-toast'
 import { GOOGLE_FONTS, validateSlug, slugify } from '@/lib/utils'
 import Link from 'next/link'
@@ -58,7 +59,8 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
     file: File,
     path: string,
     setUrl: (url: string) => void,
-    setLoading: (v: boolean) => void
+    setLoading: (v: boolean) => void,
+    currentUrl?: string
   ) {
     if (file.size > 5 * 1024 * 1024) {
       toast({ title: 'Image too large (max 5MB)', variant: 'destructive' })
@@ -77,6 +79,11 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
     const { data: { publicUrl } } = supabase.storage.from('caterer-images').getPublicUrl(fullPath)
     setUrl(publicUrl)
     setLoading(false)
+    // If we replaced an image that had a different file name (e.g. .png -> .jpg),
+    // the old object won't have been overwritten — delete it so it isn't orphaned.
+    if (currentUrl && objectPathFromPublicUrl(currentUrl) !== fullPath) {
+      deleteStoredImages([currentUrl])
+    }
     toast({ title: 'Image uploaded', variant: 'success' })
   }
 
@@ -180,6 +187,13 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
       }
       const { error: catErr } = await supabase.from('caterers').update(catererUpdate).eq('id', caterererId)
       if (catErr) throw catErr
+
+      // Clean up storage: if the saved hero/logo was removed or swapped out,
+      // delete the previously-saved file so it isn't left orphaned.
+      const orphaned: string[] = []
+      if (page?.hero_image_url && page.hero_image_url !== heroUrl) orphaned.push(page.hero_image_url)
+      if (page?.logo_url && page.logo_url !== logoUrl) orphaned.push(page.logo_url)
+      if (orphaned.length) deleteStoredImages(orphaned)
 
       toast({ title: 'Site saved!', variant: 'success' })
       setDirty(false)
@@ -368,7 +382,7 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
                     <Button type="button" variant="outline" size="sm" onClick={() => heroRef.current?.click()} disabled={uploadingHero}>
                       {uploadingHero ? 'Uploading...' : heroUrl ? 'Change image' : 'Upload image'}
                     </Button>
-                    <input ref={heroRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadImage(f, 'hero', setHeroUrl, setUploadingHero) }} />
+                    <input ref={heroRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadImage(f, 'hero', setHeroUrl, setUploadingHero, heroUrl) }} />
                   </div>
                 </div>
 
@@ -392,7 +406,7 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
                     <Button type="button" variant="outline" size="sm" onClick={() => logoRef.current?.click()} disabled={uploadingLogo}>
                       {uploadingLogo ? 'Uploading...' : logoUrl ? 'Change logo' : 'Upload logo'}
                     </Button>
-                    <input ref={logoRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadImage(f, 'logos', setLogoUrl, setUploadingLogo) }} />
+                    <input ref={logoRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadImage(f, 'logos', setLogoUrl, setUploadingLogo, logoUrl) }} />
                   </div>
                 </div>
 

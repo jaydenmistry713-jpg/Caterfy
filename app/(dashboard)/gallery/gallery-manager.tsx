@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { GalleryImage } from '@/types'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
+import { deleteStoredImages } from '@/lib/supabase/storage'
 import { toast } from '@/lib/utils/use-toast'
 import { Upload, Trash2, ImageIcon, ChevronLeft, ChevronRight } from 'lucide-react'
 
@@ -99,6 +100,8 @@ export default function GalleryManager({ caterererId, initialImages }: Props) {
 
     const supabase = createClient()
     await supabase.from('gallery_images').delete().eq('id', image.id)
+    // Also remove the underlying file from storage so it isn't orphaned
+    deleteStoredImages([image.image_url])
     setImages((prev) => prev.filter((i) => i.id !== image.id))
     toast({ title: 'Photo deleted' })
   }

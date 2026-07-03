@@ -465,6 +465,7 @@ All phases are implemented and the app builds successfully (Next.js 16, 37 route
 - Site editor Save Changes button only active when unsaved changes exist; resets after successful save
 - Dashboard performance: `getUser()` in `lib/supabase/server.ts` is wrapped with React `cache()` so `auth.getUser()` fires once per request even though layout and page both call it; all dashboard pages use this cached helper instead of calling `supabase.auth.getUser()` directly
 - App-wide brand theme (July 2026): the homepage's fonts + warm colour palette are applied across dashboard, auth, admin, directory and customer utility pages via a global `.app-theme` class + themed `ui/*` primitives, keeping each page's layout intact; caterer public `/[slug]` pages are excluded (keep their own branding). See "App Theme (brand skin)" section below
+- Storage cleanup on image delete (July 2026): deleting a gallery photo, or removing/replacing a hero image or logo in the site editor, now also deletes the underlying file from the `caterer-images` bucket so nothing is left orphaned. Deletion goes through `POST /api/images/delete` (service role via the Storage API — direct SQL deletes from `storage.objects` are blocked by Supabase's `protect_delete` trigger); the route only removes objects under the signed-in caterer's own prefixes (`hero/{id}.*`, `logos/{id}.*`, `gallery/{id}/*`). Helpers live in `lib/supabase/storage.ts` (`objectPathFromPublicUrl`, `deleteStoredImages`)
 
 ### Pending / Not Yet Built
 - Order reminder cron (email caterer after 24hr, auto-cancel at 48hr)
@@ -532,20 +533,25 @@ Migrations live in `supabase/migrations/` and must be run manually in Supabase S
 - `011_catering_guest_range.sql` — adds min_catering_guests / max_catering_guests to caterers (quote guest range)
 
 ### Deleting a test account (SQL order)
+Delete order-referencing children (`quotes`, `reviews`, `invoices`) BEFORE `orders`, and the `caterers` row LAST. The caterer id == the auth user id.
 ```sql
-DELETE FROM orders WHERE caterer_id = '[user-id]';
-DELETE FROM caterer_cuisines WHERE caterer_id = '[user-id]';
-DELETE FROM caterer_event_types WHERE caterer_id = '[user-id]';
+DELETE FROM quotes                  WHERE caterer_id = '[user-id]';
+DELETE FROM reviews                 WHERE caterer_id = '[user-id]';
+DELETE FROM invoices                WHERE caterer_id = '[user-id]';
+DELETE FROM orders                  WHERE caterer_id = '[user-id]';
+DELETE FROM menu_items              WHERE caterer_id = '[user-id]';
+DELETE FROM packages                WHERE caterer_id = '[user-id]';
+DELETE FROM gallery_images          WHERE caterer_id = '[user-id]';
+DELETE FROM blocked_dates           WHERE caterer_id = '[user-id]';
+DELETE FROM discount_codes          WHERE caterer_id = '[user-id]';
+DELETE FROM caterer_cuisines        WHERE caterer_id = '[user-id]';
+DELETE FROM caterer_event_types     WHERE caterer_id = '[user-id]';
 DELETE FROM caterer_dietary_options WHERE caterer_id = '[user-id]';
-DELETE FROM caterer_pages WHERE caterer_id = '[user-id]';
-DELETE FROM gallery_images WHERE caterer_id = '[user-id]';
-DELETE FROM menu_items WHERE caterer_id = '[user-id]';
-DELETE FROM blocked_dates WHERE caterer_id = '[user-id]';
-DELETE FROM invoices WHERE caterer_id = '[user-id]';
-DELETE FROM discount_codes WHERE caterer_id = '[user-id]';
-DELETE FROM caterers WHERE id = '[user-id]';
+DELETE FROM caterer_pages           WHERE caterer_id = '[user-id]';
+DELETE FROM caterers                WHERE id         = '[user-id]';
 -- Then delete from Supabase Authentication → Users
 ```
+**Storage is NOT cleaned by the SQL above** — direct deletes from `storage.objects` are blocked by Supabase's `protect_delete` trigger. Remove the account's files (`hero/{user-id}.*`, `logos/{user-id}.*`, `gallery/{user-id}/*`) in **Storage → caterer-images** in the dashboard (multi-select → delete), or via the Storage API with the service role. (In-app image deletes are handled automatically — see the "Storage cleanup on image delete" completed note.)
 
 ## Coding Standards
 
