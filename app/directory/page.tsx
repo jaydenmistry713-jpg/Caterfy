@@ -72,15 +72,15 @@ export default async function DirectoryPage({
   const { data: locations } = await supabase.from('locations').select('id, name, slug').order('name')
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200 py-8 px-4">
+    <div className="app-theme min-h-screen">
+      <div className="bg-[color:var(--surface)] border-b border-[color:var(--border-light)] py-8 px-4">
         <div className="max-w-7xl mx-auto">
-          <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 mb-4">
+          <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-[color:var(--ink-soft)] hover:text-[color:var(--ink)] mb-4">
             <ArrowLeft className="h-4 w-4" />
             Back to home
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Find a Caterer</h1>
-          <p className="text-gray-500">Browse {caterers?.length || 0} caterers on Caterfy</p>
+          <h1 className="text-3xl font-bold text-[color:var(--ink)] mb-2">Find a Caterer</h1>
+          <p className="text-[color:var(--ink-soft)]">Browse {caterers?.length || 0} caterers on Caterfy</p>
         </div>
       </div>
 

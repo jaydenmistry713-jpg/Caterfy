@@ -15,7 +15,7 @@ export default function CatererCard({ caterer }: Props) {
   return (
     <Link
       href={`/${caterer.slug}`}
-      className="group bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-md transition-shadow"
+      className="group bg-[color:var(--surface)] rounded-xl overflow-hidden border border-[color:var(--border-light)] hover:shadow-md transition-shadow"
     >
       <div className="relative aspect-[16/9] bg-gray-100">
         {page?.hero_image_url ? (
@@ -32,13 +32,13 @@ export default function CatererCard({ caterer }: Props) {
         )}
       </div>
       <div className="p-4">
-        <h3 className="font-semibold text-gray-900 text-lg mb-1 truncate">{caterer.business_name}</h3>
+        <h3 className="font-semibold text-[color:var(--ink)] text-lg mb-1 truncate">{caterer.business_name}</h3>
 
         {page?.tagline && (
-          <p className="text-sm text-gray-500 mb-2 line-clamp-1">{page.tagline}</p>
+          <p className="text-sm text-[color:var(--ink-soft)] mb-2 line-clamp-1">{page.tagline}</p>
         )}
 
-        <div className="flex items-center gap-3 text-sm text-gray-500">
+        <div className="flex items-center gap-3 text-sm text-[color:var(--ink-soft)]">
           {location && (
             <span className="flex items-center gap-1">
               <MapPin className="h-3.5 w-3.5" />
@@ -57,7 +57,7 @@ export default function CatererCard({ caterer }: Props) {
         {cuisines.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
             {cuisines.slice(0, 3).map((c: string) => (
-              <span key={c} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+              <span key={c} className="text-xs bg-[color:var(--cream-2)] text-[color:var(--ink-soft)] px-2 py-0.5 rounded-full">
                 {c}
               </span>
             ))}

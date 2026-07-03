@@ -464,6 +464,7 @@ All phases are implemented and the app builds successfully (Next.js 16, 37 route
 - Bank transfer payment option: caterer enters account details in Settings → Payments; shown to customers at checkout on fixed orders; bank details shown on order confirmation and optionally auto-included on invoice emails (toggle in Settings → Payments)
 - Site editor Save Changes button only active when unsaved changes exist; resets after successful save
 - Dashboard performance: `getUser()` in `lib/supabase/server.ts` is wrapped with React `cache()` so `auth.getUser()` fires once per request even though layout and page both call it; all dashboard pages use this cached helper instead of calling `supabase.auth.getUser()` directly
+- App-wide brand theme (July 2026): the homepage's fonts + warm colour palette are applied across dashboard, auth, admin, directory and customer utility pages via a global `.app-theme` class + themed `ui/*` primitives, keeping each page's layout intact; caterer public `/[slug]` pages are excluded (keep their own branding). See "App Theme (brand skin)" section below
 
 ### Pending / Not Yet Built
 - Order reminder cron (email caterer after 24hr, auto-cancel at 48hr)
@@ -619,7 +620,7 @@ The homepage (`app/(marketing)/page.tsx`) is a caterer-first marketing page (red
 
 **Design system** (scoped under `.mk-root` in `app/(marketing)/marketing.css`, applied by the marketing layout so it also reskins nav/footer on `/faq`, `/terms`, etc.):
 - Tokens: `--basil #182A20` (dark green), `--cream #F7F2E7` (page bg), `--cream-2 #EFE7D6`, `--marigold #E8A33D` (primary accent), `--marigold-deep #C9852A`, `--tomato #D25B43` (used very sparingly), `--ink #22261F`, `--ink-soft #5B6156`
-- Fonts via `next/font/google` in `app/(marketing)/layout.tsx`: Young Serif (display), Figtree (body), IBM Plex Mono (eyebrows/micro-copy) — marketing pages only
+- Fonts via `next/font/google` are loaded **globally in `app/layout.tsx`** (root) and exposed as CSS variables (`--font-young-serif`, `--font-figtree`, `--font-plex-mono`): Young Serif (display), Figtree (body), IBM Plex Mono (eyebrows/micro-copy). Figtree is the app-wide `body` font; `.mk-root` and `.app-theme` consume these variables. (Previously marketing-only; now shared with the whole app — see "App Theme (brand skin)" below.)
 - Pill buttons (`.mk-btn` + gold/basil/ghost variants), 14px-radius cards, mono uppercase eyebrows with 22px rule, alternating cream/basil sections, lucide icons at strokeWidth 1.7
 
 **Page sections**: sticky blur nav → hero (two-col, live editor demo right) → basil trust-strip marquee (fictional caterer names) → features grid (wide Site Editor card + 10 cards using real dashboard terminology) → "How it works" 01/02/03 on basil → pricing (single real £10/mo plan, count-up stats) → testimonial (illustrative, fictional) → basil final-CTA panel with animated SVG steam lines → single-row footer.
@@ -627,6 +628,17 @@ The homepage (`app/(marketing)/page.tsx`) is a caterer-first marketing page (red
 **Hero editor demo** (`components/marketing/hero-demo.tsx`, client): fake browser window with a mini caterer site ("The Willow Pantry"). Swatches switch between the 4 real templates (Classic/Modern/Bold/Link Page, accents from the editor's real preset palette) via CSS custom properties with 0.45s transitions; the business-name input live-updates the mini-site name and the URL-bar slug (uses `slugify` from `lib/utils`).
 
 **Motion**: staggered hero entrance (`.mk-enter-*`), IntersectionObserver scroll reveals (`components/marketing/reveal.tsx`, unobserves after firing), count-up stats (`components/marketing/count-up.tsx`), CSS marquee (pauses on hover), steam-line dash animation — all gated behind `prefers-reduced-motion` (reduced-motion users get static content).
+
+## App Theme (brand skin)
+
+The homepage's warm brand look (fonts + colours) is applied across the rest of the app — dashboard, auth, admin, directory, and customer utility pages (`/order-status`, `/review`) — **while keeping each page's existing layout/format** (only fonts + colours change). Caterer public pages (`/[slug]`) are deliberately **excluded** so they keep each caterer's own branding.
+
+**How it works:**
+- **Global fonts + tokens**: the three brand fonts load once in `app/layout.tsx` (root) as CSS variables; the brand colour tokens (`--basil`, `--cream`, `--surface #FDFAF2`, `--marigold`, `--ink`, `--ink-soft`, `--border-light`, etc.) live in `:root` in `app/globals.css`, so they're usable app-wide. `body` font is Figtree.
+- **`.app-theme` opt-in class** (defined in `app/globals.css`): wrap a route's root element in it to get the warm cream page background, ink text colour, and **Young Serif headings** (`h1/h2/h3` + `.font-display`). Applied on: `app/(dashboard)/layout.tsx`, `app/(auth)/layout.tsx`, the directory pages, `app/(admin)/mistuzzo/*`, and via thin `layout.tsx` wrappers for `app/order-status` and `app/review` (which have multiple render branches).
+- **Themed shared primitives** (`components/ui/*`): `Button` (default = basil/cream, warm outline/secondary/ghost), `Card` (surface bg + border-light + ink title), `Input`/`Textarea`/`Select` (border-light + basil focus ring), `Tabs` (cream-2 list, surface active). These reference the global tokens, so they carry the theme everywhere. The caterer public order form (`components/caterer/order-form.tsx`) uses these too but its primary buttons pass explicit `accentColor` inline styles, so only neutral input borders/focus shift warm there.
+- **Dashboard chrome**: `components/dashboard/sidebar.tsx` + `topbar.tsx` use a surface bg, `--basil` active nav state (was black), and a Young Serif "Caterfy" wordmark.
+- **Rule of thumb for new app pages**: add `app-theme` to the page/layout root and prefer the shared `ui/*` primitives + token vars (`var(--ink)`, `var(--ink-soft)`, `var(--surface)`, `var(--border-light)`) over hardcoded `gray-*`. Never wrap `/[slug]` caterer pages in `.app-theme`.
 
 ## Templates
 

@@ -31,11 +31,11 @@ export default function DashboardSidebar({ caterer }: Props) {
   const pathname = usePathname()
 
   return (
-    <aside className="hidden lg:flex w-64 flex-col bg-white border-r border-gray-200 min-h-screen sticky top-0">
-      <div className="p-6 border-b border-gray-200">
-        <Link href="/" className="text-xl font-bold text-gray-900">Caterfy</Link>
+    <aside className="hidden lg:flex w-64 flex-col bg-[color:var(--surface)] border-r border-[color:var(--border-light)] min-h-screen sticky top-0">
+      <div className="p-6 border-b border-[color:var(--border-light)]">
+        <Link href="/" className="font-display text-2xl text-[color:var(--basil)]">Caterfy</Link>
         {caterer && (
-          <p className="text-sm text-gray-500 mt-1 truncate">{caterer.business_name}</p>
+          <p className="text-sm text-[color:var(--ink-soft)] mt-1 truncate">{caterer.business_name}</p>
         )}
       </div>
 
@@ -49,8 +49,8 @@ export default function DashboardSidebar({ caterer }: Props) {
               className={cn(
                 'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
                 active
-                  ? 'bg-gray-900 text-white'
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'bg-[color:var(--basil)] text-[color:var(--cream)]'
+                  : 'text-[color:var(--ink-soft)] hover:bg-[color:var(--cream-2)] hover:text-[color:var(--ink)]'
               )}
             >
               <item.icon className="h-4 w-4 flex-shrink-0" />
@@ -61,11 +61,11 @@ export default function DashboardSidebar({ caterer }: Props) {
       </nav>
 
       {caterer?.slug && (
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-[color:var(--border-light)]">
           <Link
             href={`/${caterer.slug}`}
             target="_blank"
-            className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
+            className="flex items-center gap-2 text-sm text-[color:var(--ink-soft)] hover:text-[color:var(--ink)] transition-colors"
           >
             <ExternalLink className="h-4 w-4" />
             View my site

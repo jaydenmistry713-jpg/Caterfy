@@ -43,22 +43,22 @@ export default function DashboardTopbar({ caterer }: Props) {
 
   return (
     <>
-      <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4 flex items-center justify-between sticky top-0 z-30">
+      <header className="bg-[color:var(--surface)] border-b border-[color:var(--border-light)] px-4 sm:px-6 py-4 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center gap-3">
           <button
-            className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+            className="lg:hidden p-1.5 rounded-lg hover:bg-[color:var(--cream-2)] transition-colors"
             onClick={() => setMobileOpen(true)}
             aria-label="Open menu"
           >
-            <Menu className="h-5 w-5 text-gray-700" />
+            <Menu className="h-5 w-5 text-[color:var(--ink)]" />
           </button>
-          <div className="lg:hidden font-bold text-lg text-gray-900">Caterfy</div>
+          <div className="lg:hidden font-display text-xl text-[color:var(--basil)]">Caterfy</div>
         </div>
         <div className="hidden lg:block" />
 
         <div className="flex items-center gap-3">
           {caterer && (
-            <span className="hidden sm:block text-sm text-gray-500">{caterer.email}</span>
+            <span className="hidden sm:block text-sm text-[color:var(--ink-soft)]">{caterer.email}</span>
           )}
           <Button variant="ghost" size="icon" onClick={handleLogout} title="Log out">
             <LogOut className="h-4 w-4" />
@@ -70,16 +70,16 @@ export default function DashboardTopbar({ caterer }: Props) {
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute left-0 top-0 h-full w-72 bg-white flex flex-col shadow-xl">
-            <div className="p-5 border-b border-gray-200 flex items-center justify-between">
+          <aside className="absolute left-0 top-0 h-full w-72 bg-[color:var(--surface)] flex flex-col shadow-xl">
+            <div className="p-5 border-b border-[color:var(--border-light)] flex items-center justify-between">
               <div>
-                <p className="font-bold text-lg text-gray-900">Caterfy</p>
+                <p className="font-display text-xl text-[color:var(--basil)]">Caterfy</p>
                 {caterer?.business_name && (
-                  <p className="text-sm text-gray-500 truncate">{caterer.business_name}</p>
+                  <p className="text-sm text-[color:var(--ink-soft)] truncate">{caterer.business_name}</p>
                 )}
               </div>
-              <button onClick={() => setMobileOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-100">
-                <X className="h-5 w-5 text-gray-600" />
+              <button onClick={() => setMobileOpen(false)} className="p-1.5 rounded-lg hover:bg-[color:var(--cream-2)]">
+                <X className="h-5 w-5 text-[color:var(--ink-soft)]" />
               </button>
             </div>
 
@@ -93,7 +93,7 @@ export default function DashboardTopbar({ caterer }: Props) {
                     onClick={() => setMobileOpen(false)}
                     className={cn(
                       'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors',
-                      active ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                      active ? 'bg-[color:var(--basil)] text-[color:var(--cream)]' : 'text-[color:var(--ink-soft)] hover:bg-[color:var(--cream-2)] hover:text-[color:var(--ink)]'
                     )}
                   >
                     <item.icon className="h-4 w-4 flex-shrink-0" />
@@ -104,12 +104,12 @@ export default function DashboardTopbar({ caterer }: Props) {
             </nav>
 
             {caterer?.slug && (
-              <div className="p-4 border-t border-gray-200">
+              <div className="p-4 border-t border-[color:var(--border-light)]">
                 <Link
                   href={`/${caterer.slug}`}
                   target="_blank"
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
+                  className="flex items-center gap-2 text-sm text-[color:var(--ink-soft)] hover:text-[color:var(--ink)] transition-colors"
                 >
                   <ExternalLink className="h-4 w-4" />
                   View my site

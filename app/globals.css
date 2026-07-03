@@ -3,12 +3,25 @@
 :root {
   --background: #ffffff;
   --foreground: #111827;
+
+  /* Caterfy brand theme (shared with the marketing design system) */
+  --basil: #182A20;
+  --basil-2: #20362A;
+  --cream: #F7F2E7;
+  --cream-2: #EFE7D6;
+  --surface: #FDFAF2;
+  --marigold: #E8A33D;
+  --marigold-deep: #C9852A;
+  --tomato: #D25B43;
+  --ink: #22261F;
+  --ink-soft: #5B6156;
+  --border-light: rgba(34, 38, 31, 0.14);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-figtree), system-ui, -apple-system, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -18,8 +31,35 @@ body {
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #f1f1f1; }
-::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+::-webkit-scrollbar-track { background: var(--cream-2); }
+::-webkit-scrollbar-thumb { background: rgba(34, 38, 31, 0.22); border-radius: 3px; }
 
 /* Star rating */
 .star-rating { color: #f59e0b; }
+
+/* ============================================================
+   App theme — warm brand skin for the dashboard, auth, admin,
+   directory and customer utility pages (NOT caterer public
+   pages, which keep each caterer's own branding).
+   Wrap a route's root element in `.app-theme` to opt in.
+   Keeps existing layout/format; only applies fonts + colours.
+   ============================================================ */
+.app-theme {
+  background: var(--cream);
+  color: var(--ink);
+}
+
+/* Display font for headings — matches the marketing homepage */
+.app-theme h1,
+.app-theme h2,
+.app-theme h3,
+.app-theme .font-display {
+  font-family: var(--font-young-serif), Georgia, "Times New Roman", serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+/* Mono eyebrow/caption helper, available inside the app shell */
+.app-theme .font-mono-brand {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+}

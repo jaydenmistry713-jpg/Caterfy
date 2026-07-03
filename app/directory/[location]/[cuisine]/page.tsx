@@ -52,14 +52,14 @@ export default async function LocationCuisineDirectoryPage({ params }: Props) {
   const cuisineName = cuisineData.data?.name || cuisine.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200 py-8 px-4">
+    <div className="app-theme min-h-screen">
+      <div className="bg-[color:var(--surface)] border-b border-[color:var(--border-light)] py-8 px-4">
         <div className="max-w-7xl mx-auto">
-          <Link href={`/directory/${location}`} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 mb-3">
+          <Link href={`/directory/${location}`} className="flex items-center gap-1 text-sm text-[color:var(--ink-soft)] hover:text-[color:var(--ink)] mb-3">
             <ChevronLeft className="h-4 w-4" />Caterers in {locationName}
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900 mb-1">{cuisineName} Caterers in {locationName}</h1>
-          <p className="text-gray-500">{caterers?.length || 0} caterers found</p>
+          <h1 className="text-3xl font-bold text-[color:var(--ink)] mb-1">{cuisineName} Caterers in {locationName}</h1>
+          <p className="text-[color:var(--ink-soft)]">{caterers?.length || 0} caterers found</p>
         </div>
       </div>
 
