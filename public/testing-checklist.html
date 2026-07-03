@@ -220,6 +220,7 @@ const DATA = [
    { t:"✅ FIX: Migration 009 applied (per meal)", s:["In Supabase SQL editor, run <code>supabase/migrations/009_price_unit_per_meal.sql</code>."], e:"menu_items_price_unit_check now allows 'per meal'.", },
    { t:"✅ FIX: Migration 010 applied (popular package)", s:["In Supabase SQL editor, run <code>supabase/migrations/010_package_is_popular.sql</code>."], e:"packages.is_popular column exists.", },
    { t:"✅ FIX: Migration 011 applied (catering guest range)", s:["In Supabase SQL editor, run <code>supabase/migrations/011_catering_guest_range.sql</code>."], e:"caterers.min_catering_guests and max_catering_guests columns exist.", },
+   { t:"ℹ️ NOTE: Create a SECOND caterer account before testing", s:["Sign up a second caterer with its own slug, location and cuisine.","Last round several checks were blocked with 'can't test, only one caterer account'."], e:"With 2+ caterers you can now test: duplicate-slug rejection (§3), directory location/cuisine filtering (§17), distance calc (§17), and unpublished-caterer exclusion (§17)." },
   ]
  },
  {
@@ -248,6 +249,7 @@ const DATA = [
    { t:"Site-editor wizard on first visit", s:["Open /site-editor for the first time.","Step through template → accent colour → tagline → URL.","Click Publish."], e:"Slug + page settings saved; slug written to caterers table.", tag:"critical" },
    { t:"Post-onboarding nudge to Content tab", s:["After publishing, observe the auto-switch to Content tab."], e:"Lands on Content tab with a nudge banner to add hero image + about text." },
    { t:"Hero image field has plain-language help", s:["In the Content tab, read the hero image description."], e:"Clear explanation of what the hero image is." },
+   { t:"ℹ️ NOTE: Onboarding only asks for accent colour (by design)", s:["Note the wizard asks for template → accent → tagline → URL only.","Last round: 'it doesn't ask for other colours like primary/secondary/background'."], e:"EXPECTED — onboarding is a fast start; the full palette (primary/secondary/background) is edited in Site Editor → Branding. Seeing what each colour does is tracked separately as '🔲 TODO: Live preview in site editor' (§23)." },
   ]
  },
  {
@@ -274,6 +276,7 @@ const DATA = [
    { t:"✅ FIX: Font previews", s:["Branding tab → change heading/body font."], e:"Each dropdown option and a sample line render in that font (once Google Fonts load, see pending).", },
    { t:"✅ FIX: Modern hero darkening control", s:["Modern template + hero image → Content tab → 'Hero image darkening' slider → save."], e:"The overlay over the hero image lightens/darkens with the slider so the photo is more visible.", },
    { t:"✅ FIX: Sticky order bar toggle", s:["Content tab (non-Link-Page) → enable 'Sticky order bar' → save → view public page on mobile width."], e:"A fixed bottom bar with 'Order now' (scrolls to order) + 'Call' appears on Classic/Modern/Bold.", },
+   { t:"ℹ️ NOTE: Slug auto-formats (spaces stripped, lowercased)", s:["In the URL field, type spaces and CAPS (even with caps lock on)."], e:"EXPECTED — the slug input strips spaces and forces lowercase live, because slugs must be lowercase, hyphenated and space-free. This is correct behaviour, not a bug." },
   ]
  },
  {
@@ -396,6 +399,7 @@ const DATA = [
    { t:"Cancellation", s:["Cancel the subscription via portal."], e:"subscription_status → cancelled; subscription_ends_at set; data preserved." },
    { t:"✅ FIX: subscription_ends_at populated on cancel", s:["Cancel via the billing portal.","Check <code>caterers.subscription_ends_at</code> in the DB."], e:"subscription_ends_at is a real date (not null) — read from the subscription's period end / cancel date, including the subscription.deleted event.", tag:"payment" },
    { t:"✅ FIX: Dashboard subscription link is clearer", s:["On the dashboard trial banner, click 'Set up your subscription'."], e:"Goes straight to Settings → Subscription tab (via ?tab=subscription), not the generic profile page.", },
+   { t:"ℹ️ NOTE: No subscription invoice email in test mode", s:["After subscribing, you may not receive a billing invoice email.","Last round: 'didn't receive any subscription invoice'."], e:"EXPECTED in Test Mode — Stripe subscription invoices are emailed by Stripe (enable them in Stripe → Settings → Billing → 'Email finalized invoices'), and Resend sandbox (onboarding@resend.dev) only delivers to the account owner. Verify a domain / configure Stripe invoice emails before launch." },
   ]
  },
  {
@@ -484,6 +488,7 @@ const DATA = [
    { t:"✅ FIX: Location filter in sidebar", s:["Use the new Location dropdown, pick a city, Apply."], e:"Only caterers in that location are shown (via ?location=slug).", },
    { t:"✅ FIX: Apply button shows loading", s:["Click Apply Filters."], e:"Button shows 'Applying…' with a spinner during navigation, so it's clear the click registered.", },
    { t:"✅ FIX: Back-to-home on directory", s:["Open /directory."], e:"A 'Back to home' link appears above the heading and returns to /.", },
+   { t:"ℹ️ NOTE: Homepage has no search (by design, for now)", s:["The 'Homepage directory search' check above assumes a search box on the homepage."], e:"EXPECTED — the July 2026 homepage redesign removed the search strip; the directory is reached via nav/footer links to /directory. Re-adding homepage search is a future decision the tester flagged for a later round — treat the 'Homepage directory search' item as N/A until then." },
   ]
  },
  {
@@ -525,6 +530,7 @@ const DATA = [
    { t:"Cross-browser smoke", s:["Open the app in Chrome, Safari, and Firefox."], e:"Core flows work in each." },
    { t:"Loading skeleton", s:["Navigate between dashboard pages."], e:"Suspense loading skeleton (app/(dashboard)/loading.tsx) shows during transitions." },
    { t:"✅ FIX: No iOS zoom on form focus", s:["On an iPhone (Safari), tap into the order/quote form fields."], e:"The page no longer auto-zooms — inputs/textarea/selects render at 16px on mobile (text-base sm:text-sm).", },
+   { t:"ℹ️ NOTE: Loading skeleton also shows on desktop", s:["On a desktop browser, navigate between dashboard pages (e.g. Orders → Menu → Settings).","Last round: 'want a similar thing on desktop as well'."], e:"EXPECTED/ALREADY WORKS — app/(dashboard)/loading.tsx is viewport-agnostic and renders during Suspense transitions on desktop too, not just mobile. Confirm it appears on desktop navigation." },
   ]
  },
  {
@@ -568,6 +574,8 @@ const DATA = [
    { t:"🔲 TODO: Move bank details to Payments page", s:["Bank-transfer details are still edited in Settings → Payments tab."], e:"NOT BUILT — relocate the bank-details editor onto the Payments page (Connect URL hint is already there)." },
    { t:"🔲 TODO: Expanded admin actions", s:["Admin is password-protected + 'View site' works, but views are read-only."], e:"NOT BUILT — richer /mistuzzo management (edit/suspend caterers, view orders, change settings)." },
    { t:"🔲 TODO: Order ↔ invoice paid cross-indicator", s:["Invoices show emailed/paid; orders don't reflect a related invoice's paid state."], e:"NOT BUILT — surface invoice paid state on the order row + seamless bank-transfer-order → invoice hand-off." },
+   { t:"🔲 TODO: Content fields consistent across all templates", s:["Link Page-specific fields (chips, badges, Instagram, CTA label, extras, FAQs) are only editable/used on the Link Page template."], e:"NOT BUILT — make the same editor content available on Classic/Modern/Bold (each with its own layout) so a caterer doesn't feel forced onto Link Page to get those fields. (Tester feedback §3 & §4.)" },
+   { t:"🔲 TODO: Link Page text readability pass", s:["On the Link Page, some text is hard to read against the dark background / accent colours."], e:"NOT BUILT — audit Link Page contrast (menu text, captions, secondary text) so everything stays legible regardless of the chosen accent. (Tester feedback §5.)" },
   ]
  },
 ];
@@ -576,9 +584,11 @@ const DATA = [
    TESTER PROFILES + PERSISTENCE
    Each tester gets an independent slice of progress, namespaced
    by name, stored in this browser's localStorage. State key:
-     caterfy_qa_checklist_v1::<tester>
+     caterfy_qa_checklist_v2::<tester>
+   Bumping the version resets every tester to a fresh checklist for a
+   new testing round (old v1 progress is ignored). Tester names persist.
    ============================================================ */
-const BASE_KEY = "caterfy_qa_checklist_v1";
+const BASE_KEY = "caterfy_qa_checklist_v2";
 const TESTERS_KEY = "caterfy_qa_testers";       // JSON array of tester names
 const ACTIVE_KEY = "caterfy_qa_active_tester";  // currently selected tester name
 
