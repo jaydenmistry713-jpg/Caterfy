@@ -386,6 +386,14 @@ ADMIN_SECRET=
 
 # Google Analytics
 NEXT_PUBLIC_GA_MEASUREMENT_ID=
+
+# Lifecycle cron (July 2026) — shared secret between the Netlify scheduled
+# function (netlify/functions/lifecycle-cron.mjs) and /api/cron/daily
+CRON_SECRET=
+
+# Support email shown in footer/FAQ/sidebar and used as reply-to on all emails
+# (defaults to hello@caterfy.com when unset)
+NEXT_PUBLIC_SUPPORT_EMAIL=
 ```
 
 ## URL Structure
@@ -410,9 +418,23 @@ NEXT_PUBLIC_GA_MEASUREMENT_ID=
 
 ## Build Status
 
-All phases are implemented and the app builds successfully (Next.js 16, 37 routes).
+All phases are implemented and the app builds successfully (Next.js 16, 51 routes).
 
 ### Completed
+- **Growth/SEO/lifecycle pass (July 2026)** — implemented from the audit in `Caterfy-Audit-and-Marketing-Plan.pdf`:
+  - SEO: caterer-first root metadata + `metadataBase`; OG/Twitter tags site-wide with branded `public/og-image.png`; per-caterer OG using their hero image; favicon `app/icon.png` + `app/apple-icon.png`; `app/sitemap.ts` (static + guides + live caterers + non-empty location/cuisine pages, falls back to static routes if Supabase is unreachable at build) + `app/robots.ts`; JSON-LD everywhere (Organization/WebSite in root, FoodEstablishment+AggregateRating on `/[slug]`, FAQPage on `/faq`, ItemList/Breadcrumb on directory, Article on guides); canonical URLs; unknown directory location/cuisine slugs now 404
+  - Directory: **trialling caterers are now listed** (matches the "every site is listed" promise); real review ratings on cards (joined `reviews(rating)`, replacing dead `avg_rating` code); pagination on the index (24/page); "Browse by city" + "Popular cuisines in {city}" internal-link blocks; empty states are caterer-acquisition CTAs ("Get listed free"); locations passed to the location-page filter sidebar
+  - Landing page restructure: 11 feature cards → **4 job clusters** (Look professional / Take orders / Get paid / Get found) with checkmark bullets; trust marquee now shows category words (no fictional business names); fictional testimonial removed, replaced by a 5-item FAQ accordion (`.mk-faq` in marketing.css); founder note section; "No card required" microcopy on hero/pricing/final CTA; pricing comparison line
+  - Funnel: **forgot/reset-password flow** (`/forgot-password`, `/reset-password`); verify-email page shows the address, has a resend button (60s cooldown) + spam hint; signup form has live slug preview, password visibility toggle, reassurance microcopy; auth layout shows trial reassurances; **soft-expiry page** for lapsed caterer sites (branded "taking a break" + directory link instead of 404; trialling accounts past `trial_ends_at` also soft-expire; lapsed pages get `noindex`)
+  - Growth loops: **publish-&-share dialog** (`components/dashboard/share-site-dialog.tsx`) — copy link, WhatsApp share, QR download (`qrcode` npm package), A5 "Scan to order" poster (canvas), Instagram bio tip; opens automatically after first real site-editor save and via a Share button; sharing sets `caterers.link_shared_at`; dashboard checklist has a "Share your link" final step (and now **requires location** for basic info)
+  - Analytics: **page-view counter** — `/[slug]` calls `increment_page_view` RPC (SECURITY DEFINER, migration 012); 30-day views on dashboard + analytics pages; GA4 events (`lib/analytics.ts` `track()`): sign_up, publish_site/save_site, share_link, place_order, begin_subscribe; **UTM first-touch capture** (`components/marketing/attribution.tsx` → localStorage → signup metadata → `caterers.signup_source`, written via separate best-effort update)
+  - Compliance: **cookie-consent banner** (`components/ui/cookie-consent.tsx`) — GA only loads after accept (localStorage `caterfy_cookie_consent`); support email (`lib/site.ts` `SUPPORT_EMAIL`, env `NEXT_PUBLIC_SUPPORT_EMAIL`) in footer, FAQ, dashboard sidebar and as reply-to on all emails
+  - Emails: `lib/resend/emails.ts` fully restyled to brand (basil/cream/marigold, Georgia headings, pill buttons); customer-facing emails carry a UTM-tagged "Powered by Caterfy" footer line; welcome email trial copy fixed (starts at signup); **new lifecycle emails**: trial day 1 / day 7 (with stats) / ending / ended, order auto-cancelled, first-order celebration (sent inline from `/api/orders` on a caterer's first order), monthly summary
+  - **Daily cron** `/api/cron/daily` (guarded by `CRON_SECRET` header `x-cron-key`): trial lifecycle emails (idempotent via `lifecycle_emails` unique key), order reminder after 24h pending (sets `reminder_sent_at`), auto-cancel after 48h (+ customer email), review requests 1–3 days after event (sets `review_request_sent_at`), monthly summaries on the 1st; triggered by Netlify scheduled function `netlify/functions/lifecycle-cron.mjs` (09:00 UTC daily)
+  - "Powered by Caterfy" template footers now use `NEXT_PUBLIC_APP_URL` + UTM params (`lib/site.ts` `poweredByUrl()`)
+  - Content hub: `/guides` (marketing layout) with data-driven articles in `lib/guides.ts` (2 published; Article JSON-LD; guides in sitemap + footer)
+  - Dashboard fixes: Total Orders / Reviews stats use exact counts (were capped at 5/3 by query limits); "tutorial video coming soon" placeholder removed; dashboard + analytics pages swept from `gray-*` to theme tokens; 404 page themed
+  - `lib/site.ts` exports `SITE_URL` (from `NEXT_PUBLIC_APP_URL`, fallback caterfy.netlify.app) and `SUPPORT_EMAIL` — use these, never hardcode caterfy.com
 - Marketing landing page (caterer-first, redesigned July 2026) — see "Marketing Landing Page" section below
 - Caterer signup/login with email verification (Supabase Auth)
 - 14-day trial on signup, caterer record auto-created on email verify
@@ -468,9 +490,9 @@ All phases are implemented and the app builds successfully (Next.js 16, 37 route
 - Storage cleanup on image delete (July 2026): deleting a gallery photo, or removing/replacing a hero image or logo in the site editor, now also deletes the underlying file from the `caterer-images` bucket so nothing is left orphaned. Deletion goes through `POST /api/images/delete` (service role via the Storage API — direct SQL deletes from `storage.objects` are blocked by Supabase's `protect_delete` trigger); the route only removes objects under the signed-in caterer's own prefixes (`hero/{id}.*`, `logos/{id}.*`, `gallery/{id}/*`). Helpers live in `lib/supabase/storage.ts` (`objectPathFromPublicUrl`, `deleteStoredImages`)
 
 ### Pending / Not Yet Built
-- Order reminder cron (email caterer after 24hr, auto-cancel at 48hr)
-- Review request email trigger (1 day after event date)
-- ~~Google Analytics~~ **DONE**: gtag loads in `app/layout.tsx` when `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set
+- ~~Order reminder cron (email caterer after 24hr, auto-cancel at 48hr)~~ **DONE (July 2026)**: `/api/cron/daily` + Netlify scheduled function; requires `CRON_SECRET` env var + migration 012
+- ~~Review request email trigger (1 day after event date)~~ **DONE (July 2026)**: same cron; sets `orders.review_request_sent_at`
+- ~~Google Analytics~~ **DONE**: gtag loads in `app/layout.tsx` when `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set — **now consent-gated** via the cookie banner (July 2026)
 - ~~Google Fonts loading~~ **DONE**: `app/[slug]/page.tsx` injects a `fonts.googleapis.com` stylesheet for the caterer's selected heading/body fonts
 
 ### QA follow-ups from tester feedback — STILL TO BUILD (surface in next checklist review)
@@ -531,6 +553,7 @@ Migrations live in `supabase/migrations/` and must be run manually in Supabase S
 - `009_price_unit_per_meal.sql` — updates menu_items_price_unit_check to allow 'per meal'
 - `010_package_is_popular.sql` — adds is_popular BOOLEAN to packages (caterer-chosen 'Popular' badge)
 - `011_catering_guest_range.sql` — adds min_catering_guests / max_catering_guests to caterers (quote guest range)
+- `012_growth_and_lifecycle.sql` — adds signup_source + link_shared_at to caterers, review_request_sent_at to orders; creates page_views table + `increment_page_view()` SECURITY DEFINER RPC (granted to anon/authenticated) and lifecycle_emails table (service-role only, unique caterer_id+email_key). **Must be run before the share checklist tick, page-view stats, attribution and the daily cron work fully** — until then the code degrades gracefully (page-view RPC errors ignored; signup_source written via separate best-effort update)
 
 ### Deleting a test account (SQL order)
 Delete order-referencing children (`quotes`, `reviews`, `invoices`) BEFORE `orders`, and the `caterers` row LAST. The caterer id == the auth user id.

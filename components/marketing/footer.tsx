@@ -1,7 +1,9 @@
 import Link from 'next/link'
+import { SUPPORT_EMAIL } from '@/lib/site'
 
 const links = [
   { href: '/directory', label: 'Browse caterers' },
+  { href: '/guides', label: 'Guides' },
   { href: '/faq', label: 'FAQs' },
   { href: '/terms', label: 'Terms' },
   { href: '/privacy', label: 'Privacy' },
@@ -26,10 +28,22 @@ export default function MarketingFooter() {
               {link.label}
             </Link>
           ))}
+          <a
+            href={`mailto:${SUPPORT_EMAIL}`}
+            className="text-sm transition-opacity hover:opacity-100"
+            style={{ color: 'var(--cream)', opacity: 0.7 }}
+          >
+            Contact
+          </a>
         </nav>
-        <p className="mk-mono text-[10px] tracking-[0.18em] uppercase" style={{ color: 'var(--cream)', opacity: 0.5 }}>
-          © {new Date().getFullYear()} Caterfy
-        </p>
+        <div className="flex flex-col items-center sm:items-end gap-1">
+          <p className="mk-mono text-[10px] tracking-[0.18em] uppercase" style={{ color: 'var(--cream)', opacity: 0.5 }}>
+            © {new Date().getFullYear()} Caterfy
+          </p>
+          <a href={`mailto:${SUPPORT_EMAIL}`} className="text-xs" style={{ color: 'var(--cream)', opacity: 0.55 }}>
+            {SUPPORT_EMAIL}
+          </a>
+        </div>
       </div>
     </footer>
   )

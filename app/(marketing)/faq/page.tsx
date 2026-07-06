@@ -1,8 +1,10 @@
 import { Metadata } from 'next'
+import { SUPPORT_EMAIL } from '@/lib/site'
 
 export const metadata: Metadata = {
   title: 'FAQs — Caterfy',
   description: 'Frequently asked questions about Caterfy for caterers and customers.',
+  alternates: { canonical: '/faq' },
 }
 
 const catererFaqs = [
@@ -84,9 +86,21 @@ function FaqItem({ q, a }: { q: string; a: string }) {
   )
 }
 
+// FAQPage structured data — eligible for FAQ rich results in search
+const faqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [...catererFaqs, ...customerFaqs].map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: { '@type': 'Answer', text: f.a },
+  })),
+}
+
 export default function FaqPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       <div className="mb-12 text-center">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h1>
         <p className="text-lg text-gray-500">Everything you need to know about Caterfy.</p>
@@ -114,8 +128,8 @@ export default function FaqPage() {
         <p className="text-gray-700 font-medium mb-2">Still have questions?</p>
         <p className="text-gray-500 text-sm">
           Get in touch at{' '}
-          <a href="mailto:hello@caterfy.com" className="text-gray-900 underline hover:no-underline">
-            hello@caterfy.com
+          <a href={`mailto:${SUPPORT_EMAIL}`} className="text-gray-900 underline hover:no-underline">
+            {SUPPORT_EMAIL}
           </a>
         </p>
       </div>

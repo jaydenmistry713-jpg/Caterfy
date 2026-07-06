@@ -1,78 +1,63 @@
 import Link from 'next/link'
 import {
-  Palette, Inbox, FileText, Receipt, CreditCard, UtensilsCrossed,
-  Tag, Star, Calendar, MapPin, Mail, Check, ArrowRight,
+  Palette, Inbox, CreditCard, MapPin, Check, ArrowRight,
 } from 'lucide-react'
 import HeroDemo from '@/components/marketing/hero-demo'
 import Reveal from '@/components/marketing/reveal'
 import CountUp from '@/components/marketing/count-up'
 
-const TRUST_NAMES = [
-  'The Willow Pantry', 'Saffron & Sage', 'Bramble Feast Co.', 'Little Fig Kitchen',
-  'The Sunday Spread', 'Elder & Rye', 'Pepperpot Catering', 'Maple & Thyme',
-  'Copper Pot Kitchen', 'The Gilded Grape',
+// Category words, not business names — reads as "that's me", with zero
+// fake-social-proof risk. Swap for real founding-member names later.
+const TRUST_CATEGORIES = [
+  'Weddings', 'Grazing tables', 'Corporate lunches', 'Buffets', 'Private chefs',
+  'Street food', 'Afternoon tea', 'Home bakers', 'Hog roasts', 'Party platters',
 ]
 
-const FEATURES = [
+// The full feature set, chunked into the four jobs a caterer hires Caterfy
+// for. Same facts as the old 11-card grid, ~60% less reading.
+const CLUSTERS = [
+  {
+    icon: Palette,
+    eyebrow: 'Look professional',
+    title: 'Your site, live in an afternoon',
+    bullets: [
+      '4 templates, your colours, your photos — live at caterfy.com/your-name',
+      'Proper menus with categories, packages & per-person pricing — not screenshots',
+      'Gallery, reviews and an order form built in',
+      'No designer, no code, no £800 invoice',
+    ],
+  },
   {
     icon: Inbox,
-    eyebrow: 'Orders',
-    title: 'Every order in one inbox',
-    copy: 'No more scrolling back through DMs to find who wanted what, when. Fixed-price orders and quote requests land in one place — accept or decline in a click and the customer is emailed automatically.',
-  },
-  {
-    icon: FileText,
-    eyebrow: 'Quotes',
-    title: 'Quotes without the back-and-forth',
-    copy: 'Build an itemised quote in the dashboard and send it. Your customer accepts online — no PDFs, no "did you get my email?", no chasing.',
-  },
-  {
-    icon: Receipt,
-    eyebrow: 'Invoices',
-    title: 'Invoices out of your notes app',
-    copy: 'Generate an invoice from any order, or write one from scratch. Your bank transfer details are included automatically, and it goes out by email.',
+    eyebrow: 'Take orders',
+    title: 'Out of your DMs, into one inbox',
+    bullets: [
+      'Fixed-price orders and quote requests in one dashboard',
+      'Send itemised quotes customers accept online — no chasing',
+      'Block out dates you can’t cater; the order form enforces them',
+      'Accept or decline in a click — the customer is emailed automatically',
+    ],
   },
   {
     icon: CreditCard,
-    eyebrow: 'Payments',
-    title: 'Card, bank transfer or pay later',
-    copy: 'Take card payments straight to your bank via Stripe, share your bank details at checkout, or let customers pay on the day — however you already work.',
-  },
-  {
-    icon: UtensilsCrossed,
-    eyebrow: 'Menu & Services',
-    title: 'Menus that are not screenshots',
-    copy: 'Proper menus with categories, packages, photos and per-person pricing. Set stock limits and the order form enforces them for you.',
-  },
-  {
-    icon: Tag,
-    eyebrow: 'Discount Codes',
-    title: 'Run offers without a spreadsheet',
-    copy: 'Percentage or fixed-amount codes with expiry dates, minimum spends and usage caps — validated automatically at checkout.',
-  },
-  {
-    icon: Star,
-    eyebrow: 'Reviews',
-    title: 'Reviews you do not have to beg for',
-    copy: 'Customers get a review link after their event, and reviews appear on your site. Respond publicly to every one from the dashboard.',
-  },
-  {
-    icon: Calendar,
-    eyebrow: 'Availability',
-    title: 'Never explain you are fully booked',
-    copy: 'Block out dates you cannot cater and the order form stops customers booking them. No awkward decline messages needed.',
+    eyebrow: 'Get paid',
+    title: 'However you already work',
+    bullets: [
+      'Card payments straight to your bank via Stripe',
+      'Bank transfer or pay-on-the-day — your call',
+      'Invoices generated from any order, sent by email',
+      'Discount codes with expiry dates and usage caps',
+    ],
   },
   {
     icon: MapPin,
-    eyebrow: 'Directory',
-    title: 'Get found, not just built',
-    copy: 'Every Caterfy site is listed in our directory, searchable by location and cuisine — so new customers find you while you cook.',
-  },
-  {
-    icon: Mail,
-    eyebrow: 'Automated Emails',
-    title: 'Confirmations sent while you cook',
-    copy: 'Order confirmations, acceptance emails, quote notifications and review requests all go out automatically. You stay at the stove.',
+    eyebrow: 'Get found',
+    title: 'Marketing that runs itself',
+    bullets: [
+      'Listed in the Caterfy directory by location & cuisine',
+      'Review requests sent after every event — reply from your dashboard',
+      'Confirmations, acceptances and reminders sent while you cook',
+    ],
   },
 ]
 
@@ -104,6 +89,30 @@ const PLAN_FEATURES = [
   'Automated customer emails',
 ]
 
+// Objection-handling at the point of decision. Content mirrors /faq.
+const LANDING_FAQS = [
+  {
+    q: 'Do I need a card to try it?',
+    a: 'No. The 14-day trial is completely free and we don’t ask for payment details. Subscribe only if you want to keep your site after the trial.',
+  },
+  {
+    q: 'Do you take commission on my orders?',
+    a: 'Never. Your customers pay you directly. Caterfy is a flat £10/month, whatever you sell.',
+  },
+  {
+    q: 'Can customers pay me by bank transfer or cash?',
+    a: 'Yes. You choose which payment options to offer: card (via your own Stripe account), bank transfer with your details shown at checkout, or pay-on-the-day.',
+  },
+  {
+    q: 'What happens after the trial?',
+    a: '£10/month, cancel anytime from your dashboard. If you cancel or lapse, your data is kept safe and you can pick up where you left off.',
+  },
+  {
+    q: 'Do I need any tech skills?',
+    a: 'If you can post on Instagram, you can build this. Pick a template, type your menu, upload photos — the wizard walks you through it.',
+  },
+]
+
 export default function HomePage() {
   return (
     <div>
@@ -130,8 +139,8 @@ export default function HomePage() {
                 See how it works
               </Link>
             </div>
-            <p className="mk-mono mk-enter mk-enter-5 mt-6 text-[10px] tracking-[0.2em] uppercase" style={{ color: 'var(--ink-soft)' }}>
-              14-day free trial &middot; No setup fee &middot; Cancel anytime
+            <p className="mk-mono mk-enter mk-enter-5 mt-6 text-xs tracking-[0.18em] uppercase" style={{ color: 'var(--ink-soft)' }}>
+              14-day free trial &middot; No card required &middot; Cancel anytime
             </p>
           </div>
 
@@ -141,16 +150,16 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ---------- Trust strip ---------- */}
+      {/* ---------- Trust strip (categories, not invented names) ---------- */}
       <section className="py-12" style={{ background: 'var(--basil)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <p className="mk-mono text-center text-[10px] tracking-[0.22em] uppercase mb-7" style={{ color: 'var(--cream)', opacity: 0.55 }}>
-            Built for independent food businesses
+            Built for independent food businesses of every kind
           </p>
         </div>
         <div className="mk-marquee" aria-hidden="true">
           <div className="mk-marquee-track">
-            {[...TRUST_NAMES, ...TRUST_NAMES].map((name, i) => (
+            {[...TRUST_CATEGORIES, ...TRUST_CATEGORIES].map((name, i) => (
               <span key={i} className="mk-display text-2xl whitespace-nowrap" style={{ color: 'var(--cream)', opacity: 0.62 }}>
                 {name}
               </span>
@@ -159,7 +168,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ---------- Features ---------- */}
+      {/* ---------- Features: 4 job clusters ---------- */}
       <section id="features" className="px-4 sm:px-6 lg:px-8 py-20 lg:py-28 scroll-mt-16">
         <div className="max-w-7xl mx-auto">
           <Reveal>
@@ -169,62 +178,38 @@ export default function HomePage() {
             </h2>
           </Reveal>
 
-          <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {/* Flagship: site editor, wide card */}
-            <Reveal className="sm:col-span-2">
-              <div className="mk-card h-full p-8 flex flex-col justify-between gap-6">
-                <div>
+          <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-5">
+            {CLUSTERS.map((c, i) => (
+              <Reveal key={c.eyebrow} delay={(i % 2) * 90}>
+                <div className="mk-card h-full p-8">
                   <div className="flex items-center gap-4">
                     <span className="mk-icon-tile">
-                      <Palette className="h-5 w-5" strokeWidth={1.7} />
+                      <c.icon className="h-5 w-5" strokeWidth={1.7} />
                     </span>
-                    <p className="mk-eyebrow">Site Editor</p>
+                    <p className="mk-eyebrow">{c.eyebrow}</p>
                   </div>
-                  <h3 className="mt-5 text-2xl font-bold">
-                    A website you would actually send to a wedding planner
-                  </h3>
-                  <p className="mt-3 max-w-xl" style={{ color: 'var(--ink-soft)' }}>
-                    Pick a template, set your colours, add your photos and menu — live at
-                    caterfy.com/your-name the same afternoon. Gallery, reviews and an order
-                    form built in, so it works as hard as you do. No web designer, no
-                    &pound;800 invoice, no &ldquo;I&rsquo;ll update it when I get a minute&rdquo;.
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {['Classic', 'Modern', 'Bold', 'Link Page'].map((t, i) => (
-                    <span
-                      key={t}
-                      className="mk-mono text-[10px] tracking-[0.18em] uppercase rounded-full px-3.5 py-1.5"
-                      style={
-                        i === 2
-                          ? { background: 'var(--tomato)', color: 'var(--cream)' }
-                          : { background: 'var(--cream-2)', color: 'var(--ink-soft)' }
-                      }
-                    >
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </Reveal>
-
-            {FEATURES.map((f, i) => (
-              <Reveal key={f.eyebrow} delay={(i % 3) * 70}>
-                <div className="mk-card h-full p-7">
-                  <div className="flex items-center gap-4">
-                    <span className="mk-icon-tile">
-                      <f.icon className="h-5 w-5" strokeWidth={1.7} />
-                    </span>
-                    <p className="mk-eyebrow">{f.eyebrow}</p>
-                  </div>
-                  <h3 className="mt-5 text-lg font-bold leading-snug">{f.title}</h3>
-                  <p className="mt-2.5 text-[15px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-                    {f.copy}
-                  </p>
+                  <h3 className="mt-5 text-2xl font-bold leading-snug">{c.title}</h3>
+                  <ul className="mt-5 space-y-3">
+                    {c.bullets.map((b) => (
+                      <li key={b} className="flex items-start gap-3 text-[15px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
+                        <Check className="h-4 w-4 mt-1 flex-shrink-0" strokeWidth={2} style={{ color: 'var(--marigold-deep)' }} />
+                        {b}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </Reveal>
             ))}
           </div>
+
+          <Reveal>
+            <p className="mt-8 text-center text-sm" style={{ color: 'var(--ink-soft)' }}>
+              Plus stock limits, food-certification badges, a contact form, order tracking and more —{' '}
+              <Link href="/faq" className="underline font-medium" style={{ color: 'var(--ink)' }}>
+                see everything included
+              </Link>
+            </p>
+          </Reveal>
         </div>
       </section>
 
@@ -265,8 +250,9 @@ export default function HomePage() {
             <p className="mk-eyebrow justify-center">Simple pricing</p>
             <h2 className="mk-display mt-4 text-3xl sm:text-5xl">One plan. Everything included.</h2>
             <p className="mt-4 max-w-xl mx-auto" style={{ color: 'var(--ink-soft)' }}>
-              No tiers, no add-ons, no commission on your orders. Your customers pay you —
-              Caterfy just costs less than a takeaway each month.
+              No tiers, no add-ons, no commission on your orders. A web designer charges
+              &pound;500+ once. Squarespace is &pound;17/month and doesn&rsquo;t take orders.
+              Caterfy is &pound;10, flat.
             </p>
           </Reveal>
 
@@ -302,8 +288,8 @@ export default function HomePage() {
               <Link href="/signup" className="mk-btn mk-btn-gold w-full mt-9">
                 Start your 14-day free trial
               </Link>
-              <p className="mk-mono mt-4 text-center text-[10px] tracking-[0.18em] uppercase" style={{ color: 'var(--cream)', opacity: 0.55 }}>
-                No setup fee &middot; Cancel anytime
+              <p className="mk-mono mt-4 text-center text-xs tracking-[0.15em] uppercase" style={{ color: 'var(--cream)', opacity: 0.6 }}>
+                No card required &middot; Cancel anytime
               </p>
             </div>
           </Reveal>
@@ -331,24 +317,50 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ---------- Testimonial ---------- */}
+      {/* ---------- FAQ ---------- */}
       <section className="px-4 sm:px-6 lg:px-8 py-16 lg:py-24" style={{ background: 'var(--cream-2)' }}>
-        <Reveal className="max-w-3xl mx-auto text-center">
-          <p className="mk-display text-7xl leading-none select-none" aria-hidden="true" style={{ color: 'var(--marigold)' }}>
-            &ldquo;
+        <div className="max-w-3xl mx-auto">
+          <Reveal className="text-center">
+            <p className="mk-eyebrow justify-center">Before you ask</p>
+            <h2 className="mk-display mt-4 text-3xl sm:text-4xl">Fair questions, straight answers.</h2>
+          </Reveal>
+
+          <Reveal delay={100}>
+            <div className="mt-10">
+              {LANDING_FAQS.map((f) => (
+                <details key={f.q} className="mk-faq">
+                  <summary>{f.q}</summary>
+                  <p>{f.a}</p>
+                </details>
+              ))}
+            </div>
+            <p className="mt-6 text-center text-sm" style={{ color: 'var(--ink-soft)' }}>
+              More questions answered on the{' '}
+              <Link href="/faq" className="underline font-medium" style={{ color: 'var(--ink)' }}>
+                full FAQ page
+              </Link>
+            </p>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ---------- Founder note ---------- */}
+      <section className="px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
+        <Reveal className="max-w-2xl mx-auto text-center">
+          <p className="mk-eyebrow justify-center">A note from the founder</p>
+          <p className="mk-display mt-6 text-xl sm:text-2xl leading-relaxed">
+            Caterfy exists because too many brilliant caterers run their whole business
+            out of a notes app and a DM inbox. The food is professional — the tools
+            should be too. That&rsquo;s the entire idea.
           </p>
-          <blockquote className="mk-display text-2xl sm:text-[2rem] leading-snug -mt-4">
-            I used to spend Sunday nights copying orders out of Instagram into a notebook.
-            Now everything is already in one place — I just cook.
-          </blockquote>
-          <p className="mk-mono mt-7 text-[11px] tracking-[0.2em] uppercase" style={{ color: 'var(--ink-soft)' }}>
-            Priya &middot; Saffron &amp; Sage, Birmingham
+          <p className="mk-mono mt-6 text-[11px] tracking-[0.2em] uppercase" style={{ color: 'var(--ink-soft)' }}>
+            Independently built &middot; No investors to feed &middot; No commission, ever
           </p>
         </Reveal>
       </section>
 
       {/* ---------- Final CTA ---------- */}
-      <section className="px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
+      <section className="px-4 sm:px-6 lg:px-8 pb-20 lg:pb-28 pt-4">
         <Reveal className="max-w-5xl mx-auto">
           <div
             className="relative overflow-hidden px-6 py-16 sm:px-16 sm:py-20 text-center"
@@ -379,8 +391,8 @@ export default function HomePage() {
                 Start your 14-day free trial
                 <ArrowRight className="h-4 w-4" strokeWidth={1.7} />
               </Link>
-              <p className="mk-mono mt-5 text-[10px] tracking-[0.2em] uppercase" style={{ color: 'var(--cream)', opacity: 0.55 }}>
-                No setup fee &middot; Cancel anytime
+              <p className="mk-mono mt-5 text-xs tracking-[0.15em] uppercase" style={{ color: 'var(--cream)', opacity: 0.6 }}>
+                No card required &middot; Cancel anytime
               </p>
             </div>
           </div>

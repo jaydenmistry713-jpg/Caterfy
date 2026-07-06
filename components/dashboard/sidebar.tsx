@@ -4,9 +4,10 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, ShoppingBag, UtensilsCrossed, Palette,
-  Images, Star, Calendar, BarChart2, CreditCard, FileText, Settings, ExternalLink, Tag
+  Images, Star, Calendar, BarChart2, CreditCard, FileText, Settings, ExternalLink, Tag, LifeBuoy
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { SUPPORT_EMAIL } from '@/lib/site'
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -60,8 +61,8 @@ export default function DashboardSidebar({ caterer }: Props) {
         })}
       </nav>
 
-      {caterer?.slug && (
-        <div className="p-4 border-t border-[color:var(--border-light)]">
+      <div className="p-4 border-t border-[color:var(--border-light)] space-y-2">
+        {caterer?.slug && (
           <Link
             href={`/${caterer.slug}`}
             target="_blank"
@@ -70,8 +71,15 @@ export default function DashboardSidebar({ caterer }: Props) {
             <ExternalLink className="h-4 w-4" />
             View my site
           </Link>
-        </div>
-      )}
+        )}
+        <a
+          href={`mailto:${SUPPORT_EMAIL}`}
+          className="flex items-center gap-2 text-sm text-[color:var(--ink-soft)] hover:text-[color:var(--ink)] transition-colors"
+        >
+          <LifeBuoy className="h-4 w-4" />
+          Need help? Email us
+        </a>
+      </div>
     </aside>
   )
 }

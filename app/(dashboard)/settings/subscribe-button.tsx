@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/lib/utils/use-toast'
+import { track } from '@/lib/analytics'
 
 export default function SubscribeButton() {
   const [loading, setLoading] = useState(false)
@@ -10,6 +11,7 @@ export default function SubscribeButton() {
   async function handleSubscribe() {
     setLoading(true)
     try {
+      track('begin_subscribe')
       const res = await fetch('/api/stripe/checkout', { method: 'POST' })
       const { url, error } = await res.json()
       if (error) throw new Error(error)

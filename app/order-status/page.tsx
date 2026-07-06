@@ -97,9 +97,9 @@ export default async function OrderStatusPage({ searchParams }: Props) {
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="text-center">
           <XCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-          <h1 className="text-xl font-bold text-gray-900 mb-2">Order not found</h1>
-          <p className="text-gray-500">Check your reference number and email address.</p>
-          <Link href="/order-status" className="text-blue-600 underline mt-4 block">Try again</Link>
+          <h1 className="text-xl font-bold text-[color:var(--ink)] mb-2">Order not found</h1>
+          <p className="text-[color:var(--ink-soft)]">Check your reference number and email address.</p>
+          <Link href="/order-status" className="text-[color:var(--basil)] underline mt-4 block">Try again</Link>
         </div>
       </div>
     )

@@ -14,9 +14,11 @@ import { deleteStoredImages, objectPathFromPublicUrl } from '@/lib/supabase/stor
 import { toast } from '@/lib/utils/use-toast'
 import { GOOGLE_FONTS, validateSlug, slugify } from '@/lib/utils'
 import Link from 'next/link'
-import { ExternalLink, Upload, X, Plus, Trash2, Sparkles } from 'lucide-react'
+import { ExternalLink, Upload, X, Plus, Trash2, Sparkles, Share2 } from 'lucide-react'
 import SiteEditorOnboarding from './site-editor-onboarding'
+import ShareSiteDialog from '@/components/dashboard/share-site-dialog'
 import { CERTIFICATIONS } from '@/components/caterer/certification-badges'
+import { track } from '@/lib/analytics'
 
 const TEMPLATES = [
   { id: 'classic', name: 'Classic', desc: 'Clean and professional with full-width hero' },
@@ -54,6 +56,11 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
 
   const [showOnboarding, setShowOnboarding] = useState(!page?.tagline && !page?.about && !page?.logo_url)
   const [activeTab, setActiveTab] = useState('template')
+
+  // Share dialog: opens automatically after the first real save (the
+  // publish moment), and any time via the Share button.
+  const [shareOpen, setShareOpen] = useState(false)
+  const isFirstPublish = useRef(!page?.tagline && !page?.about)
 
   async function uploadImage(
     file: File,
@@ -197,6 +204,14 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
 
       toast({ title: 'Site saved!', variant: 'success' })
       setDirty(false)
+
+      if (isFirstPublish.current && slug) {
+        isFirstPublish.current = false
+        track('publish_site')
+        setShareOpen(true)
+      } else {
+        track('save_site')
+      }
     } catch (err: any) {
       toast({ title: 'Error saving', description: err.message, variant: 'destructive' })
     } finally {
@@ -226,11 +241,25 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
             <div className="flex-1 text-sm text-gray-600">
               Your site URL: <span className="font-medium text-gray-900">caterfy.com/{caterer.slug}</span>
             </div>
+            <button
+              onClick={() => setShareOpen(true)}
+              className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900"
+            >
+              <Share2 className="h-4 w-4" />Share
+            </button>
             <Link href={`/${caterer.slug}`} target="_blank" className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900">
               <ExternalLink className="h-4 w-4" />Preview
             </Link>
           </div>
         )}
+
+        <ShareSiteDialog
+          open={shareOpen}
+          onOpenChange={setShareOpen}
+          slug={slug || caterer?.slug || ''}
+          businessName={caterer?.business_name || 'My Catering Business'}
+          catererId={caterererId}
+        />
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="flex-wrap">

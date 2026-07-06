@@ -43,6 +43,16 @@ export async function GET(request: NextRequest) {
           show_contact_publicly: true,
         })
 
+        // Best-effort attribution (kept separate so record creation can't fail
+        // if migration 012 hasn't been run yet)
+        if (user.user_metadata?.signup_source) {
+          await supabase
+            .from('caterers')
+            .update({ signup_source: user.user_metadata.signup_source })
+            .eq('id', user.id)
+            .then(() => {}, () => {})
+        }
+
         // Create default caterer_pages record
         await supabase.from('caterer_pages').insert({
           caterer_id: user.id,

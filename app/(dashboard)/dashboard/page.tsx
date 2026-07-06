@@ -2,9 +2,8 @@ import { createClient, getUser } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ShoppingBag, Star, AlertCircle, CheckCircle, ArrowRight, PlayCircle } from 'lucide-react'
+import { ShoppingBag, AlertCircle, CheckCircle, ArrowRight, Eye, Star } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import OnboardingWizard from './onboarding-wizard'
 
@@ -14,13 +13,28 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   if (!user) redirect('/login')
   const supabase = await createClient()
 
-  const [catererRes, ordersRes, reviewsRes, pageRes, galleryRes, menuRes] = await Promise.all([
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+
+  const [
+    catererRes,
+    recentOrdersRes,
+    totalOrdersRes,
+    pendingOrdersRes,
+    reviewsCountRes,
+    pageRes,
+    galleryRes,
+    menuRes,
+    pageViewsRes,
+  ] = await Promise.all([
     supabase.from('caterers').select('*').eq('id', user.id).single(),
     supabase.from('orders').select('*').eq('caterer_id', user.id).order('created_at', { ascending: false }).limit(5),
-    supabase.from('reviews').select('*').eq('caterer_id', user.id).order('created_at', { ascending: false }).limit(3),
+    supabase.from('orders').select('id', { count: 'exact', head: true }).eq('caterer_id', user.id),
+    supabase.from('orders').select('id', { count: 'exact', head: true }).eq('caterer_id', user.id).eq('status', 'pending'),
+    supabase.from('reviews').select('id', { count: 'exact', head: true }).eq('caterer_id', user.id),
     supabase.from('caterer_pages').select('*').eq('caterer_id', user.id).single(),
-    supabase.from('gallery_images').select('id').eq('caterer_id', user.id),
+    supabase.from('gallery_images').select('id', { count: 'exact', head: true }).eq('caterer_id', user.id),
     supabase.from('menu_items').select('id').eq('caterer_id', user.id).limit(1),
+    supabase.from('page_views').select('views').eq('caterer_id', user.id).gte('date', thirtyDaysAgo),
   ])
 
   // Fetch reference data for onboarding wizard on first login
@@ -39,20 +53,31 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   }
 
   const caterer = catererRes.data
-  const recentOrders = ordersRes.data || []
-  const recentReviews = reviewsRes.data || []
+  const recentOrders = recentOrdersRes.data || []
+  const totalOrders = totalOrdersRes.count || 0
+  const pendingOrders = pendingOrdersRes.count || 0
+  const totalReviews = reviewsCountRes.count || 0
   const page = pageRes.data
-  const galleryCount = galleryRes.data?.length || 0
+  const galleryCount = galleryRes.count || 0
   const hasMenuItems = (menuRes.data?.length || 0) > 0
-  const pendingOrders = recentOrders.filter((o) => o.status === 'pending').length
+  const pageViews30d = (pageViewsRes.data || []).reduce((sum, r: any) => sum + (r.views || 0), 0)
 
-  // Build checklist
+  // Build checklist — location is required (a caterer without one never
+  // appears in location searches), and sharing the link is the final step.
   const checklist = [
-    { label: 'Basic info added', done: !!caterer?.phone || !!caterer?.location_id, href: '/settings' },
+    { label: 'Basic info added (location required)', done: !!caterer?.location_id, href: '/settings' },
     { label: 'Branding set up', done: !!(page?.logo_url || page?.tagline || page?.accent_color !== '#2E75B6' || page?.primary_color !== '#000000'), href: '/site-editor' },
     { label: 'Menu items added', done: hasMenuItems, href: '/menu' },
     { label: 'Gallery photos uploaded (min 3)', done: galleryCount >= 3, href: '/gallery' },
     { label: 'Stripe Connect connected', done: !!caterer?.stripe_connect_id, href: '/payments' },
+    { label: 'Share your link', done: !!caterer?.link_shared_at, href: '/site-editor' },
+  ]
+
+  const stats = [
+    { label: 'Pending Orders', value: pendingOrders, icon: ShoppingBag },
+    { label: 'Total Orders', value: totalOrders, icon: CheckCircle },
+    { label: 'Reviews', value: totalReviews, icon: Star },
+    { label: 'Page views (30 days)', value: pageViews30d, icon: Eye },
   ]
 
   return (
@@ -69,10 +94,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       )}
 
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-[color:var(--ink)]">
           Welcome back{caterer?.business_name ? `, ${caterer.business_name}` : ''}
         </h1>
-        <p className="text-gray-500 mt-1">Here's an overview of your business</p>
+        <p className="text-[color:var(--ink-soft)] mt-1">Here&rsquo;s an overview of your business</p>
       </div>
 
       {/* Trial banner */}
@@ -91,52 +116,19 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Pending Orders</p>
-                <p className="text-2xl font-bold mt-1">{pendingOrders}</p>
+        {stats.map((stat) => (
+          <Card key={stat.label}>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-[color:var(--ink-soft)]">{stat.label}</p>
+                  <p className="text-2xl font-bold mt-1 text-[color:var(--ink)]">{stat.value}</p>
+                </div>
+                <stat.icon className="h-8 w-8 text-[color:var(--border-light)]" />
               </div>
-              <ShoppingBag className="h-8 w-8 text-gray-300" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Total Orders</p>
-                <p className="text-2xl font-bold mt-1">{recentOrders.length}</p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-gray-300" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Reviews</p>
-                <p className="text-2xl font-bold mt-1">{recentReviews.length}</p>
-              </div>
-              <Star className="h-8 w-8 text-gray-300" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Gallery Photos</p>
-                <p className="text-2xl font-bold mt-1">{galleryCount}</p>
-              </div>
-              <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 font-bold">
-                {galleryCount}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -149,8 +141,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             {checklist.every((i) => i.done) ? (
               <div className="flex flex-col items-center gap-2 py-6 text-center">
                 <CheckCircle className="h-8 w-8 text-green-500" />
-                <p className="font-medium text-gray-900">All set!</p>
-                <p className="text-sm text-gray-500">Your profile is complete and ready for customers.</p>
+                <p className="font-medium text-[color:var(--ink)]">All set!</p>
+                <p className="text-sm text-[color:var(--ink-soft)]">Your profile is complete and ready for customers.</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -158,19 +150,19 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                   <Link
                     key={item.label}
                     href={item.href}
-                    className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="flex items-center justify-between p-3 rounded-lg hover:bg-[color:var(--cream-2)] transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       {item.done ? (
                         <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
                       ) : (
-                        <div className="w-5 h-5 rounded-full flex-shrink-0 bg-gray-200" />
+                        <div className="w-5 h-5 rounded-full flex-shrink-0 bg-[color:var(--cream-2)] border border-[color:var(--border-light)]" />
                       )}
-                      <span className={`text-sm ${item.done ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
+                      <span className={`text-sm ${item.done ? 'text-[color:var(--ink-soft)] line-through' : 'text-[color:var(--ink)]'}`}>
                         {item.label}
                       </span>
                     </div>
-                    {!item.done && <ArrowRight className="h-4 w-4 text-gray-400" />}
+                    {!item.done && <ArrowRight className="h-4 w-4 text-[color:var(--ink-soft)]" />}
                   </Link>
                 ))}
               </div>
@@ -182,18 +174,18 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Recent Orders</CardTitle>
-            <Link href="/orders" className="text-sm text-gray-500 hover:text-gray-900">View all →</Link>
+            <Link href="/orders" className="text-sm text-[color:var(--ink-soft)] hover:text-[color:var(--ink)]">View all →</Link>
           </CardHeader>
           <CardContent>
             {recentOrders.length === 0 ? (
-              <p className="text-sm text-gray-500 text-center py-6">No orders yet</p>
+              <p className="text-sm text-[color:var(--ink-soft)] text-center py-6">No orders yet</p>
             ) : (
               <div className="space-y-3">
                 {recentOrders.map((order) => (
-                  <div key={order.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                  <div key={order.id} className="flex items-center justify-between py-2 border-b border-[color:var(--border-light)] last:border-0">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{order.customer_name}</p>
-                      <p className="text-xs text-gray-500">{order.reference_number} · {formatDate(order.event_date)}</p>
+                      <p className="text-sm font-medium text-[color:var(--ink)]">{order.customer_name}</p>
+                      <p className="text-xs text-[color:var(--ink-soft)]">{order.reference_number} · {formatDate(order.event_date)}</p>
                     </div>
                     <Badge
                       variant={
@@ -212,24 +204,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           </CardContent>
         </Card>
       </div>
-
-      {/* Getting started video */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <PlayCircle className="h-5 w-5 text-gray-400" />
-            Getting started with Caterfy
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="aspect-video w-full max-w-2xl rounded-xl bg-gray-100 flex items-center justify-center">
-            <div className="text-center">
-              <PlayCircle className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-sm text-gray-400">Tutorial video coming soon</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }

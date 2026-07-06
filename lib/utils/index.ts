@@ -89,6 +89,9 @@ export const RESERVED_SLUGS = new Set([
   'caterers', 'home', 'index', 'app', 'account', 'profile', 'billing',
   'payments', 'invoices', 'orders', 'reviews', 'gallery', 'services',
   'pricing', 'blog', 'news', 'faq', 'legal', 'cookies', 'sitemap',
+  'guides', 'review', 'order-status', 'verify-email', 'forgot-password',
+  'reset-password', 'availability', 'analytics', 'discount-codes',
+  'site-editor', 'robots', 'og-image',
 ])
 
 export function validateSlug(slug: string): string | null {

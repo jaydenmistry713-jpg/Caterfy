@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { toast } from '@/lib/utils/use-toast'
 import { generateOrderReference, formatPriceUnit } from '@/lib/utils'
+import { track } from '@/lib/analytics'
 import { CheckCircle, Tag, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
 
 interface OrderItem {
@@ -157,6 +158,8 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
 
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to submit order')
+
+      track('place_order', { order_type: orderType, payment_method: form.payment_method || 'none' })
 
       if (data.checkout_url) {
         window.location.href = data.checkout_url

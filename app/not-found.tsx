@@ -3,9 +3,12 @@ import { Button } from '@/components/ui/button'
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center">
-      <h1 className="text-6xl font-bold text-gray-900 mb-4">404</h1>
-      <p className="text-xl text-gray-500 mb-8">This page doesn't exist.</p>
+    <div className="app-theme min-h-screen flex flex-col items-center justify-center px-4 text-center">
+      <p className="font-mono-brand text-xs tracking-[0.2em] uppercase text-[color:var(--marigold-deep)] mb-4">
+        Error 404
+      </p>
+      <h1 className="font-display text-6xl text-[color:var(--basil)] mb-4">Nothing on the menu here</h1>
+      <p className="text-xl text-[color:var(--ink-soft)] mb-8">This page doesn&rsquo;t exist.</p>
       <div className="flex gap-3">
         <Button asChild>
           <Link href="/">Go home</Link>

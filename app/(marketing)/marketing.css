@@ -423,3 +423,52 @@
   text-transform: uppercase;
   font-weight: 500;
 }
+
+/* ---------- FAQ accordion (landing page) ---------- */
+
+.mk-faq {
+  background: #FDFAF2;
+  border: 1px solid var(--border-light);
+  border-radius: 14px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.mk-faq summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 16px 20px;
+  font-weight: 600;
+  font-size: 15.5px;
+  color: var(--ink);
+  position: relative;
+  padding-right: 44px;
+}
+
+.mk-faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.mk-faq summary::after {
+  content: '+';
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 18px;
+  color: var(--marigold-deep);
+  transition: transform 0.2s ease;
+}
+
+.mk-faq[open] summary::after {
+  content: '−';
+}
+
+.mk-faq p {
+  padding: 0 20px 16px;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}

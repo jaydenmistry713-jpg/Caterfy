@@ -7,6 +7,7 @@ import CertificationBadges from './certification-badges'
 import SendMessageForm from './send-message-form'
 import StickyOrderBar from './sticky-order-bar'
 import { formatDate, formatPriceUnit } from '@/lib/utils'
+import { poweredByUrl } from '@/lib/site'
 
 interface Props {
   caterer: any
@@ -175,8 +176,8 @@ export default function CatererPageBold({ caterer, menuItems, packages, gallery,
       </div>
 
       <footer className="py-6 text-center border-t border-gray-100">
-        <a href="https://caterfy.com" target="_blank" rel="noopener noreferrer" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
-          Powered by Caterfy
+        <a href={poweredByUrl(caterer.slug)} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+          Powered by Caterfy — websites for independent caterers
         </a>
       </footer>
       {page?.template_data?.sticky_bar && (

@@ -12,6 +12,11 @@ export default function CatererCard({ caterer }: Props) {
   const location = caterer.location
   const cuisines = caterer.caterer_cuisines?.map((c: any) => c.cuisine?.name).filter(Boolean) || []
 
+  // Rating computed from the joined reviews(rating) rows the directory queries select
+  const ratings: number[] = (caterer.reviews || []).map((r: any) => r.rating).filter((n: any) => typeof n === 'number')
+  const reviewCount = ratings.length
+  const avgRating = reviewCount ? ratings.reduce((a, b) => a + b, 0) / reviewCount : null
+
   return (
     <Link
       href={`/${caterer.slug}`}
@@ -45,11 +50,11 @@ export default function CatererCard({ caterer }: Props) {
               {location.name}
             </span>
           )}
-          {caterer.avg_rating && (
+          {avgRating !== null && (
             <span className="flex items-center gap-1">
               <Star className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
-              {caterer.avg_rating.toFixed(1)}
-              <span className="text-gray-400">({caterer.review_count})</span>
+              {avgRating.toFixed(1)}
+              <span className="text-gray-400">({reviewCount})</span>
             </span>
           )}
         </div>

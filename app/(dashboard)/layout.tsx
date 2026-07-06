@@ -39,6 +39,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
       auto_accept_orders: false,
       show_contact_publicly: true,
     })
+    // Best-effort attribution (kept separate so record creation can't fail
+    // if migration 012 hasn't been run yet)
+    if (user.user_metadata?.signup_source) {
+      await service
+        .from('caterers')
+        .update({ signup_source: user.user_metadata.signup_source })
+        .eq('id', user.id)
+        .then(() => {}, () => {})
+    }
     await service.from('caterer_pages').insert({ caterer_id: user.id, template: 'classic' })
     const { data: newCaterer } = await supabase
       .from('caterers')

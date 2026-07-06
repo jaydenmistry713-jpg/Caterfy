@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
-import { sendNewOrderNotification, sendOrderConfirmationToCustomer } from '@/lib/resend/emails'
+import { sendNewOrderNotification, sendOrderConfirmationToCustomer, sendFirstOrderCelebration } from '@/lib/resend/emails'
 import { stripe } from '@/lib/stripe'
 import { z } from 'zod'
 
@@ -134,6 +134,19 @@ export async function POST(request: NextRequest) {
       if (dc) {
         await supabase.from('discount_codes').update({ uses_count: (dc.uses_count ?? 0) + 1 }).eq('id', dc.id)
       }
+    }
+
+    // First-order celebration — the most shareable moment in the lifecycle
+    try {
+      const { count: orderCount } = await supabase
+        .from('orders')
+        .select('id', { count: 'exact', head: true })
+        .eq('caterer_id', validated.caterer_id)
+      if (orderCount === 1) {
+        await sendFirstOrderCelebration(caterer.email, caterer.business_name, validated.reference_number)
+      }
+    } catch (celebErr) {
+      console.error('First-order email failed:', celebErr)
     }
 
     // Send emails

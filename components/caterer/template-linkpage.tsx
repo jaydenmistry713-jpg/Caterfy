@@ -7,6 +7,7 @@ import OrderButton from './order-button'
 import { CERTIFICATIONS } from './certification-badges'
 import SendMessageForm from './send-message-form'
 import { formatPriceUnit } from '@/lib/utils'
+import { poweredByUrl } from '@/lib/site'
 
 interface LinkPageData {
   chips?: string[]
@@ -486,8 +487,8 @@ export default function CatererPageLinkPage({ caterer, menuItems, packages, gall
 
           {/* FOOTER */}
           <footer style={{ textAlign: 'center', padding: '20px 16px 8px', fontSize: 11, color: muted, lineHeight: 1.8 }}>
-            <a href="https://caterfy.com" target="_blank" rel="noopener noreferrer" style={{ color: muted, textDecoration: 'none' }}>
-              Powered by Caterfy
+            <a href={poweredByUrl(caterer.slug)} target="_blank" rel="noopener noreferrer" style={{ color: muted, textDecoration: 'none' }}>
+              Powered by Caterfy — websites for independent caterers
             </a>
           </footer>
         </div>
