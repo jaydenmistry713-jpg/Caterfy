@@ -388,8 +388,9 @@ ADMIN_SECRET=
 NEXT_PUBLIC_GA_MEASUREMENT_ID=
 
 # Lifecycle cron (July 2026) — shared secret between the Netlify scheduled
-# function (netlify/functions/lifecycle-cron.mjs) and /api/cron/daily
-CRON_SECRET=
+# function (netlify/functions/lifecycle-cron.mjs) and /api/cron/daily.
+# Set this exact value in Netlify env vars (the app reads it from there, not from this file):
+CRON_SECRET=d6bc90616025100bff05339ad2e0bc6dc8685ea959e90ccf6d24ec2531928f9d
 
 # Support email shown in footer/FAQ/sidebar and used as reply-to on all emails
 # (defaults to hello@caterfy.com when unset)
@@ -631,7 +632,7 @@ DELETE FROM caterers                WHERE id         = '[user-id]';
 
 ## Testing Checklist
 
-`public/testing-checklist.html` is a self-contained, interactive QA checklist covering every feature area (auth, onboarding, site builder, all 4 templates, menu/stock, orders, quotes, payments/Stripe, subscriptions, invoices, discounts, reviews, availability, messages, settings/business modes, directory, admin, emails, responsive, performance/RLS, edge cases/security, and known-pending items — ~140 checks across 24 sections).
+`public/testing-checklist.html` is a self-contained, interactive QA checklist covering every feature area (auth, onboarding, site builder, all 4 templates, menu/stock, orders, quotes, payments/Stripe, subscriptions, invoices, discounts, reviews, availability, messages, settings/business modes, directory, admin, emails, responsive, performance/RLS, edge cases/security, the July 2026 growth round — landing page/marketing site (§23), SEO/metadata/link sharing (§24), consent/analytics/growth tracking (§25) — and known-pending items (§26) — ~290 checks across 27 sections). July 2026 additions are appended to the END of existing sections (progress is keyed by section id + item index, so never insert items mid-section) and tagged "✅ NEW:"; §19 includes the full lifecycle-email/cron test recipes (simulate by adjusting created_at/event_date/trial_ends_at in SQL, then trigger /api/cron/daily with the CRON_SECRET header).
 
 - **Deployed with the site**: lives in `public/`, so it ships with every Netlify deploy and is reachable on the live site at `/testing-checklist.html` (e.g. `https://caterfy.netlify.app/testing-checklist.html`). Both testers open the same URL; no build step or server needed locally either (open the file directly).
 - **Per-tester local storage**: each tester picks/adds their name in the header dropdown. Progress is namespaced per tester under `localStorage` key `caterfy_qa_checklist_v1::<tester>`, with the tester list in `caterfy_qa_testers` and the active tester in `caterfy_qa_active_tester`. Two people testing on separate devices each keep their own independent state automatically; if they share a browser, switching the dropdown swaps between their separate checklists. A `Rename` button renames a profile (moving its state). An old single-profile key (`caterfy_qa_checklist_v1`) is auto-migrated into a `Default` tester on first load.
