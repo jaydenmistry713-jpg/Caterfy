@@ -1,8 +1,9 @@
 import Link from 'next/link'
-import {
-  Palette, Inbox, CreditCard, MapPin, Check, ArrowRight,
-} from 'lucide-react'
+import { Check, ArrowRight } from 'lucide-react'
 import HeroDemo from '@/components/marketing/hero-demo'
+import {
+  SiteSnapshot, OrdersSnapshot, PaymentsSnapshot, GrowthSnapshot,
+} from '@/components/marketing/feature-snapshots'
 import Reveal from '@/components/marketing/reveal'
 import CountUp from '@/components/marketing/count-up'
 
@@ -14,10 +15,11 @@ const TRUST_CATEGORIES = [
 ]
 
 // The full feature set, chunked into the four jobs a caterer hires Caterfy
-// for. Same facts as the old 11-card grid, ~60% less reading.
+// for. Same facts as the old 11-card grid, ~60% less reading. Each card leads
+// with a CSS-built snapshot of the real product UI (feature-snapshots.tsx).
 const CLUSTERS = [
   {
-    icon: Palette,
+    Visual: SiteSnapshot,
     eyebrow: 'Look professional',
     title: 'Your site, live in an afternoon',
     bullets: [
@@ -28,7 +30,7 @@ const CLUSTERS = [
     ],
   },
   {
-    icon: Inbox,
+    Visual: OrdersSnapshot,
     eyebrow: 'Take orders',
     title: 'Out of your DMs, into one inbox',
     bullets: [
@@ -39,7 +41,7 @@ const CLUSTERS = [
     ],
   },
   {
-    icon: CreditCard,
+    Visual: PaymentsSnapshot,
     eyebrow: 'Get paid',
     title: 'However you already work',
     bullets: [
@@ -50,7 +52,7 @@ const CLUSTERS = [
     ],
   },
   {
-    icon: MapPin,
+    Visual: GrowthSnapshot,
     eyebrow: 'Get found',
     title: 'Marketing that runs itself',
     bullets: [
@@ -181,22 +183,20 @@ export default function HomePage() {
           <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-5">
             {CLUSTERS.map((c, i) => (
               <Reveal key={c.eyebrow} delay={(i % 2) * 90}>
-                <div className="mk-card h-full p-8">
-                  <div className="flex items-center gap-4">
-                    <span className="mk-icon-tile">
-                      <c.icon className="h-5 w-5" strokeWidth={1.7} />
-                    </span>
+                <div className="mk-card h-full p-4 sm:p-5">
+                  <c.Visual />
+                  <div className="px-2 pt-6 pb-3 sm:px-3">
                     <p className="mk-eyebrow">{c.eyebrow}</p>
+                    <h3 className="mt-4 text-2xl font-bold leading-snug">{c.title}</h3>
+                    <ul className="mt-5 space-y-3">
+                      {c.bullets.map((b) => (
+                        <li key={b} className="flex items-start gap-3 text-[15px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
+                          <Check className="h-4 w-4 mt-1 flex-shrink-0" strokeWidth={2} style={{ color: 'var(--marigold-deep)' }} />
+                          {b}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <h3 className="mt-5 text-2xl font-bold leading-snug">{c.title}</h3>
-                  <ul className="mt-5 space-y-3">
-                    {c.bullets.map((b) => (
-                      <li key={b} className="flex items-start gap-3 text-[15px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-                        <Check className="h-4 w-4 mt-1 flex-shrink-0" strokeWidth={2} style={{ color: 'var(--marigold-deep)' }} />
-                        {b}
-                      </li>
-                    ))}
-                  </ul>
                 </div>
               </Reveal>
             ))}
