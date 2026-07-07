@@ -137,8 +137,8 @@ export default function HomePage() {
                 Start your free trial
                 <ArrowRight className="h-4 w-4" strokeWidth={1.7} />
               </Link>
-              <Link href="/#how-it-works" className="mk-btn mk-btn-ghost">
-                See how it works
+              <Link href="/demo" className="mk-btn mk-btn-ghost">
+                See an example site
               </Link>
             </div>
             <p className="mk-mono mk-enter mk-enter-5 mt-6 text-xs tracking-[0.18em] uppercase" style={{ color: 'var(--ink-soft)' }}>

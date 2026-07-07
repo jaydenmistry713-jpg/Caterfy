@@ -91,7 +91,7 @@ export const RESERVED_SLUGS = new Set([
   'pricing', 'blog', 'news', 'faq', 'legal', 'cookies', 'sitemap',
   'guides', 'review', 'order-status', 'verify-email', 'forgot-password',
   'reset-password', 'availability', 'analytics', 'discount-codes',
-  'site-editor', 'robots', 'og-image',
+  'site-editor', 'robots', 'og-image', 'demo',
 ])
 
 export function validateSlug(slug: string): string | null {
