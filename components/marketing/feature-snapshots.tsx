@@ -1,5 +1,5 @@
 import {
-  Check, Clock, CreditCard, Landmark, Smartphone, HandCoins, Star,
+  Check, Clock, Landmark, HandCoins, Star,
 } from 'lucide-react'
 
 // Tentary-style product visuals for the landing-page feature cards: each is a
@@ -122,12 +122,102 @@ export function OrdersSnapshot() {
 
 /* ---------- Get paid: checkout payment options ---------- */
 
-const PAYMENT_ROWS = [
-  { icon: CreditCard, label: 'Visa & Mastercard' },
-  { icon: Smartphone, label: 'Apple Pay & Google Pay' },
-  { icon: Landmark, label: 'Bank transfer' },
-  { icon: HandCoins, label: 'Pay on the day' },
-]
+// Hand-built payment brand marks: inline SVG/CSS replicas kept self-contained
+// (no logo assets, no external requests). Each sits in a small white card
+// tile (.mk-pay-tile).
+
+function VisaMark() {
+  return (
+    <span className="mk-pay-tile">
+      <svg viewBox="0 0 40 14" className="h-[9px] w-auto">
+        <text
+          x="20" y="12" textAnchor="middle"
+          fontFamily="Arial, Helvetica, sans-serif" fontSize="14.5" fontWeight="700" fontStyle="italic"
+          fill="#1A1F71" letterSpacing="0.5"
+        >
+          VISA
+        </text>
+      </svg>
+    </span>
+  )
+}
+
+function MastercardMark() {
+  return (
+    <span className="mk-pay-tile">
+      <svg viewBox="0 0 30 19" className="h-[13px] w-auto">
+        <circle cx="11" cy="9.5" r="9" fill="#EB001B" />
+        <circle cx="19" cy="9.5" r="9" fill="#F79E1B" />
+        <path d="M15 2.3a9 9 0 0 1 0 14.4 9 9 0 0 1 0-14.4Z" fill="#FF5F00" />
+      </svg>
+    </span>
+  )
+}
+
+function AmexMark() {
+  return (
+    <span className="mk-pay-tile" style={{ background: '#006FCF', borderColor: '#006FCF' }}>
+      <svg viewBox="0 0 40 12" className="h-[8px] w-auto">
+        <text
+          x="20" y="10.5" textAnchor="middle"
+          fontFamily="Arial, Helvetica, sans-serif" fontSize="11" fontWeight="700"
+          fill="#FFFFFF" letterSpacing="0.6"
+        >
+          AMEX
+        </text>
+      </svg>
+    </span>
+  )
+}
+
+function ApplePayMark() {
+  return (
+    <span className="mk-pay-tile" style={{ background: '#000000', borderColor: '#000000' }}>
+      <svg viewBox="0 0 46 18" className="h-[11px] w-auto">
+        {/* Apple silhouette: leaf + bitten body */}
+        <path
+          d="M12.3 4.6c.7-.9 1.2-2.1 1-3.3-1 .05-2.2.7-2.9 1.55-.65.75-1.2 2-1 3.1 1.1.1 2.2-.55 2.9-1.35Z"
+          fill="#FFFFFF"
+        />
+        <path
+          d="M13.3 6.2c-1.6-.1-2.95.9-3.7.9-.76 0-1.93-.85-3.18-.83-1.63.03-3.14.95-3.98 2.42-1.7 2.95-.44 7.3 1.22 9.7.8 1.17 1.77 2.48 3.03 2.43 1.22-.05 1.68-.78 3.15-.78 1.46 0 1.88.78 3.17.76 1.3-.03 2.13-1.19 2.93-2.37.92-1.35 1.3-2.66 1.32-2.73-.03-.02-2.54-.98-2.56-3.9-.02-2.44 2-3.6 2.08-3.66-1.14-1.67-2.9-1.86-3.48-1.94Z"
+          fill="#FFFFFF"
+        />
+        <text
+          x="19" y="15"
+          fontFamily="Helvetica, Arial, sans-serif" fontSize="13" fontWeight="500"
+          fill="#FFFFFF"
+        >
+          Pay
+        </text>
+      </svg>
+    </span>
+  )
+}
+
+function GooglePayMark() {
+  return (
+    <span className="mk-pay-tile">
+      <svg viewBox="0 0 46 18" className="h-[11px] w-auto">
+        {/* Google G: four-colour arcs + crossbar */}
+        <g transform="translate(9 9)">
+          <path d="M0 -7.5 A7.5 7.5 0 0 1 5.3 -5.3 L2.65 -2.65 A3.75 3.75 0 0 0 0 -3.75 Z" fill="#EA4335" />
+          <path d="M0 -7.5 A7.5 7.5 0 0 0 -6.5 -3.75 L-3.25 -1.87 A3.75 3.75 0 0 1 0 -3.75 Z" fill="#EA4335" />
+          <path d="M-6.5 -3.75 A7.5 7.5 0 0 0 -6.5 3.75 L-3.25 1.87 A3.75 3.75 0 0 1 -3.25 -1.87 Z" fill="#FBBC05" />
+          <path d="M-6.5 3.75 A7.5 7.5 0 0 0 0 7.5 L0 3.75 A3.75 3.75 0 0 1 -3.25 1.87 Z" fill="#34A853" />
+          <path d="M0 7.5 A7.5 7.5 0 0 0 7.3 1.8 L7.5 -0.5 L0 -0.5 L0 2.5 L3.8 2.5 A3.75 3.75 0 0 1 0 3.75 Z" fill="#4285F4" />
+        </g>
+        <text
+          x="19.5" y="15"
+          fontFamily="Roboto, Helvetica, Arial, sans-serif" fontSize="13" fontWeight="500"
+          fill="#5F6368"
+        >
+          Pay
+        </text>
+      </svg>
+    </span>
+  )
+}
 
 export function PaymentsSnapshot() {
   return (
@@ -137,17 +227,30 @@ export function PaymentsSnapshot() {
 
       <div className="absolute left-1/2 -top-9 -translate-x-1/2 w-[290px] max-w-[92%] space-y-2">
         <SkeletonRow />
-        {PAYMENT_ROWS.map((row) => (
-          <div key={row.label} className="mk-snap-row">
-            <span className="mk-snap-icon">
-              <row.icon className="h-3.5 w-3.5" strokeWidth={1.7} />
-            </span>
-            {row.label}
-            <span className="mk-check">
-              <Check className="h-3 w-3" strokeWidth={3.2} />
-            </span>
-          </div>
-        ))}
+        <div className="mk-snap-row">
+          <span className="flex items-center gap-1"><VisaMark /><MastercardMark /><AmexMark /></span>
+          Card payments
+          <span className="mk-check"><Check className="h-3 w-3" strokeWidth={3.2} /></span>
+        </div>
+        <div className="mk-snap-row">
+          <span className="flex items-center gap-1"><ApplePayMark /><GooglePayMark /></span>
+          Apple Pay &amp; Google Pay
+          <span className="mk-check"><Check className="h-3 w-3" strokeWidth={3.2} /></span>
+        </div>
+        <div className="mk-snap-row">
+          <span className="mk-snap-icon">
+            <Landmark className="h-3.5 w-3.5" strokeWidth={1.7} />
+          </span>
+          Bank transfer
+          <span className="mk-check"><Check className="h-3 w-3" strokeWidth={3.2} /></span>
+        </div>
+        <div className="mk-snap-row">
+          <span className="mk-snap-icon">
+            <HandCoins className="h-3.5 w-3.5" strokeWidth={1.7} />
+          </span>
+          Pay on the day
+          <span className="mk-check"><Check className="h-3 w-3" strokeWidth={3.2} /></span>
+        </div>
       </div>
     </div>
   )

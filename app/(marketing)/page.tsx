@@ -21,7 +21,7 @@ const CLUSTERS = [
   {
     Visual: SiteSnapshot,
     eyebrow: 'Look professional',
-    title: 'Your site, live in an afternoon',
+    title: 'Your own catering website',
     bullets: [
       '4 templates, your colours, your photos — live at caterfy.com/your-name',
       'Proper menus with categories, packages & per-person pricing — not screenshots',
@@ -32,7 +32,7 @@ const CLUSTERS = [
   {
     Visual: OrdersSnapshot,
     eyebrow: 'Take orders',
-    title: 'Out of your DMs, into one inbox',
+    title: 'All your orders & quotes in one dashboard',
     bullets: [
       'Fixed-price orders and quote requests in one dashboard',
       'Send itemised quotes customers accept online — no chasing',
@@ -43,7 +43,7 @@ const CLUSTERS = [
   {
     Visual: PaymentsSnapshot,
     eyebrow: 'Get paid',
-    title: 'However you already work',
+    title: 'Collect payments however you like',
     bullets: [
       'Card payments straight to your bank via Stripe',
       'Bank transfer or pay-on-the-day — your call',
@@ -54,7 +54,7 @@ const CLUSTERS = [
   {
     Visual: GrowthSnapshot,
     eyebrow: 'Get found',
-    title: 'Marketing that runs itself',
+    title: 'Automatic reviews, emails & a directory listing',
     bullets: [
       'Listed in the Caterfy directory by location & cuisine',
       'Review requests sent after every event — reply from your dashboard',
