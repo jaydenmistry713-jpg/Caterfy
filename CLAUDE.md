@@ -110,7 +110,7 @@ caterers (
 caterer_pages (
   id UUID PRIMARY KEY,
   caterer_id UUID REFERENCES caterers(id),
-  template TEXT DEFAULT 'classic', -- 'classic', 'modern', 'bold', 'linkpage'
+  template TEXT DEFAULT 'classic', -- 'classic', 'modern', 'bold', 'linkpage', 'maison'
   tagline TEXT,
   about TEXT,
   primary_color TEXT DEFAULT '#000000',
@@ -122,7 +122,7 @@ caterer_pages (
   logo_url TEXT,
   hero_image_url TEXT,
   terms_conditions TEXT,
-  template_data JSONB DEFAULT '{}', -- shared: certifications[]; linkpage: chips, badge1, badge2, instagram, cta_label, extras, faqs
+  template_data JSONB DEFAULT '{}', -- shared: certifications[]; linkpage: chips, badge1, badge2, instagram, cta_label, extras, faqs; maison: { accent, band, paper } palette ids
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 )
@@ -439,7 +439,7 @@ All phases are implemented and the app builds successfully (Next.js 16, 51 route
 - Marketing landing page (caterer-first, redesigned July 2026) — see "Marketing Landing Page" section below
 - Caterer signup/login with email verification (Supabase Auth)
 - 14-day trial on signup, caterer record auto-created on email verify
-- Site builder: 4 templates (Classic, Modern, Bold, Link Page), branding, content, image uploads, URL slug
+- Site builder: 5 templates (Classic, Modern, Bold, Link Page, Maison), branding, content, image uploads, URL slug
   - Template picker shows mini wireframe previews of each layout (not just a label)
   - Animated 4-step onboarding wizard on first visit to site editor (template → accent colour → tagline → URL); final button says "Publish" and saves slug + page settings; slug saved to caterers table
   - After completing onboarding, automatically switches to Content tab with a nudge banner to add hero image and about text
@@ -555,6 +555,7 @@ Migrations live in `supabase/migrations/` and must be run manually in Supabase S
 - `010_package_is_popular.sql` — adds is_popular BOOLEAN to packages (caterer-chosen 'Popular' badge)
 - `011_catering_guest_range.sql` — adds min_catering_guests / max_catering_guests to caterers (quote guest range)
 - `012_growth_and_lifecycle.sql` — adds signup_source + link_shared_at to caterers, review_request_sent_at to orders; creates page_views table + `increment_page_view()` SECURITY DEFINER RPC (granted to anon/authenticated) and lifecycle_emails table (service-role only, unique caterer_id+email_key). **Must be run before the share checklist tick, page-view stats, attribution and the daily cron work fully** — until then the code degrades gracefully (page-view RPC errors ignored; signup_source written via separate best-effort update)
+- `013_maison_template.sql` — widens caterer_pages_template_check to include 'maison' (template 5). **Must be run before a caterer can save the Maison template**
 
 ### Deleting a test account (SQL order)
 Delete order-referencing children (`quotes`, `reviews`, `invoices`) BEFORE `orders`, and the `caterers` row LAST. The caterer id == the auth user id.
@@ -676,9 +677,9 @@ The homepage's warm brand look (fonts + colours) is applied across the rest of t
 
 ## Templates
 
-All four templates share:
-- Certification badges in the hero (from `template_data.certifications`)
-- Expandable menu item descriptions (hidden by default, expand on click/tap)
+All templates share:
+- Certification badges in the hero (from `template_data.certifications`; Maison renders them as text labels in its meta row instead of pills)
+- Expandable menu item descriptions (hidden by default, expand on click/tap) — except Maison, which always shows descriptions in its editorial menu list
 - Send message form in the contact/order section (→ `/api/messages`)
 - Order button respects `business_mode` (hides items or quote based on setting)
 
@@ -719,6 +720,18 @@ All four templates share:
 - Sticky bottom bar with "Order Now" + "Call" buttons
 - All accent colours are fully dynamic from `caterer_pages.accent_color`
 - Link Page-specific fields in the site editor Content tab: chips, badges, instagram, CTA label, extras, FAQs
+
+### Maison (template 5, July 2026 — "impossible to make a bad site")
+- Editorial, high-end look (`components/caterer/template-maison.tsx`): Fraunces serif + Inter (locked type pairing, loaded by the template itself — `/[slug]` skips the caterer-font injection for maison), generous whitespace, hairline rules, dotted menu price leaders, numbered package triptych (max 3 rendered, `is_popular` → "Most requested" tag), editorial gallery grid (slots cycle wide/wide/tall/tall/tall), one large serif pull-quote review (auto-picked: 5★ with 60–200 chars, else best) + up to 4 compact reviews, dark "details band" (Serving / Occasions / Dietary — composed from location, event types and dietary options with designed fallbacks), CTA + OrderButton + SendMessageForm
+- **Curated palette system instead of free colour/font pickers** (`components/caterer/maison-palette.ts`): accent (8 named deep colours) × band (5 dark panel colours) × paper (3 near-white tones) — every combination is contrast-safe by construction. Stored as `template_data.maison = { accent, band, paper }` ids (not hexes); unknown ids fall back to clay/moss/ivory. The editor's Branding tab swaps the colour pickers + font selects for three swatch-chip rows plus a live palette preview when maison is selected; `primary/secondary/accent/background_color` and `heading/body_font` columns are ignored by this template
+- Designed fallbacks everywhere: headline falls back to "Seasonal feasts, laid by hand." (tagline's last two words get the italic accent treatment automatically); hero sub-line, band copy and captions are composed from real data (event types, cuisines, location); sections hide when empty
+- Requires migration `013_maison_template.sql` (template check constraint)
+
+## Design Concepts (`design-concepts/`)
+
+Standalone self-contained HTML mock-ups (Google Fonts + hot-linked Unsplash; open directly in a browser) used to design "impossible to make ugly" templates before implementing them:
+- `concept-a-maison.html` — the editorial concept that became the Maison template (above)
+- `concept-b-feast.html` — **"Feast", not yet implemented**: bold street-food/BBQ direction (Archivo Black stacked headlines, rotated polaroids with hard offset shadows, sticker badges, animated marquee, thick-border menu cards with price tags, tilted "Most booked" package, speech-bubble reviews). Same palette philosophy as Maison (curated colour pairs, locked type) if/when built as template 6
 
 ## Email Templates Required
 

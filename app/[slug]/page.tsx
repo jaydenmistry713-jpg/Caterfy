@@ -7,6 +7,7 @@ import CatererPageClassic from '@/components/caterer/template-classic'
 import CatererPageModern from '@/components/caterer/template-modern'
 import CatererPageBold from '@/components/caterer/template-bold'
 import CatererPageLinkPage from '@/components/caterer/template-linkpage'
+import CatererPageMaison from '@/components/caterer/template-maison'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -147,8 +148,11 @@ export default async function CatererPage({ params }: Props) {
 
   const template = caterer.page?.template || 'classic'
 
-  // Load the caterer's selected Google Fonts so heading/body font choices actually render.
-  const fonts = Array.from(new Set([caterer.page?.heading_font, caterer.page?.body_font].filter(Boolean)))
+  // Load the caterer's selected Google Fonts so heading/body font choices
+  // actually render. Maison locks its own type pairing and loads it itself.
+  const fonts = template === 'maison'
+    ? []
+    : Array.from(new Set([caterer.page?.heading_font, caterer.page?.body_font].filter(Boolean)))
   const fontHref = fonts.length
     ? `https://fonts.googleapis.com/css2?${fonts.map((f: string) => `family=${encodeURIComponent(f).replace(/%20/g, '+')}:wght@400;500;600;700`).join('&')}&display=swap`
     : null
@@ -191,6 +195,7 @@ export default async function CatererPage({ params }: Props) {
     template === 'modern' ? <CatererPageModern {...data} /> :
     template === 'bold' ? <CatererPageBold {...data} /> :
     template === 'linkpage' ? <CatererPageLinkPage {...data} /> :
+    template === 'maison' ? <CatererPageMaison {...data} /> :
     <CatererPageClassic {...data} />
 
   return (

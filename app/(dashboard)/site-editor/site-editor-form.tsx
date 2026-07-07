@@ -18,6 +18,9 @@ import { ExternalLink, Upload, X, Plus, Trash2, Sparkles, Share2 } from 'lucide-
 import SiteEditorOnboarding from './site-editor-onboarding'
 import ShareSiteDialog from '@/components/dashboard/share-site-dialog'
 import { CERTIFICATIONS } from '@/components/caterer/certification-badges'
+import {
+  MAISON_ACCENTS, MAISON_BANDS, MAISON_PAPERS, MAISON_DEFAULTS,
+} from '@/components/caterer/maison-palette'
 import { track } from '@/lib/analytics'
 
 const TEMPLATES = [
@@ -25,6 +28,7 @@ const TEMPLATES = [
   { id: 'modern', name: 'Modern', desc: 'Contemporary with masonry gallery and centered layout' },
   { id: 'bold', name: 'Bold', desc: 'High-impact with card menu and colour-block design' },
   { id: 'linkpage', name: 'Link Page', desc: 'Dark, mobile-first with sticky bar and social links' },
+  { id: 'maison', name: 'Maison', desc: 'Elegant and editorial — serif type, curated colour palettes' },
 ]
 
 // Relative luminance (0 = black, 1 = white) for a #rrggbb hex colour
@@ -121,6 +125,13 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
     sticky_bar: td.sticky_bar ?? false,
   })
 
+  // Maison palette: three curated layers instead of free colour pickers
+  const [maison, setMaison] = useState({
+    accent: td.maison?.accent || MAISON_DEFAULTS.accent,
+    band: td.maison?.band || MAISON_DEFAULTS.band,
+    paper: td.maison?.paper || MAISON_DEFAULTS.paper,
+  })
+
   // Contact visibility lives on the caterer record but is edited here for convenience
   const [showContact, setShowContact] = useState<boolean>(caterer?.show_contact_publicly ?? true)
 
@@ -133,7 +144,7 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
       return
     }
     setDirty(true)
-  }, [form, heroUrl, logoUrl, slug, selectedCerts, templateData, showContact])
+  }, [form, heroUrl, logoUrl, slug, selectedCerts, templateData, showContact, maison])
 
   function handleSlugChange(val: string) {
     const cleaned = slugify(val)
@@ -175,6 +186,7 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
           certifications: selectedCerts,
           hero_overlay: templateData.hero_overlay,
           sticky_bar: templateData.sticky_bar,
+          maison,
         },
       }
       if (page) {
@@ -366,6 +378,35 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
                       <div className="h-4 bg-gray-950 border-t border-gray-800 flex items-center px-2 gap-1">
                         <div className="flex-1 h-2 bg-orange-500/60 rounded" />
                         <div className="flex-1 h-2 bg-gray-800 rounded border border-gray-700" />
+                      </div>
+                    </div>
+                  )}
+                  {/* Maison */}
+                  {t.id === 'maison' && (
+                    <div className="h-28 rounded-lg mb-3 overflow-hidden flex flex-col border border-gray-200" style={{ background: '#FAF6EE' }}>
+                      <div className="h-2.5 flex items-center px-1.5 gap-1" style={{ borderBottom: '1px solid rgba(35,38,30,0.1)' }}>
+                        <div className="w-8 h-1 rounded" style={{ background: '#23261E' }} />
+                        <div className="ml-auto flex gap-1"><div className="w-3 h-0.5 rounded bg-gray-300" /><div className="w-4 h-1.5 rounded-full border border-gray-400" /></div>
+                      </div>
+                      <div className="px-2 pt-2 space-y-1">
+                        <div className="w-6 h-0.5 rounded" style={{ background: '#B4643C' }} />
+                        <div className="w-20 h-2 rounded-sm" style={{ background: '#23261E' }} />
+                        <div className="flex gap-1 items-center">
+                          <div className="w-10 h-2 rounded-sm" style={{ background: '#B4643C', opacity: 0.85 }} />
+                          <div className="w-8 h-0.5 rounded bg-gray-300" />
+                        </div>
+                      </div>
+                      <div className="flex-1 px-2 pt-1.5 grid grid-cols-3 gap-1">
+                        {[0, 1, 2].map((i) => (
+                          <div key={i} className="space-y-0.5 pt-0.5" style={{ borderTop: '1px solid rgba(35,38,30,0.18)' }}>
+                            <div className="w-3 h-0.5 rounded" style={{ background: '#B4643C' }} />
+                            <div className="w-full h-0.5 bg-gray-300 rounded" />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="h-5 flex items-center px-2 gap-1.5" style={{ background: '#3C4A34' }}>
+                        <div className="w-8 h-0.5 rounded bg-white/50" />
+                        <div className="w-8 h-0.5 rounded bg-white/50" />
                       </div>
                     </div>
                   )}
@@ -598,6 +639,81 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
           <TabsContent value="branding">
             <Card>
               <CardContent className="pt-6 space-y-6">
+                {form.template === 'maison' ? (
+                  <>
+                    <p className="text-xs text-gray-500 bg-gray-50 rounded-lg p-3 leading-relaxed">
+                      <strong>Maison uses curated palettes.</strong> Pick an accent, a feature-panel
+                      colour and a paper tone — every combination is designed to work together, and
+                      the typography (Fraunces &amp; Inter) is part of the template.
+                    </p>
+
+                    {/* Live palette preview */}
+                    <div
+                      className="rounded-xl overflow-hidden border border-gray-200"
+                      style={{ background: MAISON_PAPERS[maison.paper].hex }}
+                    >
+                      <div className="px-5 pt-5 pb-4">
+                        <div
+                          className="text-[10px] font-semibold uppercase"
+                          style={{ letterSpacing: '0.2em', color: MAISON_ACCENTS[maison.accent].hex }}
+                        >
+                          Preview
+                        </div>
+                        <p className="mt-1 text-xl" style={{ fontFamily: 'Georgia, serif', color: '#23261E' }}>
+                          Seasonal feasts,{' '}
+                          <em style={{ color: MAISON_ACCENTS[maison.accent].hex }}>laid by hand.</em>
+                        </p>
+                        <span
+                          className="inline-block mt-3 rounded-full px-4 py-1.5 text-xs font-semibold text-white"
+                          style={{ background: MAISON_ACCENTS[maison.accent].hex }}
+                        >
+                          Plan your event →
+                        </span>
+                      </div>
+                      <div
+                        className="px-5 py-3 text-xs"
+                        style={{ background: MAISON_BANDS[maison.band].hex, color: MAISON_PAPERS[maison.paper].hex }}
+                      >
+                        Serving · Occasions · Dietary
+                      </div>
+                    </div>
+
+                    {([
+                      { key: 'accent', label: 'Accent colour', help: 'Buttons, prices, highlights and the italic headline word.', options: MAISON_ACCENTS },
+                      { key: 'band', label: 'Feature panel', help: 'The dark full-width panel near the bottom of your page.', options: MAISON_BANDS },
+                      { key: 'paper', label: 'Paper tone', help: 'Your page background.', options: MAISON_PAPERS },
+                    ] as const).map(({ key, label, help, options }) => (
+                      <div key={key}>
+                        <Label>{label}</Label>
+                        <p className="text-xs text-gray-500 mb-2">{help}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {Object.entries(options).map(([id, opt]) => (
+                            <button
+                              key={id}
+                              type="button"
+                              onClick={() => setMaison({ ...maison, [key]: id })}
+                              className={`flex items-center gap-2 rounded-full border-2 px-3 py-1.5 text-sm font-medium transition-colors ${
+                                maison[key] === id
+                                  ? 'border-gray-900 bg-gray-50 text-gray-900'
+                                  : 'border-gray-200 text-gray-600 hover:border-gray-400'
+                              }`}
+                            >
+                              <span
+                                className="w-4 h-4 rounded-full flex-shrink-0"
+                                style={{
+                                  background: opt.hex,
+                                  border: key === 'paper' ? '1px solid rgba(0,0,0,0.15)' : undefined,
+                                }}
+                              />
+                              {opt.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  <>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   {[
                     { key: 'primary_color', label: 'Primary colour' },
@@ -661,6 +777,8 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
                   <p className="text-xs text-gray-500 bg-gray-50 rounded-lg p-3">
                     For the Link Page template, <strong>Accent colour</strong> is the primary brand colour used throughout — buttons, prices, badges, and hover states.
                   </p>
+                )}
+                  </>
                 )}
               </CardContent>
             </Card>

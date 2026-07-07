@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ember &amp; Salt — Concept B “Feast”</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,900;1,900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #FFF3E2;
+    --char: #1A1512;
+    --char-2: #241E19;
+    --flame: #E4572E;
+    --mustard: #F2A93B;
+    --cream: #FFF8EC;
+    --line: #1A1512;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--char);
+    font-family: 'Archivo', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  .display {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 900;
+    text-transform: uppercase;
+    line-height: 0.95;
+    letter-spacing: -0.01em;
+  }
+
+  .mono {
+    font-family: 'Space Grotesk', monospace;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-size: 12px;
+  }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+  img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  a { color: inherit; text-decoration: none; }
+
+  /* ---------- Nav ---------- */
+  nav {
+    position: sticky; top: 0; z-index: 60;
+    background: var(--char);
+    color: var(--cream);
+    border-bottom: 3px solid var(--flame);
+  }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 66px; }
+  .logo { font-weight: 900; font-size: 19px; text-transform: uppercase; letter-spacing: 0.02em; }
+  .logo span { color: var(--flame); }
+  .nav-links { display: flex; gap: 28px; align-items: center; }
+  .nav-links a { font-size: 13.5px; font-weight: 600; opacity: 0.85; }
+  .nav-links a:hover { opacity: 1; color: var(--mustard); }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 0.04em;
+    padding: 13px 24px;
+    border: 2px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 4px 4px 0 var(--line);
+    transition: transform 0.15s, box-shadow 0.15s;
+    background: var(--mustard); color: var(--char) !important;
+  }
+  .btn:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--line); }
+  .btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--line); }
+  .btn-flame { background: var(--flame); color: var(--cream) !important; }
+  .btn-ghost { background: transparent; color: var(--cream) !important; border-color: var(--cream); box-shadow: 4px 4px 0 rgba(255,248,236,0.35); }
+  .nav .btn { padding: 9px 18px; box-shadow: 3px 3px 0 var(--flame); border-color: var(--flame); }
+
+  /* ---------- Hero ---------- */
+  .hero { background: var(--char); color: var(--cream); position: relative; overflow: hidden; }
+  .hero-grid {
+    display: grid; grid-template-columns: 7fr 5fr; gap: 50px;
+    align-items: center; padding: 84px 0 96px;
+  }
+  .kicker {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--flame); color: var(--cream);
+    padding: 7px 16px; border-radius: 999px;
+    transform: rotate(-1.5deg);
+    margin-bottom: 28px;
+  }
+  .hero h1 { font-size: clamp(54px, 8.5vw, 110px); }
+  .hero h1 .outline {
+    color: transparent;
+    -webkit-text-stroke: 2.5px var(--mustard);
+  }
+  .hero h1 .flame { color: var(--flame); }
+  .hero-sub { margin-top: 26px; font-size: 18px; max-width: 44ch; opacity: 0.85; }
+  .hero-btns { display: flex; gap: 16px; margin-top: 36px; flex-wrap: wrap; }
+  .hero-note { margin-top: 22px; font-size: 13px; opacity: 0.6; }
+
+  .hero-photos { position: relative; height: 520px; }
+  .polaroid {
+    position: absolute;
+    background: var(--cream);
+    border: 2px solid var(--line);
+    border-radius: 14px;
+    padding: 10px 10px 14px;
+    box-shadow: 8px 8px 0 rgba(228, 87, 46, 0.9);
+  }
+  .polaroid figure { border-radius: 8px; overflow: hidden; border: 2px solid var(--line); }
+  .polaroid .tag { margin-top: 10px; color: var(--char); text-align: center; font-size: 11px; }
+  .p1 { width: 76%; top: 30px; left: 0; transform: rotate(-3deg); z-index: 2; }
+  .p1 figure { aspect-ratio: 4/4.4; }
+  .p1 .tag { text-align: left; padding-left: 6px; }
+  .p2 { width: 54%; bottom: -8px; right: -4px; transform: rotate(2.5deg); z-index: 3; box-shadow: 8px 8px 0 rgba(242, 169, 59, 0.9); }
+  .p2 figure { aspect-ratio: 4/3.4; }
+  .sticker {
+    position: absolute; z-index: 5;
+    width: 110px; height: 110px;
+    top: -12px; right: 8px;
+    background: var(--mustard);
+    border: 2px solid var(--line);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    font-weight: 900; font-size: 13px; line-height: 1.15; text-transform: uppercase;
+    color: var(--char);
+    transform: rotate(9deg);
+    box-shadow: 4px 4px 0 var(--line);
+  }
+
+  /* ---------- Marquee ---------- */
+  .marquee {
+    background: var(--flame); color: var(--char);
+    border-top: 3px solid var(--line); border-bottom: 3px solid var(--line);
+    overflow: hidden; padding: 13px 0;
+  }
+  .marquee-track {
+    display: flex; gap: 42px; width: max-content;
+    font-weight: 900; text-transform: uppercase; font-size: 16px; letter-spacing: 0.06em;
+    animation: slide 22s linear infinite;
+  }
+  @keyframes slide { to { transform: translateX(-50%); } }
+
+  /* ---------- Sections ---------- */
+  section { padding: 96px 0; }
+  .sec-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 30px; margin-bottom: 50px; flex-wrap: wrap; }
+  .sec-head h2 { font-size: clamp(38px, 5vw, 64px); }
+  .sec-head .mono { color: var(--flame); display: block; margin-bottom: 12px; }
+
+  /* ---------- Menu cards ---------- */
+  .menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; }
+  .dish {
+    background: var(--cream);
+    border: 2px solid var(--line);
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 6px 6px 0 var(--line);
+    transition: transform 0.18s, box-shadow 0.18s;
+  }
+  .dish:hover { transform: translate(-3px, -3px); box-shadow: 10px 10px 0 var(--line); }
+  .dish figure { aspect-ratio: 4/2.9; border-bottom: 2px solid var(--line); }
+  .dish-body { padding: 20px 20px 24px; position: relative; }
+  .dish h3 { font-weight: 900; text-transform: uppercase; font-size: 19px; letter-spacing: 0.01em; }
+  .dish p { font-size: 14px; margin-top: 8px; opacity: 0.75; }
+  .price-tag {
+    position: absolute; top: -19px; right: 16px;
+    background: var(--mustard);
+    border: 2px solid var(--line);
+    border-radius: 999px;
+    font-weight: 900; font-size: 14px;
+    padding: 6px 14px;
+    box-shadow: 3px 3px 0 var(--line);
+    transform: rotate(2deg);
+  }
+  .diet { display: inline-block; margin-top: 12px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; background: rgba(26,21,18,0.08); padding: 4px 10px; border-radius: 999px; }
+
+  /* ---------- Packages ---------- */
+  .packs { background: var(--char); color: var(--cream); }
+  .packs .sec-head .mono { color: var(--mustard); }
+  .pack-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; align-items: stretch; }
+  .pack {
+    border: 2px solid var(--cream);
+    border-radius: 18px;
+    padding: 30px 28px 34px;
+    background: var(--char-2);
+    position: relative;
+  }
+  .pack.hot {
+    background: var(--flame);
+    border-color: var(--line);
+    box-shadow: 8px 8px 0 var(--mustard);
+    transform: rotate(-1deg) scale(1.02);
+  }
+  .pack .feeds { font-family: 'Space Grotesk'; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; opacity: 0.75; }
+  .pack h3 { font-weight: 900; text-transform: uppercase; font-size: 24px; margin-top: 10px; }
+  .pack .p-price { font-size: 44px; font-weight: 900; margin-top: 8px; }
+  .pack .p-price span { font-size: 15px; font-weight: 600; opacity: 0.7; }
+  .pack ul { list-style: none; margin-top: 20px; }
+  .pack li { padding: 6px 0 6px 26px; position: relative; font-size: 14.5px; }
+  .pack li::before { content: '🔥'; position: absolute; left: 0; font-size: 12px; }
+  .pack.hot li::before { content: '★'; color: var(--char); font-weight: 900; }
+  .hot-tag {
+    position: absolute; top: -16px; left: 24px;
+    background: var(--mustard); color: var(--char);
+    border: 2px solid var(--line); border-radius: 999px;
+    font-weight: 900; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em;
+    padding: 5px 14px;
+    transform: rotate(-2deg);
+    box-shadow: 3px 3px 0 var(--line);
+  }
+
+  /* ---------- Reviews ---------- */
+  .rev-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; }
+  .rev {
+    background: var(--cream);
+    border: 2px solid var(--line);
+    border-radius: 18px;
+    padding: 26px;
+    box-shadow: 6px 6px 0 var(--line);
+  }
+  .rev:nth-child(2) { transform: rotate(1deg); box-shadow: 6px 6px 0 var(--flame); }
+  .rev:nth-child(3) { transform: rotate(-1deg); box-shadow: 6px 6px 0 var(--mustard); }
+  .rev .stars { color: var(--flame); font-size: 17px; letter-spacing: 4px; }
+  .rev p { margin-top: 14px; font-size: 15.5px; font-weight: 500; }
+  .rev .who { margin-top: 16px; font-family: 'Space Grotesk'; font-size: 11.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.6; }
+
+  /* ---------- CTA ---------- */
+  .cta {
+    background: var(--flame); color: var(--char);
+    border-top: 3px solid var(--line);
+    text-align: center;
+    padding: 110px 0;
+  }
+  .cta h2 { font-size: clamp(48px, 8vw, 96px); color: var(--cream); text-shadow: 4px 4px 0 var(--char); }
+  .cta p { font-size: 18px; font-weight: 600; margin-top: 18px; }
+  .cta .btn { margin-top: 34px; background: var(--char); color: var(--cream) !important; box-shadow: 5px 5px 0 var(--mustard); font-size: 16px; padding: 17px 34px; }
+  .cta .mono { display: block; margin-top: 26px; color: var(--char); opacity: 0.75; }
+
+  footer { background: var(--char); color: var(--cream); padding: 26px 0; }
+  .foot { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 13px; opacity: 0.75; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 900px) {
+    .hero-grid { grid-template-columns: 1fr; padding: 60px 0 70px; }
+    .hero-photos { height: 430px; max-width: 480px; }
+    .menu-grid, .pack-grid, .rev-grid { grid-template-columns: 1fr; }
+    .pack.hot { transform: none; }
+    .nav-links a:not(.btn) { display: none; }
+    section { padding: 70px 0; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap nav-inner">
+    <a class="logo" href="#">Ember<span>&amp;</span>Salt</a>
+    <div class="nav-links">
+      <a href="#menu">Menu</a>
+      <a href="#packages">Packages</a>
+      <a href="#reviews">Reviews</a>
+      <a class="btn" href="#">Book the pit</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="kicker mono">★ Bristol street food &amp; events</span>
+      <h1 class="display">
+        Low <span class="outline">&amp;</span> slow.<br>
+        <span class="flame">Smoke</span> &amp; fire.
+      </h1>
+      <p class="hero-sub">
+        Twelve-hour brisket, buttermilk fried chicken and proper sides —
+        cooked over oak at your wedding, festival or party. We bring the pit.
+      </p>
+      <div class="hero-btns">
+        <a class="btn btn-flame" href="#">Get a quote →</a>
+        <a class="btn btn-ghost" href="#menu">See the menu</a>
+      </div>
+      <p class="hero-note">Feeding crowds of 30–500 · Fully licensed · 5★ hygiene</p>
+    </div>
+    <div class="hero-photos">
+      <div class="sticker">12-hr<br>brisket</div>
+      <div class="polaroid p1">
+        <figure><img src="https://images.unsplash.com/photo-1544025162-d76694265947?w=1000&q=80&auto=format&fit=crop" alt="Sliced smoked brisket on a board"></figure>
+        <div class="tag mono">THE MAIN EVENT</div>
+      </div>
+      <div class="polaroid p2">
+        <figure><img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&q=80&auto=format&fit=crop" alt="Skewers over flame"></figure>
+        <div class="tag mono">OVER OAK, ALWAYS</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Marquee -->
+<div class="marquee">
+  <div class="marquee-track">
+    <span>Weddings ★ Festivals ★ Birthdays ★ Corporate ★ Street food ★ Private parties ★</span>
+    <span>Weddings ★ Festivals ★ Birthdays ★ Corporate ★ Street food ★ Private parties ★</span>
+  </div>
+</div>
+
+<!-- Menu -->
+<section id="menu">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <span class="mono">What we cook</span>
+        <h2 class="display">The greatest hits.</h2>
+      </div>
+      <a class="btn" href="#">Full menu →</a>
+    </div>
+    <div class="menu-grid">
+      <div class="dish">
+        <figure><img loading="lazy" src="https://images.unsplash.com/photo-1544025162-d76694265947?w=900&q=80&auto=format&fit=crop" alt="Smoked brisket"></figure>
+        <div class="dish-body">
+          <span class="price-tag">£12.50</span>
+          <h3>12-hour brisket</h3>
+          <p>Oak-smoked overnight, sliced to order. Pickles, burnt-end beans, brioche.</p>
+        </div>
+      </div>
+      <div class="dish">
+        <figure><img loading="lazy" src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=900&q=80&auto=format&fit=crop" alt="Loaded burger"></figure>
+        <div class="dish-body">
+          <span class="price-tag">£11.00</span>
+          <h3>Smash stack</h3>
+          <p>Double smashed patties, ember cheese sauce, house pickles, shack sauce.</p>
+        </div>
+      </div>
+      <div class="dish">
+        <figure><img loading="lazy" src="https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=900&q=80&auto=format&fit=crop" alt="Tacos, three ways">
+        </figure>
+        <div class="dish-body">
+          <span class="price-tag">£9.50</span>
+          <h3>Pit tacos</h3>
+          <p>Pulled pork or charred squash, pink onions, lime crema, three per tray.</p>
+          <span class="diet">Veggie option</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Packages -->
+<section id="packages" class="packs">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <span class="mono">Feed your crowd</span>
+        <h2 class="display">Pick your heat.</h2>
+      </div>
+    </div>
+    <div class="pack-grid">
+      <div class="pack">
+        <span class="feeds">FEEDS 30–60</span>
+        <h3>The Street Party</h3>
+        <p class="p-price">£795</p>
+        <ul>
+          <li>Two mains from the hits</li>
+          <li>Three proper sides</li>
+          <li>Two hours of service</li>
+        </ul>
+      </div>
+      <div class="pack hot">
+        <span class="hot-tag">Most booked</span>
+        <span class="feeds">FEEDS 60–150</span>
+        <h3>The Full Smoke</h3>
+        <p class="p-price">£1,450</p>
+        <ul>
+          <li>Brisket + two more mains</li>
+          <li>Four sides &amp; slaw bar</li>
+          <li>Evening grazing round two</li>
+        </ul>
+      </div>
+      <div class="pack">
+        <span class="feeds">FEEDS 150–500</span>
+        <h3>The Festival</h3>
+        <p class="p-price">£POA</p>
+        <ul>
+          <li>Full pit setup + trailer</li>
+          <li>Menu built with you</li>
+          <li>All-day crew &amp; service</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Reviews -->
+<section id="reviews">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <span class="mono">Word on the street</span>
+        <h2 class="display">They keep coming back.</h2>
+      </div>
+    </div>
+    <div class="rev-grid">
+      <div class="rev">
+        <div class="stars">★★★★★</div>
+        <p>“Booked for our wedding — guests abandoned the dance floor when the brisket came out. Zero regrets.”</p>
+        <div class="who">Jess &amp; Dan · Wedding</div>
+      </div>
+      <div class="rev">
+        <div class="stars">★★★★★</div>
+        <p>“Fed 200 of us at the summer festival and the queue moved fast. The smash stack is stupidly good.”</p>
+        <div class="who">Amara · Festival organiser</div>
+      </div>
+      <div class="rev">
+        <div class="stars">★★★★★</div>
+        <p>“Office party sorted in one email. They handled the vegans better than most veggie caterers do.”</p>
+        <div class="who">Chris · Corporate</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta">
+  <div class="wrap">
+    <h2 class="display">Book the pit.</h2>
+    <p>Tell us the date and the headcount — we’ll bring the fire.</p>
+    <a class="btn" href="#">Get a quote →</a>
+    <span class="mono">07700 900 442 · HELLO@EMBERANDSALT.CO.UK</span>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap foot">
+    <span>© 2026 Ember &amp; Salt</span>
+    <span>@emberandsaltbbq</span>
+    <span>Powered by Caterfy</span>
+  </div>
+</footer>
+
+</body>
+</html>

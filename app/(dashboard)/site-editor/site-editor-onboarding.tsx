@@ -18,6 +18,7 @@ const TEMPLATES = [
   { id: 'modern', name: 'Modern', desc: 'Contemporary with masonry gallery' },
   { id: 'bold', name: 'Bold', desc: 'High-impact with colour-block design' },
   { id: 'linkpage', name: 'Link Page', desc: 'Dark, mobile-first with sticky bar' },
+  { id: 'maison', name: 'Maison', desc: 'Elegant, editorial, curated palettes' },
 ]
 
 const STEPS = [

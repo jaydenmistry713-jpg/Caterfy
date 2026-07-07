@@ -23,7 +23,7 @@ const CLUSTERS = [
     eyebrow: 'Look professional',
     title: 'Your own catering website',
     bullets: [
-      '4 templates, your colours, your photos — live at caterfy.com/your-name',
+      '5 templates, your colours, your photos — live at caterfy.com/your-name',
       'Proper menus with categories, packages & per-person pricing — not screenshots',
       'Gallery, reviews and an order form built in',
       'No designer, no code, no £800 invoice',
@@ -67,7 +67,7 @@ const STEPS = [
   {
     num: '01',
     title: 'Pick a template',
-    copy: 'Choose Classic, Modern, Bold or Link Page, set your accent colour, and claim caterfy.com/your-name. No designer, no code.',
+    copy: 'Choose from five templates — Classic, Modern, Bold, Link Page or Maison — set your colours, and claim caterfy.com/your-name. No designer, no code.',
   },
   {
     num: '02',
@@ -82,7 +82,7 @@ const STEPS = [
 ]
 
 const PLAN_FEATURES = [
-  'Professional website — 4 templates',
+  'Professional website — 5 templates',
   'Orders & quote requests',
   'Invoices & discount codes',
   'Card, bank transfer & pay-later payments',
@@ -300,7 +300,7 @@ export default function HomePage() {
               {[
                 { value: <CountUp to={10} prefix="£" />, label: 'a month, flat' },
                 { value: <CountUp to={14} />, label: 'day free trial' },
-                { value: <CountUp to={4} />, label: 'site templates' },
+                { value: <CountUp to={5} />, label: 'site templates' },
                 { value: <CountUp to={0} suffix="%" />, label: 'commission on orders' },
               ].map((stat, i) => (
                 <div key={i}>

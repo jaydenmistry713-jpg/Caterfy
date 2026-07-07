@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Willow Pantry — Concept A “Maison”</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #FAF6EE;
+    --ink: #23261E;
+    --soft: #71746A;
+    --moss: #3C4A34;
+    --moss-deep: #2E3A28;
+    --clay: #B4643C;
+    --hairline: rgba(35, 38, 30, 0.16);
+    --hairline-soft: rgba(35, 38, 30, 0.09);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .serif { font-family: 'Fraunces', Georgia, serif; font-weight: 400; }
+
+  .label {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--clay);
+  }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 28px; }
+
+  img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+  a { color: inherit; text-decoration: none; }
+
+  /* ---------- Nav ---------- */
+  nav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(250, 246, 238, 0.92);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--hairline-soft);
+  }
+  .nav-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    height: 68px;
+  }
+  .wordmark {
+    font-size: 13px; font-weight: 600;
+    letter-spacing: 0.28em; text-transform: uppercase;
+  }
+  .nav-links { display: flex; gap: 34px; align-items: center; }
+  .nav-links a {
+    font-size: 13px; font-weight: 500; color: var(--soft);
+    transition: color 0.15s;
+  }
+  .nav-links a:hover { color: var(--ink); }
+  .nav-cta {
+    border: 1px solid var(--ink);
+    border-radius: 999px;
+    padding: 9px 22px;
+    font-size: 13px; font-weight: 600;
+    color: var(--ink) !important;
+    transition: background 0.2s, color 0.2s;
+  }
+  .nav-cta:hover { background: var(--ink); color: var(--paper) !important; }
+
+  /* ---------- Hero ---------- */
+  .hero { padding: 90px 0 0; }
+  .hero-meta {
+    display: flex; gap: 26px; flex-wrap: wrap;
+    margin-bottom: 30px;
+  }
+  .hero h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 350;
+    font-size: clamp(44px, 7.2vw, 92px);
+    line-height: 1.04;
+    letter-spacing: -0.015em;
+    max-width: 12ch;
+  }
+  .hero h1 em {
+    font-style: italic;
+    color: var(--clay);
+    font-weight: 380;
+  }
+  .hero-row {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    gap: 40px; margin-top: 44px; flex-wrap: wrap;
+  }
+  .hero-sub { max-width: 400px; color: var(--soft); font-size: 17px; }
+  .btn-row { display: flex; gap: 14px; align-items: center; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 9px;
+    border-radius: 999px; padding: 15px 30px;
+    font-size: 14px; font-weight: 600;
+    transition: transform 0.18s, box-shadow 0.18s;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-clay { background: var(--clay); color: #FFF; }
+  .btn-clay:hover { box-shadow: 0 10px 26px rgba(180, 100, 60, 0.35); }
+  .btn-line { border: 1px solid var(--hairline); color: var(--ink); }
+  .btn-line:hover { background: rgba(35,38,30,0.05); }
+
+  .hero-img {
+    margin-top: 70px;
+    aspect-ratio: 21 / 9;
+    overflow: hidden;
+    border-radius: 4px;
+  }
+  .hero-caption {
+    display: flex; justify-content: space-between;
+    padding: 14px 4px 0;
+    font-size: 12px; color: var(--soft);
+    letter-spacing: 0.06em;
+  }
+
+  /* ---------- Section scaffolding ---------- */
+  section { padding: 120px 0 0; }
+  .sec-head { margin-bottom: 56px; }
+  .sec-head h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 350;
+    font-size: clamp(32px, 4vw, 52px);
+    line-height: 1.1;
+    margin-top: 18px;
+    letter-spacing: -0.01em;
+  }
+
+  /* ---------- About ---------- */
+  .about-grid {
+    display: grid;
+    grid-template-columns: 5fr 6fr;
+    gap: 70px;
+    align-items: start;
+  }
+  .about-lede {
+    font-family: 'Fraunces', serif;
+    font-weight: 350;
+    font-size: clamp(22px, 2.4vw, 30px);
+    line-height: 1.45;
+    margin-top: 18px;
+  }
+  .about-body { margin-top: 26px; color: var(--soft); max-width: 52ch; }
+  .about-imgs {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
+  }
+  .about-imgs figure:first-child { aspect-ratio: 3/4; border-radius: 4px; overflow: hidden; }
+  .about-imgs figure:last-child { aspect-ratio: 3/4; border-radius: 4px; overflow: hidden; margin-top: 56px; }
+
+  /* ---------- Menu ---------- */
+  .menu-cols {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0 90px;
+  }
+  .menu-cat { margin-bottom: 54px; }
+  .menu-cat h3 {
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--ink);
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--hairline);
+    margin-bottom: 8px;
+  }
+  .menu-item {
+    display: flex; align-items: baseline; gap: 12px;
+    padding: 16px 0 5px;
+  }
+  .menu-item .name {
+    font-family: 'Fraunces', serif;
+    font-size: 20px; font-weight: 400;
+    white-space: nowrap;
+  }
+  .menu-item .dots {
+    flex: 1;
+    border-bottom: 1px dotted rgba(35,38,30,0.35);
+    transform: translateY(-4px);
+  }
+  .menu-item .price {
+    font-size: 14px; font-weight: 600;
+    color: var(--clay);
+    white-space: nowrap;
+  }
+  .menu-desc { font-size: 14px; color: var(--soft); max-width: 46ch; }
+
+  /* ---------- Packages ---------- */
+  .pack-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    border-top: 1px solid var(--hairline);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .pack {
+    padding: 44px 36px 50px;
+    border-left: 1px solid var(--hairline);
+    position: relative;
+  }
+  .pack:first-child { border-left: none; padding-left: 4px; }
+  .pack .num { font-size: 12px; font-weight: 600; letter-spacing: 0.18em; color: var(--clay); }
+  .pack h3 {
+    font-family: 'Fraunces', serif; font-weight: 400;
+    font-size: 26px; margin-top: 14px;
+  }
+  .pack .price {
+    font-family: 'Fraunces', serif;
+    font-size: 34px; margin-top: 6px;
+  }
+  .pack .price span { font-size: 14px; font-family: 'Inter'; color: var(--soft); }
+  .pack ul { list-style: none; margin-top: 22px; }
+  .pack li {
+    font-size: 14px; color: var(--soft);
+    padding: 7px 0 7px 20px; position: relative;
+  }
+  .pack li::before {
+    content: '—'; position: absolute; left: 0; color: var(--clay);
+  }
+  .pack-tag {
+    position: absolute; top: 44px; right: 32px;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.16em;
+    text-transform: uppercase;
+    background: var(--moss); color: var(--paper);
+    padding: 5px 12px; border-radius: 999px;
+  }
+
+  /* ---------- Gallery ---------- */
+  .gal-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 18px;
+  }
+  .gal-grid figure { overflow: hidden; border-radius: 4px; position: relative; }
+  .gal-grid figure img { transition: transform 0.6s ease; }
+  .gal-grid figure:hover img { transform: scale(1.04); }
+  .g1 { grid-column: span 7; aspect-ratio: 16/10; }
+  .g2 { grid-column: span 5; aspect-ratio: 16/10; }
+  .g3 { grid-column: span 4; aspect-ratio: 4/5; }
+  .g4 { grid-column: span 4; aspect-ratio: 4/5; }
+  .g5 { grid-column: span 4; aspect-ratio: 4/5; }
+  .gal-caption {
+    margin-top: 16px; font-size: 12px; color: var(--soft);
+    letter-spacing: 0.06em;
+  }
+
+  /* ---------- Quote ---------- */
+  .quote { text-align: center; max-width: 820px; margin: 0 auto; }
+  .stars { color: var(--clay); font-size: 15px; letter-spacing: 6px; }
+  .quote blockquote {
+    font-family: 'Fraunces', serif;
+    font-style: italic; font-weight: 350;
+    font-size: clamp(24px, 3vw, 36px);
+    line-height: 1.4;
+    margin-top: 26px;
+  }
+  .quote cite {
+    display: block; margin-top: 24px;
+    font-style: normal; font-size: 13px; color: var(--soft);
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+
+  /* ---------- Details band ---------- */
+  .band {
+    margin-top: 120px;
+    background: var(--moss);
+    color: var(--paper);
+    padding: 90px 0;
+  }
+  .band-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 60px;
+  }
+  .band h4 {
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: rgba(250,246,238,0.55);
+    margin-bottom: 18px;
+  }
+  .band p {
+    font-family: 'Fraunces', serif;
+    font-size: 21px; font-weight: 350; line-height: 1.5;
+  }
+
+  /* ---------- CTA ---------- */
+  .cta { text-align: center; padding: 130px 0; }
+  .cta h2 {
+    font-family: 'Fraunces', serif; font-weight: 350;
+    font-size: clamp(38px, 5.5vw, 68px);
+    letter-spacing: -0.01em;
+  }
+  .cta h2 em { font-style: italic; color: var(--clay); }
+  .cta p { color: var(--soft); margin-top: 18px; }
+  .cta .btn-row { justify-content: center; margin-top: 36px; }
+  .cta .phone {
+    display: block; margin-top: 26px;
+    font-size: 13px; letter-spacing: 0.12em; color: var(--soft);
+  }
+
+  /* ---------- Footer ---------- */
+  footer {
+    border-top: 1px solid var(--hairline-soft);
+    padding: 30px 0;
+  }
+  .foot {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 12px; color: var(--soft); flex-wrap: wrap; gap: 12px;
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 860px) {
+    section { padding-top: 80px; }
+    .nav-links a:not(.nav-cta) { display: none; }
+    .about-grid { grid-template-columns: 1fr; gap: 44px; }
+    .menu-cols { grid-template-columns: 1fr; }
+    .pack-grid { grid-template-columns: 1fr; border: none; }
+    .pack { border-left: none; border-top: 1px solid var(--hairline); padding: 36px 4px 42px; }
+    .band-grid { grid-template-columns: 1fr; gap: 36px; }
+    .g1, .g2, .g3, .g4, .g5 { grid-column: span 12; aspect-ratio: 16/10; }
+    .hero-img { aspect-ratio: 4/3; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap nav-inner">
+    <a href="#" class="wordmark">The Willow Pantry</a>
+    <div class="nav-links">
+      <a href="#menu">Menu</a>
+      <a href="#occasions">Occasions</a>
+      <a href="#gallery">Gallery</a>
+      <a href="#" class="nav-cta">Enquire</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<header class="hero wrap">
+  <div class="hero-meta">
+    <span class="label">Bristol &amp; the South West</span>
+    <span class="label" style="color: var(--soft)">Est. 2020</span>
+    <span class="label" style="color: var(--soft)">Food Hygiene ★★★★★</span>
+  </div>
+  <h1>Seasonal feasts, <em>laid by hand.</em></h1>
+  <div class="hero-row">
+    <p class="hero-sub">
+      Grazing tables, canapés and slow-cooked suppers for weddings and
+      gatherings that deserve better than beige buffets.
+    </p>
+    <div class="btn-row">
+      <a class="btn btn-clay" href="#">Plan your event →</a>
+      <a class="btn btn-line" href="#menu">View menus</a>
+    </div>
+  </div>
+  <figure class="hero-img">
+    <img src="https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=2200&q=80&auto=format&fit=crop" alt="A long candlelit wedding table dressed with foliage">
+  </figure>
+  <div class="hero-caption">
+    <span>Harvest wedding — Somerset, September</span>
+    <span>120 guests · grazing &amp; feast</span>
+  </div>
+</header>
+
+<!-- About -->
+<section>
+  <div class="wrap about-grid">
+    <div>
+      <span class="label">Our kitchen</span>
+      <p class="about-lede">
+        We started with a market stall and a very heavy cheese board.
+        Six years on, we cook for the days people remember.
+      </p>
+      <p class="about-body">
+        Everything is made from scratch on the morning of your event — with
+        produce from farms we can name, and usually visit on the way. We keep
+        our bookings few so that every table gets the same unreasonable
+        attention.
+      </p>
+    </div>
+    <div class="about-imgs">
+      <figure><img loading="lazy" src="https://images.unsplash.com/photo-1470124182917-cc6e71b22ecc?w=900&q=80&auto=format&fit=crop" alt="Chef finishing a dish in the pan"></figure>
+      <figure><img loading="lazy" src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=900&q=80&auto=format&fit=crop" alt="A plated dish on a rustic table"></figure>
+    </div>
+  </div>
+</section>
+
+<!-- Menu -->
+<section id="menu">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="label">The menu</span>
+      <h2>Short, seasonal,<br>argued over daily.</h2>
+    </div>
+    <div class="menu-cols">
+      <div>
+        <div class="menu-cat">
+          <h3>Grazing &amp; Boards</h3>
+          <div class="menu-item"><span class="name">Signature grazing table</span><span class="dots"></span><span class="price">£9.50 pp</span></div>
+          <p class="menu-desc">British cheeses, cured meats, house pickles, warm focaccia, honeycomb — styled on the table.</p>
+          <div class="menu-item"><span class="name">Brunch board</span><span class="dots"></span><span class="price">£7.50 pp</span></div>
+          <p class="menu-desc">Mini pastries, whipped ricotta with roasted stone fruit, smoked salmon bagels.</p>
+        </div>
+        <div class="menu-cat">
+          <h3>Canapés</h3>
+          <div class="menu-item"><span class="name">Wild mushroom arancini</span><span class="dots"></span><span class="price">£2.80</span></div>
+          <p class="menu-desc">Crisp risotto bites, black garlic aioli. Vegetarian.</p>
+          <div class="menu-item"><span class="name">Smoked trout blinis</span><span class="dots"></span><span class="price">£3.20</span></div>
+          <p class="menu-desc">Chalk-stream trout, crème fraîche, pickled shallot, dill.</p>
+        </div>
+      </div>
+      <div>
+        <div class="menu-cat">
+          <h3>Feasts &amp; Mains</h3>
+          <div class="menu-item"><span class="name">Slow-roast lamb shoulder</span><span class="dots"></span><span class="price">£18.50 pp</span></div>
+          <p class="menu-desc">Eight-hour lamb, flatbreads, whipped feta, charred greens, herbed grains — served family-style.</p>
+          <div class="menu-item"><span class="name">Harissa cauliflower feast</span><span class="dots"></span><span class="price">£14.00 pp</span></div>
+          <p class="menu-desc">Whole-roasted cauliflower, smoked almond dukkah, jewelled couscous, green tahini. Vegan.</p>
+        </div>
+        <div class="menu-cat">
+          <h3>Desserts</h3>
+          <div class="menu-item"><span class="name">Brown butter brownies</span><span class="dots"></span><span class="price">£3.00</span></div>
+          <p class="menu-desc">Baked the morning of your event. Gluten-free option.</p>
+          <div class="menu-item"><span class="name">Lemon posset pots</span><span class="dots"></span><span class="price">£3.50</span></div>
+          <p class="menu-desc">Shortbread crumb, candied lemon.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Packages -->
+<section id="occasions">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="label">Gatherings</span>
+      <h2>Three ways to feed a crowd.</h2>
+    </div>
+    <div class="pack-grid">
+      <div class="pack">
+        <span class="num">01</span>
+        <h3>The Long Lunch</h3>
+        <p class="price">£395 <span>· up to 30 guests</span></p>
+        <ul>
+          <li>Full grazing table</li>
+          <li>Two canapé choices</li>
+          <li>Delivered &amp; styled</li>
+        </ul>
+      </div>
+      <div class="pack">
+        <span class="pack-tag">Most requested</span>
+        <span class="num">02</span>
+        <h3>The Willow Signature</h3>
+        <p class="price">£895 <span>· up to 60 guests</span></p>
+        <ul>
+          <li>Grazing table &amp; four canapés</li>
+          <li>One feast main, one dessert</li>
+          <li>On-the-day styling</li>
+        </ul>
+      </div>
+      <div class="pack">
+        <span class="num">03</span>
+        <h3>The Full Spread</h3>
+        <p class="price">£1,650 <span>· up to 120 guests</span></p>
+        <ul>
+          <li>Canapé hour &amp; grazing</li>
+          <li>Two feast mains, dessert table</li>
+          <li>Two of our team all evening</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Gallery -->
+<section id="gallery">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="label">Recent tables</span>
+      <h2>Proof, not promises.</h2>
+    </div>
+    <div class="gal-grid">
+      <figure class="g1"><img loading="lazy" src="https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?w=1400&q=80&auto=format&fit=crop" alt="Overhead table spread"></figure>
+      <figure class="g2"><img loading="lazy" src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1100&q=80&auto=format&fit=crop" alt="Seasonal salad bowls"></figure>
+      <figure class="g3"><img loading="lazy" src="https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=900&q=80&auto=format&fit=crop" alt="Berry-dressed celebration cake"></figure>
+      <figure class="g4"><img loading="lazy" src="https://images.unsplash.com/photo-1476718406336-bb5a9690ee2a?w=900&q=80&auto=format&fit=crop" alt="Plated dessert"></figure>
+      <figure class="g5"><img loading="lazy" src="https://images.unsplash.com/photo-1522336572468-97b06e8ef143?w=900&q=80&auto=format&fit=crop" alt="Hands at work in the bakery"></figure>
+    </div>
+    <p class="gal-caption">Somerset · Bristol · Bath · The Cotswolds — 2025/26 season</p>
+  </div>
+</section>
+
+<!-- Quote -->
+<section>
+  <div class="wrap quote">
+    <div class="stars">★★★★★</div>
+    <blockquote>
+      “The grazing table was the first thing every guest mentioned —
+      and the last thing they left alone.”
+    </blockquote>
+    <cite>Hannah &amp; Tom · wedding, Somerset</cite>
+  </div>
+</section>
+
+<!-- Details band -->
+<div class="band">
+  <div class="wrap band-grid">
+    <div>
+      <h4>Serving</h4>
+      <p>Bristol, Bath, Somerset and the Cotswolds. Further afield by arrangement.</p>
+    </div>
+    <div>
+      <h4>Occasions</h4>
+      <p>Weddings, private dinners, corporate lunches and the odd very good birthday.</p>
+    </div>
+    <div>
+      <h4>Dietary</h4>
+      <p>Vegan, gluten-free and allergen-aware menus, planned with you — never an afterthought.</p>
+    </div>
+  </div>
+</div>
+
+<!-- CTA -->
+<section class="cta">
+  <div class="wrap">
+    <span class="label">Bookings for 2026–27</span>
+    <h2>Let’s plan <em>your table.</em></h2>
+    <p>Tell us the date, the place and how many you’re feeding — we’ll do the rest.</p>
+    <div class="btn-row">
+      <a class="btn btn-clay" href="#">Request a quote →</a>
+      <a class="btn btn-line" href="#">Message us</a>
+    </div>
+    <span class="phone">0117 496 0842 · HELLO@THEWILLOWPANTRY.CO.UK</span>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot">
+    <span>© 2026 The Willow Pantry</span>
+    <span>Instagram · @thewillowpantry</span>
+    <span>Powered by Caterfy</span>
+  </div>
+</footer>
+
+</body>
+</html>
