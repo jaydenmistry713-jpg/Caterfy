@@ -727,9 +727,9 @@ All templates share:
 - Designed fallbacks everywhere: headline falls back to "Seasonal feasts, laid by hand." (tagline's last two words get the italic accent treatment automatically); hero sub-line, band copy and captions are composed from real data (event types, cuisines, location); sections hide when empty
 - Requires migration `013_maison_template.sql` (template check constraint)
 
-## Design Concepts (`design-concepts/`)
+## Design Concepts (`public/design-concepts/`)
 
-Standalone self-contained HTML mock-ups (Google Fonts + hot-linked Unsplash; open directly in a browser) used to design "impossible to make ugly" templates before implementing them:
+Standalone self-contained HTML mock-ups (Google Fonts + hot-linked Unsplash) used to design "impossible to make ugly" templates before implementing them. They live in `public/` so they ship with every deploy and are viewable on the live site at `/design-concepts/<file>.html` (e.g. `https://caterfy.netlify.app/design-concepts/concept-a-maison.html`):
 - `concept-a-maison.html` — the editorial concept that became the Maison template (above)
 - `concept-b-feast.html` — **"Feast", not yet implemented**: bold street-food/BBQ direction (Archivo Black stacked headlines, rotated polaroids with hard offset shadows, sticker badges, animated marquee, thick-border menu cards with price tags, tilted "Most booked" package, speech-bubble reviews). Same palette philosophy as Maison (curated colour pairs, locked type) if/when built as template 6
 
