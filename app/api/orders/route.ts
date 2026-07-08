@@ -173,8 +173,12 @@ export async function POST(request: NextRequest) {
       console.error('Email send failed:', emailErr)
     }
 
-    // Create Stripe Checkout Session for card payments
-    let checkout_url: string | null = null
+    // Create an *embedded* Stripe Checkout Session for card payments so the
+    // customer pays inline on the order page (no redirect to Stripe's hosted
+    // page). On completion Stripe redirects the top window to return_url, and
+    // /order-status reconciles the payment (see reconcileCardPayment) — the
+    // same no-webhook path the hosted flow used.
+    let client_secret: string | null = null
     if (
       validated.payment_method === 'card' &&
       caterer.stripe_connect_id &&
@@ -182,6 +186,7 @@ export async function POST(request: NextRequest) {
       validated.total > 0
     ) {
       const session = await stripe.checkout.sessions.create({
+        ui_mode: 'embedded_page',
         payment_method_types: ['card'],
         line_items: [{
           price_data: {
@@ -195,8 +200,7 @@ export async function POST(request: NextRequest) {
           quantity: 1,
         }],
         mode: 'payment',
-        success_url: `${process.env.NEXT_PUBLIC_APP_URL}/order-status?ref=${validated.reference_number}&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/${caterer.slug}`,
+        return_url: `${process.env.NEXT_PUBLIC_APP_URL}/order-status?ref=${validated.reference_number}&session_id={CHECKOUT_SESSION_ID}`,
         metadata: {
           order_id: order.id,
           reference_number: validated.reference_number,
@@ -207,10 +211,10 @@ export async function POST(request: NextRequest) {
           },
         },
       })
-      checkout_url = session.url
+      client_secret = session.client_secret
     }
 
-    return NextResponse.json({ order, checkout_url })
+    return NextResponse.json({ order, client_secret })
   } catch (err: any) {
     if (err.name === 'ZodError') {
       return NextResponse.json({ error: 'Invalid request data', details: err.errors }, { status: 400 })

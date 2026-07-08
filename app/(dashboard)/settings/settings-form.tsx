@@ -11,7 +11,6 @@ import { createClient } from '@/lib/supabase/client'
 import SubscribeButton from './subscribe-button'
 import { toast } from '@/lib/utils/use-toast'
 import { Cuisine, EventType, DietaryOption, Location } from '@/types'
-import { Textarea } from '@/components/ui/textarea'
 
 interface Props {
   caterererId: string
@@ -25,9 +24,6 @@ interface Props {
 
 export default function SettingsForm({ caterererId, caterer, locations, cuisines, eventTypes, dietaryOptions, initialTab }: Props) {
   const [saving, setSaving] = useState(false)
-  const [savingBank, setSavingBank] = useState(false)
-  const [bankDetails, setBankDetails] = useState(caterer?.bank_transfer_details || '')
-  const [showBankOnInvoice, setShowBankOnInvoice] = useState(caterer?.show_bank_details_on_invoice ?? true)
   const [profile, setProfile] = useState({
     business_name: caterer?.business_name || '',
     phone: caterer?.phone || '',
@@ -96,25 +92,11 @@ export default function SettingsForm({ caterererId, caterer, locations, cuisines
     }
   }
 
-  async function saveBankDetails() {
-    setSavingBank(true)
-    const supabase = createClient()
-    try {
-      const { error } = await supabase.from('caterers').update({
-        bank_transfer_details: bankDetails.trim() || null,
-        show_bank_details_on_invoice: showBankOnInvoice,
-      }).eq('id', caterererId)
-      if (error) throw error
-      toast({ title: 'Bank details saved!', variant: 'success' })
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' })
-    } finally {
-      setSavingBank(false)
-    }
-  }
-
-  const validTabs = ['profile', 'categories', 'contact', 'payments', 'subscription']
-  const defaultTab = initialTab && validTabs.includes(initialTab) ? initialTab : 'profile'
+  // Bank-transfer editing moved to the Payments page; redirect any old
+  // ?tab=payments deep-link to the subscription tab so it still resolves.
+  const validTabs = ['profile', 'categories', 'contact', 'subscription']
+  const resolvedTab = initialTab === 'payments' ? 'subscription' : initialTab
+  const defaultTab = resolvedTab && validTabs.includes(resolvedTab) ? resolvedTab : 'profile'
 
   return (
     <Tabs defaultValue={defaultTab}>
@@ -122,7 +104,6 @@ export default function SettingsForm({ caterererId, caterer, locations, cuisines
         <TabsTrigger value="profile">Business Profile</TabsTrigger>
         <TabsTrigger value="categories">Categories</TabsTrigger>
         <TabsTrigger value="contact">Contact Methods</TabsTrigger>
-        <TabsTrigger value="payments">Payments</TabsTrigger>
         <TabsTrigger value="subscription">Subscription</TabsTrigger>
       </TabsList>
 
@@ -270,48 +251,6 @@ export default function SettingsForm({ caterererId, caterer, locations, cuisines
             </div>
             <Button onClick={saveProfile} disabled={saving} className="mt-4">
               {saving ? 'Saving...' : 'Save'}
-            </Button>
-          </CardContent>
-        </Card>
-      </TabsContent>
-
-      <TabsContent value="payments">
-        <Card>
-          <CardHeader><CardTitle>Bank Transfer Details</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-gray-500">
-              Enter your bank account details below. When a customer selects bank transfer at checkout, these details will be shown to them after their order is confirmed. They can also appear automatically on invoices.
-            </p>
-            <div>
-              <Label htmlFor="bank_details">Account details</Label>
-              <p className="text-xs text-gray-400 mb-1">e.g. Account name, sort code, account number — one per line</p>
-              <Textarea
-                id="bank_details"
-                className="mt-1 font-mono text-sm"
-                rows={4}
-                value={bankDetails}
-                onChange={(e) => setBankDetails(e.target.value)}
-                placeholder={'Account name: Spice & Co.\nSort code: 12-34-56\nAccount number: 12345678'}
-              />
-            </div>
-            <div className="flex items-center justify-between py-3 border-t border-gray-100">
-              <div>
-                <p className="font-medium text-gray-900 text-sm">Show on invoices</p>
-                <p className="text-xs text-gray-500">Include these details automatically on all invoices sent to customers</p>
-              </div>
-              <button
-                onClick={() => setShowBankOnInvoice((v: boolean) => !v)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  showBankOnInvoice ? 'bg-green-500' : 'bg-gray-300'
-                }`}
-              >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  showBankOnInvoice ? 'translate-x-6' : 'translate-x-1'
-                }`} />
-              </button>
-            </div>
-            <Button onClick={saveBankDetails} disabled={savingBank}>
-              {savingBank ? 'Saving...' : 'Save Bank Details'}
             </Button>
           </CardContent>
         </Card>

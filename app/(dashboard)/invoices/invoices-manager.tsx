@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Invoice } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,9 +32,10 @@ interface Props {
   orders?: Order[]
   bankTransferDetails?: string | null
   showBankDetailsOnInvoice?: boolean
+  autoOpenOrderId?: string | null
 }
 
-export default function InvoicesManager({ caterererId, businessName, initialInvoices, orders = [], bankTransferDetails, showBankDetailsOnInvoice }: Props) {
+export default function InvoicesManager({ caterererId, businessName, initialInvoices, orders = [], bankTransferDetails, showBankDetailsOnInvoice, autoOpenOrderId }: Props) {
   const [invoices, setInvoices] = useState(initialInvoices)
   const [showCreate, setShowCreate] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -66,6 +67,18 @@ export default function InvoicesManager({ caterererId, businessName, initialInvo
     })
   }
 
+  // Deep-linked from an order's "Create invoice" button: open the dialog
+  // pre-filled from that order.
+  useEffect(() => {
+    if (autoOpenOrderId && orders.some((o) => o.id === autoOpenOrderId)) {
+      setCreateMode('from-order')
+      setShowCreate(true)
+      handleOrderSelect(autoOpenOrderId)
+    }
+    // Run once on mount for the incoming link.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   function addLineItem() {
     setForm({ ...form, lineItems: [...form.lineItems, { description: '', amount: '' }] })
   }
@@ -95,6 +108,9 @@ export default function InvoicesManager({ caterererId, businessName, initialInvo
       .insert({
         caterer_id: caterererId,
         invoice_number,
+        // Link the invoice back to its order (when made from one) so the order
+        // row can surface this invoice's paid/sent status.
+        order_id: createMode === 'from-order' && selectedOrderId ? selectedOrderId : null,
         customer_name: form.customer_name,
         customer_email: form.customer_email,
         line_items: form.lineItems.filter((i) => i.description && i.amount),

@@ -92,7 +92,10 @@ export default async function AdminDashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Recent Caterers</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Recent Caterers</CardTitle>
+              <Link href="/mistuzzo/caterers" className="text-sm text-[color:var(--basil)] font-medium hover:underline">View all →</Link>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -104,6 +107,7 @@ export default async function AdminDashboardPage() {
                     <th className="text-left py-2 text-gray-500">Status</th>
                     <th className="text-left py-2 text-gray-500">Joined</th>
                     <th className="text-left py-2 text-gray-500">Site</th>
+                    <th className="text-left py-2 text-gray-500">Manage</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -127,6 +131,9 @@ export default async function AdminDashboardPage() {
                         ) : (
                           <span className="text-gray-400 text-xs">No site</span>
                         )}
+                      </td>
+                      <td className="py-3">
+                        <Link href={`/mistuzzo/caterers/${c.id}`} className="text-[color:var(--basil)] font-medium hover:underline text-xs">Manage →</Link>
                       </td>
                     </tr>
                   ))}

@@ -1,11 +1,11 @@
 export type SubscriptionStatus = 'trialling' | 'active' | 'cancelled' | 'past_due'
 export type OrderStatus = 'pending' | 'accepted' | 'declined' | 'cancelled' | 'completed'
 export type PaymentStatus = 'unpaid' | 'awaiting_payment' | 'paid' | 'refunded'
-export type PaymentMethod = 'card' | 'offline'
+export type PaymentMethod = 'card' | 'offline' | 'bank_transfer'
 export type OrderType = 'fixed' | 'quote'
 export type QuoteStatus = 'pending' | 'sent' | 'accepted' | 'declined'
 export type InvoiceStatus = 'unpaid' | 'paid'
-export type Template = 'classic' | 'modern' | 'bold'
+export type Template = 'classic' | 'modern' | 'bold' | 'linkpage' | 'maison'
 
 export interface Location {
   id: string

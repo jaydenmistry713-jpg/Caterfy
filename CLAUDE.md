@@ -496,18 +496,49 @@ All phases are implemented and the app builds successfully (Next.js 16, 51 route
 - ~~Google Analytics~~ **DONE**: gtag loads in `app/layout.tsx` when `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set — **now consent-gated** via the cookie banner (July 2026)
 - ~~Google Fonts loading~~ **DONE**: `app/[slug]/page.tsx` injects a `fonts.googleapis.com` stylesheet for the caterer's selected heading/body fonts
 
-### QA follow-ups from tester feedback — STILL TO BUILD (surface in next checklist review)
-These are the larger items deliberately not yet built after the July 2026 tester-feedback fix waves. They are also listed in `public/testing-checklist.html` section 23 (Known Pending):
-1. **Live preview in the site editor** — render the selected template live as the caterer edits (currently changes only show after Save + reload). Largest item.
-2. **Inline card checkout** — take card payment on the order page (Stripe Embedded Checkout / Payment Element) instead of redirecting to Stripe Checkout.
-3. **Move bank-transfer details from Settings → Payments** — the bank-details editor still lives in Settings → Payments tab; the tester wants it on the Payments page (the Connect URL hint is already there).
-4. **Expanded admin actions** at `/mistuzzo` — admin is now password-protected and "View site" is fixed, but richer management (edit/suspend caterers, view orders, change settings) beyond read-only views isn't built.
-5. **Order ↔ invoice paid cross-indicator** — invoices show emailed/paid status, but an invoice's paid state is not surfaced back onto the related order row (and there's no seamless bank-transfer-order → invoice hand-off).
+### QA follow-ups from tester feedback — all five now BUILT (July 2026)
+The five larger items deferred after the tester-feedback fix waves have now been implemented:
+1. ~~**Live preview in the site editor**~~ **DONE**: `components/dashboard/site-live-preview.tsx` renders the *real* template components (`template-classic/modern/bold/linkpage/maison`) at a scaled logical width (desktop 1200 / mobile 390) inside a scroll viewport, driven live by the editor's in-progress state. `site-editor-form.tsx` builds a `previewCaterer` (with `.page`) via `useMemo` from the form/templateData/maison/hero/logo/slug state; the editor page now also loads the caterer's real menu/packages/gallery/reviews (+ location/event-type/dietary joins) to feed it. Two-pane on `xl` (sticky preview right, toggle with Show/Hide), full-screen overlay via a "Preview" button below `xl`. Fonts injected via a `<link>` (maison loads its own). Preview is `pointer-events-none` + `aria-hidden`.
+2. ~~**Inline card checkout**~~ **DONE**: card orders now use Stripe **Embedded Checkout** inline in the order dialog instead of redirecting. `/api/orders` creates the session with `ui_mode: 'embedded_page'` (NB: the pinned `2026-04-22.dahlia` API renamed the enum — it's `embedded_page`/`hosted_page`, not `embedded`/`hosted`) + `return_url`, returns `client_secret`; `components/caterer/embedded-checkout.tsx` renders `EmbeddedCheckoutProvider`/`EmbeddedCheckout` (`loadStripe(NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)`); `order-form.tsx` shows it when `client_secret` comes back. On completion Stripe redirects the top window to `/order-status`, which reconciles via the **same** `reconcileCardPayment` no-webhook path (retrieve session → mark paid + auto-accept + email). Destination charge to the connected account is unchanged.
+3. ~~**Move bank-transfer details to Payments page**~~ **DONE**: extracted into `components/dashboard/bank-details-form.tsx`, now rendered on `/payments` (below Stripe Connect status). Removed from Settings; the Settings "Payments" tab is gone and `?tab=payments` deep-links redirect to the subscription tab.
+4. ~~**Expanded admin actions** at `/mistuzzo`~~ **DONE**: new caterer detail page `/mistuzzo/caterers/[id]` (edit business_name/email/phone/slug, suspend/reactivate/mark-active, extend trial +14d, toggle accepting-orders, recent-orders table) + searchable `/mistuzzo/caterers` list; dashboard rows link via "Manage →". All mutations go through `PATCH /api/admin/caterers/[id]` — guarded by `isAdminAuthenticated()`, service-role, allowlisted fields + reversible lifecycle actions only (suspend = `subscription_status='cancelled'` → soft-expiry via `isLive()`). No hard-delete (the FK-ordered deletion runbook stays manual).
+5. ~~**Order ↔ invoice paid cross-indicator**~~ **DONE**: orders query joins `invoices(...)`; `orders-list.tsx` rolls them up to one badge (paid > sent > created) in the header + an invoice line in the expanded view. Invoices created "From Order" now persist `order_id` (previously dropped, so the link never formed). Bank-transfer → invoice hand-off: order rows without an invoice show a "Create invoice →" link to `/invoices?from_order={id}`, which auto-opens the create dialog pre-filled from that order (the invoices page fetches the order explicitly so even a still-pending bank-transfer order is selectable).
 - ~~**Card payment status update (no-webhook approach)**~~ **DONE (July 2026)**: Card orders now reconcile on the success redirect without needing a webhook.
   - `success_url` in `app/api/orders/route.ts` includes `&session_id={CHECKOUT_SESSION_ID}`
   - The `/order-status` page reconciles server-side when `session_id` is present (`reconcileCardPayment`): retrieves the Stripe session, and if `payment_status === 'paid'` sets the order `payment_status='paid'`, `status='accepted'` (auto-accept), `accepted_at`, `stripe_payment_intent_id`, then emails the customer the acceptance + review link once (guarded against duplicates by checking current `payment_status`)
   - A standalone `/api/orders/verify-payment` route does the same for any client-side caller
   - The `checkout.session.completed` webhook case was **kept** (now also auto-accepts) for resilience if a webhook is configured — it's idempotent with the redirect path
+
+### Backups & disaster recovery — STILL TO BUILD (decided July 2026, deferred; surface whenever the user asks "what's left")
+Nothing protects the production data today. Supabase **free tier has no backups** — if the project is lost/corrupted, all caterers, orders, reviews, invoices and auth users are gone. Schema is safe (migrations in git) and payment truth is recoverable from Stripe, but the data, images and auth users are not. Agreed plan, not yet implemented:
+1. **Nightly automated `pg_dump`** — GitHub Action on a cron running `supabase db dump` (must include the `auth` schema — `caterers.id == auth user id`, so restoring data without auth locks everyone out), uploading encrypted dumps to private external storage (e.g. Backblaze B2 — ~free at current size). Highest-value item.
+2. **Weekly storage sync** — mirror the `caterer-images` bucket (hero/logos/gallery) to the same external storage via the Storage API with the service role; `pg_dump` does NOT cover Storage.
+3. **Restore runbook + one dry-run restore** — doc: new Supabase project → run migrations → restore dump → re-upload storage → update Netlify env vars → update Supabase Auth redirect URLs. Test it once into a scratch project before launch.
+4. **Secrets escrow** — keep an encrypted offline copy (password manager) of the full env set: Supabase keys, Stripe keys, Resend key, `CRON_SECRET`, `ADMIN_PASSWORD`/`ADMIN_SECRET`.
+5. **Upgrade to Supabase Pro at launch** for managed daily backups (7-day retention), keeping the external dumps as the "Supabase itself fails" layer.
+6. **Outage resilience (downtime, not loss)** — error boundaries on `/[slug]` and `/directory` rendering a branded "we'll be right back" instead of a 500; order-form submission failure should say "try again shortly" rather than silently losing the customer's details; optionally ISR/short-cache public caterer pages so they keep serving through a brief Supabase blip.
+
+### Product & robustness backlog — STILL TO BUILD (deferred July 2026; surface whenever the user asks "what's left")
+Discussed in the "what improvements" review and deliberately not built yet. Roughly priority-ordered:
+
+**Launch blockers (make the live product actually function):**
+- **Resend domain verification** — until a domain is verified and `RESEND_FROM_DOMAIN` is set, every email (orders, quotes, review requests, the whole lifecycle sequence) only delivers to the Resend account owner. Highest-impact unfinished task. Also unlocks Supabase custom SMTP for branded verification emails.
+- **Stripe live mode + real domain switch** — write down the cutover checklist before launch day: recreate webhook, activate Connect, update Supabase Auth redirect URLs, set `NEXT_PUBLIC_APP_URL`, swap test→live keys.
+- **Error visibility** — no error tracking or uptime monitoring exists. Add Sentry (free tier) for server/client errors and a free uptime ping against a `/api/health` route, so a broken checkout surfaces without waiting for a caterer to email. (Pairs with the outage error boundaries above.)
+
+**Caterer notifications beyond email** — a new order currently only reaches the caterer by email; a missed order inside the 48h auto-cancel window is a lost sale. Add at minimum an unread-orders badge in the dashboard/sidebar; ideally SMS or WhatsApp (e.g. Twilio) for new orders, since caterers live in kitchens, not inboxes.
+
+**Bigger product bets:**
+- **Custom domains for caterers** (`theirbusiness.co.uk` → their Caterfy page) — the classic site-builder upsell; makes a £10/mo page feel like "my website". Netlify/Vercel domain APIs make it feasible; could justify a higher tier.
+- **Directory search** — the directory has location/cuisine filters but no free-text search and no "near me" ordering (lat/long already in `locations`).
+- **Template 6 "Feast"** — concept HTML already exists (`public/design-concepts/concept-b-feast.html`); the Maison curated-palette pattern is proven, so it's cheap differentiation.
+- **Review collection flywheel** — only post-order customers are asked for reviews; let caterers invite past (pre-Caterfy) customers to seed their page (reviews drive directory ranking + social proof).
+
+**Engineering robustness:**
+- **Automated tests** — ~290 manual QA checks, zero automated tests. Add Playwright smoke tests for the 5 money paths (signup, publish, place fixed order, card payment, quote flow) to catch regressions without a human re-run.
+- **Rate limiting / abuse protection** — `/api/messages`, `/api/orders`, `/api/reviews` are open, uncaptcha'd endpoints; a spam script could flood every caterer's inbox through Resend and burn sending reputation. Add per-IP limiting or Turnstile (at least on the message form).
+- **ISR / short-cache on `/[slug]` + directory** — every visit hits Supabase; short `revalidate` windows cut load, speed pages, and keep them serving during a DB blip (overlaps outage item above).
+- **Image optimization on upload** — 5MB heroes are served through Next Image on every visit; resize to sane max dimensions at upload time.
 
 ## Deployment & Infrastructure Notes
 

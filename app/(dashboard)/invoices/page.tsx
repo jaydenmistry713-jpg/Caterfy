@@ -2,7 +2,12 @@ import { createClient, getUser } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import InvoicesManager from './invoices-manager'
 
-export default async function InvoicesPage() {
+interface Props {
+  searchParams: Promise<{ from_order?: string }>
+}
+
+export default async function InvoicesPage({ searchParams }: Props) {
+  const { from_order } = await searchParams
   const user = await getUser()
   if (!user) redirect('/login')
   const supabase = await createClient()
@@ -20,7 +25,20 @@ export default async function InvoicesPage() {
 
   const invoices = invoicesRes.data
   const caterer = catererRes.data
-  const orders = ordersRes.data
+  let orders = ordersRes.data || []
+
+  // Deep-link from an order's "Create invoice" button. The order may not be in
+  // the accepted/completed list above (e.g. a still-pending bank-transfer
+  // order), so fetch it explicitly and make sure it's selectable.
+  if (from_order && !orders.some((o) => o.id === from_order)) {
+    const { data: linked } = await supabase
+      .from('orders')
+      .select('id, reference_number, customer_name, customer_email, total, items, status, event_date')
+      .eq('caterer_id', user.id)
+      .eq('id', from_order)
+      .maybeSingle()
+    if (linked) orders = [linked, ...orders]
+  }
 
   return (
     <div className="space-y-6">
@@ -35,6 +53,7 @@ export default async function InvoicesPage() {
         orders={orders || []}
         bankTransferDetails={caterer?.bank_transfer_details || null}
         showBankDetailsOnInvoice={caterer?.show_bank_details_on_invoice ?? true}
+        autoOpenOrderId={from_order || null}
       />
     </div>
   )

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import ConnectStripeButton from './connect-stripe-button'
+import BankDetailsForm from '@/components/dashboard/bank-details-form'
 import { ExternalLink, CreditCard, CheckCircle } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
@@ -89,6 +90,13 @@ export default async function PaymentsPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Bank transfer details (moved here from Settings → Payments) */}
+      <BankDetailsForm
+        caterererId={user.id}
+        initialDetails={caterer?.bank_transfer_details || null}
+        initialShowOnInvoice={caterer?.show_bank_details_on_invoice ?? true}
+      />
 
       {/* Transaction history */}
       <Card>

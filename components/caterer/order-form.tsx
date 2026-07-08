@@ -12,6 +12,7 @@ import { toast } from '@/lib/utils/use-toast'
 import { generateOrderReference, formatPriceUnit } from '@/lib/utils'
 import { track } from '@/lib/analytics'
 import { CheckCircle, Tag, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
+import InlineCardCheckout from './embedded-checkout'
 
 interface OrderItem {
   id: string
@@ -35,6 +36,7 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
   const [submitted, setSubmitted] = useState(false)
   const [refNumber, setRefNumber] = useState('')
   const [loading, setLoading] = useState(false)
+  const [checkoutSecret, setCheckoutSecret] = useState<string | null>(null)
 
   const [selectedItems, setSelectedItems] = useState<OrderItem[]>([])
   const [blockedDates, setBlockedDates] = useState<string[]>([])
@@ -161,8 +163,11 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
 
       track('place_order', { order_type: orderType, payment_method: form.payment_method || 'none' })
 
-      if (data.checkout_url) {
-        window.location.href = data.checkout_url
+      // Card payment: show Stripe's embedded checkout inline. On completion
+      // Stripe redirects the top window to /order-status, which reconciles.
+      if (data.client_secret) {
+        setRefNumber(reference)
+        setCheckoutSecret(data.client_secret)
         return
       }
 
@@ -173,6 +178,22 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
     } finally {
       setLoading(false)
     }
+  }
+
+  if (checkoutSecret) {
+    return (
+      <Dialog open onOpenChange={onClose}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Pay for your order</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-gray-500 mb-1">
+            Reference <span className="font-mono font-medium text-gray-900">{refNumber}</span> · Total £{total.toFixed(2)}
+          </p>
+          <InlineCardCheckout clientSecret={checkoutSecret} />
+        </DialogContent>
+      </Dialog>
+    )
   }
 
   if (submitted) {
@@ -599,7 +620,7 @@ export default function OrderForm({ caterer, menuItems, packages, orderType, onC
             <div className="flex justify-between">
               <Button variant="outline" onClick={() => setStep(orderType === 'fixed' ? 2 : 1)}>← Back</Button>
               <Button onClick={submitOrder} disabled={loading} style={{ backgroundColor: accentColor }}>
-                {loading ? 'Submitting...' : orderType === 'quote' ? 'Submit Request' : 'Place Order'}
+                {loading ? 'Submitting...' : orderType === 'quote' ? 'Submit Request' : form.payment_method === 'card' ? 'Continue to payment' : 'Place Order'}
               </Button>
             </div>
           </div>

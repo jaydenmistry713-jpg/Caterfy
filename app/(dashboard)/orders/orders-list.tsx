@@ -13,7 +13,20 @@ import { Textarea } from '@/components/ui/textarea'
 import { formatDate } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from '@/lib/utils/use-toast'
-import { Check, X, ChevronDown, ChevronUp, FileText, Plus, Trash2, Loader2 } from 'lucide-react'
+import Link from 'next/link'
+import { Check, X, ChevronDown, ChevronUp, FileText, Plus, Trash2, Loader2, Receipt } from 'lucide-react'
+
+// Roll an order's (possibly multiple) invoices up to a single status indicator:
+// paid wins, then emailed, then just-created.
+function invoiceIndicator(order: any): { label: string; variant: 'success' | 'info' | 'warning'; invoice: any } | null {
+  const invs: any[] = order?.invoices || []
+  if (!invs.length) return null
+  const paid = invs.find((i) => i.status === 'paid')
+  if (paid) return { label: 'Invoice paid', variant: 'success', invoice: paid }
+  const sent = invs.find((i) => i.sent_at)
+  if (sent) return { label: 'Invoice sent', variant: 'info', invoice: sent }
+  return { label: 'Invoice created', variant: 'warning', invoice: invs[0] }
+}
 
 interface Props {
   orders: Order[]
@@ -133,6 +146,10 @@ export default function OrdersList({ orders: initialOrders, caterererId }: Props
                 {quoteStatusOf(order) === 'accepted' && (
                   <Badge variant="success">Quote accepted</Badge>
                 )}
+                {(() => {
+                  const inv = invoiceIndicator(order)
+                  return inv ? <Badge variant={inv.variant}>{inv.label}</Badge> : null
+                })()}
               </div>
               <p className="text-sm text-gray-500">
                 {order.reference_number} · Event: {formatDate(order.event_date)}
@@ -229,6 +246,38 @@ export default function OrdersList({ orders: initialOrders, caterererId }: Props
                 </div>
               )}
             </div>
+            {/* Invoice link-through: shows the related invoice's live status, or
+                offers to raise one (handy for bank-transfer orders the caterer
+                collects and reconciles manually). */}
+            {(() => {
+              const inv = invoiceIndicator(order)
+              if (inv) {
+                return (
+                  <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-2 text-gray-600">
+                      <Receipt className="h-4 w-4 text-gray-400" />
+                      {inv.invoice.invoice_number}
+                      <Badge variant={inv.variant}>{inv.invoice.status}</Badge>
+                    </span>
+                    <Link href="/invoices" className="text-blue-600 hover:underline">View in Invoices →</Link>
+                  </div>
+                )
+              }
+              if (order.total && ['accepted', 'completed'].includes(order.status)) {
+                return (
+                  <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-2 text-gray-500">
+                      <Receipt className="h-4 w-4 text-gray-400" />
+                      {order.payment_method === 'bank_transfer'
+                        ? 'Paid by bank transfer? Raise an invoice for your records.'
+                        : 'No invoice raised for this order yet.'}
+                    </span>
+                    <Link href={`/invoices?from_order=${order.id}`} className="text-blue-600 hover:underline whitespace-nowrap ml-3">Create invoice →</Link>
+                  </div>
+                )
+              }
+              return null
+            })()}
             <div className="mt-4 pt-4 border-t border-gray-200 flex gap-2">
               {order.status === 'accepted' && (
                 <Button

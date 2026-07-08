@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,8 +14,9 @@ import { deleteStoredImages, objectPathFromPublicUrl } from '@/lib/supabase/stor
 import { toast } from '@/lib/utils/use-toast'
 import { GOOGLE_FONTS, validateSlug, slugify } from '@/lib/utils'
 import Link from 'next/link'
-import { ExternalLink, Upload, X, Plus, Trash2, Sparkles, Share2 } from 'lucide-react'
+import { ExternalLink, Upload, X, Plus, Trash2, Sparkles, Share2, Eye, EyeOff } from 'lucide-react'
 import SiteEditorOnboarding from './site-editor-onboarding'
+import SiteLivePreview from '@/components/dashboard/site-live-preview'
 import ShareSiteDialog from '@/components/dashboard/share-site-dialog'
 import { CERTIFICATIONS } from '@/components/caterer/certification-badges'
 import {
@@ -45,9 +46,13 @@ interface Props {
   caterererId: string
   caterer: any
   page: any
+  menuItems?: any[]
+  packages?: any[]
+  gallery?: any[]
+  reviews?: any[]
 }
 
-export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
+export default function SiteEditorForm({ caterererId, caterer, page, menuItems = [], packages = [], gallery = [], reviews = [] }: Props) {
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
   const isMounted = useRef(false)
@@ -137,6 +142,44 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
 
   const [slug, setSlug] = useState(caterer?.slug || '')
   const [slugError, setSlugError] = useState<string | null>(null)
+
+  // Live preview: rebuild the caterer/page objects the real templates expect
+  // from the in-progress editor state, so the preview reflects unsaved edits.
+  const [previewOpen, setPreviewOpen] = useState(true)
+  const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false)
+
+  const previewCaterer = useMemo(() => {
+    const previewPage = {
+      ...page,
+      ...form,
+      hero_image_url: heroUrl || null,
+      logo_url: logoUrl || null,
+      template_data: {
+        chips: templateData.chips.split(',').map((s: string) => s.trim()).filter(Boolean),
+        badge1: templateData.badge1 || null,
+        badge2: templateData.badge2 || null,
+        instagram: templateData.instagram || null,
+        cta_label: templateData.cta_label || null,
+        extras: templateData.extras || null,
+        faqs: templateData.faqs.filter((f) => f.q && f.a),
+        certifications: selectedCerts,
+        hero_overlay: templateData.hero_overlay,
+        sticky_bar: templateData.sticky_bar,
+        maison,
+      },
+    }
+    return {
+      ...caterer,
+      slug: slug || caterer?.slug || 'your-site',
+      show_contact_publicly: showContact,
+      page: previewPage,
+    }
+  }, [caterer, page, form, heroUrl, logoUrl, templateData, selectedCerts, maison, slug, showContact])
+
+  const previewFonts = useMemo(
+    () => Array.from(new Set([form.heading_font, form.body_font].filter(Boolean))) as string[],
+    [form.heading_font, form.body_font]
+  )
 
   useEffect(() => {
     if (!isMounted.current) {
@@ -247,7 +290,8 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
         />
       )}
 
-      <div className="space-y-6">
+      <div className={`${previewOpen ? 'xl:flex xl:gap-6 xl:items-start' : ''}`}>
+      <div className="space-y-6 xl:flex-1 xl:min-w-0">
         {caterer?.slug && (
           <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
             <div className="flex-1 text-sm text-gray-600">
@@ -808,13 +852,61 @@ export default function SiteEditorForm({ caterererId, caterer, page }: Props) {
           </TabsContent>
         </Tabs>
 
-        <div className="flex items-center justify-end gap-4">
-          <p className="text-xs text-gray-400">Changes only appear on your live site after you save.</p>
+        <div className="flex items-center justify-end gap-3 flex-wrap">
+          <p className="text-xs text-gray-400 mr-auto">Preview updates as you edit. Changes go live once you save.</p>
+          {/* Mobile / tablet: open preview as an overlay */}
+          <Button type="button" variant="outline" size="lg" className="xl:hidden" onClick={() => setMobilePreviewOpen(true)}>
+            <Eye className="h-4 w-4 mr-1.5" /> Preview
+          </Button>
+          {/* Desktop: toggle the side preview pane */}
+          <Button type="button" variant="outline" size="lg" className="hidden xl:inline-flex" onClick={() => setPreviewOpen((v) => !v)}>
+            {previewOpen ? <EyeOff className="h-4 w-4 mr-1.5" /> : <Eye className="h-4 w-4 mr-1.5" />}
+            {previewOpen ? 'Hide preview' : 'Show preview'}
+          </Button>
           <Button onClick={save} disabled={saving || !dirty} size="lg">
             {saving ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
       </div>
+
+      {/* Desktop live preview pane */}
+      {previewOpen && (
+        <aside className="hidden xl:block xl:w-[440px] xl:flex-shrink-0 xl:sticky xl:top-6">
+          <SiteLivePreview
+            template={form.template}
+            caterer={previewCaterer}
+            menuItems={menuItems}
+            packages={packages}
+            gallery={gallery}
+            reviews={reviews}
+            fonts={previewFonts}
+          />
+        </aside>
+      )}
+      </div>
+
+      {/* Mobile / tablet live preview overlay */}
+      {mobilePreviewOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 xl:hidden flex flex-col">
+          <div className="bg-white flex items-center justify-between px-4 py-3 border-b border-gray-200">
+            <span className="font-semibold text-gray-900">Live preview</span>
+            <button onClick={() => setMobilePreviewOpen(false)} className="text-gray-400 hover:text-gray-700">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-hidden bg-gray-100 p-3">
+            <SiteLivePreview
+              template={form.template}
+              caterer={previewCaterer}
+              menuItems={menuItems}
+              packages={packages}
+              gallery={gallery}
+              reviews={reviews}
+              fonts={previewFonts}
+            />
+          </div>
+        </div>
+      )}
     </>
   )
 }
