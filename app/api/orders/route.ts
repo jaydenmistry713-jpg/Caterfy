@@ -45,6 +45,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'This caterer is not currently accepting orders' }, { status: 400 })
     }
 
+    // A card order isn't real until the customer pays. When we'll hand off to
+    // Stripe's inline checkout, defer all side effects (confirmation emails,
+    // stock, discount usage, first-order celebration) to payment confirmation
+    // (see lib/orders/finalize.ts) so abandoning checkout doesn't email anyone
+    // or consume stock.
+    const isCardPending =
+      validated.payment_method === 'card' &&
+      !!caterer.stripe_connect_id &&
+      !!validated.total &&
+      validated.total > 0
+
     // Reject dates the caterer has blocked as unavailable
     if (validated.event_date) {
       const { data: blocked } = await supabase
@@ -106,8 +117,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
-    // Decrement stock for fixed orders (menu items with a stock_limit set)
-    if (validated.order_type === 'fixed' && Array.isArray(validated.items)) {
+    // Decrement stock for fixed orders (menu items with a stock_limit set).
+    // Skipped for card-pending orders — happens on payment confirmation instead.
+    if (!isCardPending && validated.order_type === 'fixed' && Array.isArray(validated.items)) {
       for (const it of validated.items as any[]) {
         if (!it?.item_id || !it?.quantity) continue
         const { data: menuItem } = await supabase
@@ -123,8 +135,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Increment usage count for an applied discount code
-    if (validated.discount_code) {
+    // Increment usage count for an applied discount code.
+    // Skipped for card-pending orders — happens on payment confirmation instead.
+    if (!isCardPending && validated.discount_code) {
       const { data: dc } = await supabase
         .from('discount_codes')
         .select('id, uses_count')
@@ -136,41 +149,46 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // First-order celebration — the most shareable moment in the lifecycle
-    try {
-      const { count: orderCount } = await supabase
-        .from('orders')
-        .select('id', { count: 'exact', head: true })
-        .eq('caterer_id', validated.caterer_id)
-      if (orderCount === 1) {
-        await sendFirstOrderCelebration(caterer.email, caterer.business_name, validated.reference_number)
+    // First-order celebration + confirmation emails. Skipped for card-pending
+    // orders — these run on payment confirmation (finalizeCardOrder) instead, so
+    // starting and abandoning the inline checkout never notifies anyone.
+    if (!isCardPending) {
+      // First-order celebration — the most shareable moment in the lifecycle
+      try {
+        const { count: orderCount } = await supabase
+          .from('orders')
+          .select('id', { count: 'exact', head: true })
+          .eq('caterer_id', validated.caterer_id)
+        if (orderCount === 1) {
+          await sendFirstOrderCelebration(caterer.email, caterer.business_name, validated.reference_number)
+        }
+      } catch (celebErr) {
+        console.error('First-order email failed:', celebErr)
       }
-    } catch (celebErr) {
-      console.error('First-order email failed:', celebErr)
-    }
 
-    // Send emails
-    try {
-      await Promise.all([
-        sendNewOrderNotification(caterer.email, caterer.business_name, {
-          reference_number: validated.reference_number,
-          customer_name: validated.customer_name,
-          event_date: validated.event_date,
-          total: validated.total || undefined,
-          order_type: validated.order_type,
-        }),
-        sendOrderConfirmationToCustomer(validated.customer_email, {
-          reference_number: validated.reference_number,
-          business_name: caterer.business_name,
-          event_date: validated.event_date,
-          total: validated.total || undefined,
-          order_type: validated.order_type,
-          payment_method: validated.payment_method,
-          items: validated.items as any,
-        }),
-      ])
-    } catch (emailErr) {
-      console.error('Email send failed:', emailErr)
+      // Send emails
+      try {
+        await Promise.all([
+          sendNewOrderNotification(caterer.email, caterer.business_name, {
+            reference_number: validated.reference_number,
+            customer_name: validated.customer_name,
+            event_date: validated.event_date,
+            total: validated.total || undefined,
+            order_type: validated.order_type,
+          }),
+          sendOrderConfirmationToCustomer(validated.customer_email, {
+            reference_number: validated.reference_number,
+            business_name: caterer.business_name,
+            event_date: validated.event_date,
+            total: validated.total || undefined,
+            order_type: validated.order_type,
+            payment_method: validated.payment_method,
+            items: validated.items as any,
+          }),
+        ])
+      } catch (emailErr) {
+        console.error('Email send failed:', emailErr)
+      }
     }
 
     // Create an *embedded* Stripe Checkout Session for card payments so the
@@ -179,12 +197,7 @@ export async function POST(request: NextRequest) {
     // /order-status reconciles the payment (see reconcileCardPayment) — the
     // same no-webhook path the hosted flow used.
     let client_secret: string | null = null
-    if (
-      validated.payment_method === 'card' &&
-      caterer.stripe_connect_id &&
-      validated.total &&
-      validated.total > 0
-    ) {
+    if (isCardPending) {
       const session = await stripe.checkout.sessions.create({
         ui_mode: 'embedded_page',
         payment_method_types: ['card'],

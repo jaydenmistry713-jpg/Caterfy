@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createServiceClient } from '@/lib/supabase/server'
 import { sendPaymentFailed } from '@/lib/resend/emails'
+import { finalizeCardOrder } from '@/lib/orders/finalize'
 import Stripe from 'stripe'
 
 export async function POST(request: NextRequest) {
@@ -90,12 +91,17 @@ export async function POST(request: NextRequest) {
       const orderId = session.metadata?.order_id
       if (orderId && session.payment_status === 'paid') {
         // A paid card order needs no manual accept — auto-accept it too.
-        await supabase.from('orders').update({
+        // Compare-and-set so the deferred side effects (emails, stock, discount)
+        // run exactly once even if the success-redirect reconcile also fires.
+        const { data: updated } = await supabase.from('orders').update({
           payment_status: 'paid',
           status: 'accepted',
           accepted_at: new Date().toISOString(),
           stripe_payment_intent_id: typeof session.payment_intent === 'string' ? session.payment_intent : null,
-        }).eq('id', orderId)
+        }).eq('id', orderId).neq('payment_status', 'paid').select('id')
+        if (updated && updated.length > 0) {
+          await finalizeCardOrder(supabase, orderId)
+        }
       }
       break
     }

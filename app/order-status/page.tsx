@@ -5,18 +5,20 @@ import { Badge } from '@/components/ui/badge'
 import { CheckCircle, Clock, XCircle, Package } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { stripe } from '@/lib/stripe'
-import { sendOrderAccepted } from '@/lib/resend/emails'
+import { finalizeCardOrder } from '@/lib/orders/finalize'
 import AcceptQuote from './accept-quote'
 import Link from 'next/link'
 
 // Reconcile a card payment on the success redirect (no webhook needed).
-// Marks the order paid + auto-accepts it and emails the customer once.
+// Marks the order paid + auto-accepts it, then runs the deferred side effects
+// (emails, stock, discount) exactly once — the compare-and-set update below
+// guards against the webhook and this redirect both firing.
 async function reconcileCardPayment(ref: string, sessionId: string) {
   try {
     const service = await createServiceClient()
     const { data: order } = await service
       .from('orders')
-      .select('id, payment_status, customer_email, reference_number, items, caterers(business_name)')
+      .select('id, payment_status')
       .eq('reference_number', ref)
       .single()
     if (!order || order.payment_status === 'paid') return
@@ -24,7 +26,7 @@ async function reconcileCardPayment(ref: string, sessionId: string) {
     const session = await stripe.checkout.sessions.retrieve(sessionId)
     if (session.payment_status !== 'paid') return
 
-    await service
+    const { data: updated } = await service
       .from('orders')
       .update({
         payment_status: 'paid',
@@ -34,15 +36,12 @@ async function reconcileCardPayment(ref: string, sessionId: string) {
           typeof session.payment_intent === 'string' ? session.payment_intent : null,
       })
       .eq('id', order.id)
+      .neq('payment_status', 'paid')
+      .select('id')
 
-    try {
-      await sendOrderAccepted(order.customer_email, {
-        id: order.id,
-        reference_number: order.reference_number,
-        business_name: (order as any).caterers?.business_name || '',
-        items: (order as any).items,
-      })
-    } catch {}
+    if (updated && updated.length > 0) {
+      await finalizeCardOrder(service, order.id)
+    }
   } catch (err) {
     console.error('Card payment reconcile failed:', err)
   }

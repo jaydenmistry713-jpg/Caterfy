@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { stripe } from '@/lib/stripe'
-import { sendOrderAccepted } from '@/lib/resend/emails'
+import { finalizeCardOrder } from '@/lib/orders/finalize'
 
 // Verifies a Stripe Checkout session on the success redirect (no webhook required).
 // Called by the /order-status page when it receives a session_id query param.
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
     const { data: order } = await supabase
       .from('orders')
-      .select('id, payment_status, status, customer_email, reference_number, items, caterers(business_name)')
+      .select('id, payment_status, status')
       .eq('reference_number', reference_number)
       .single()
 
@@ -36,7 +36,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ payment_status: order.payment_status, status: order.status })
     }
 
-    await supabase
+    // Compare-and-set so the deferred side effects run exactly once even if the
+    // webhook also fires.
+    const { data: updated } = await supabase
       .from('orders')
       .update({
         payment_status: 'paid',
@@ -46,17 +48,11 @@ export async function POST(request: NextRequest) {
           typeof session.payment_intent === 'string' ? session.payment_intent : null,
       })
       .eq('id', order.id)
+      .neq('payment_status', 'paid')
+      .select('id')
 
-    try {
-      const businessName = (order as any).caterers?.business_name || ''
-      await sendOrderAccepted(order.customer_email, {
-        id: order.id,
-        reference_number: order.reference_number,
-        business_name: businessName,
-        items: (order as any).items,
-      })
-    } catch (emailErr) {
-      console.error('Acceptance email failed:', emailErr)
+    if (updated && updated.length > 0) {
+      await finalizeCardOrder(supabase, order.id)
     }
 
     return NextResponse.json({ payment_status: 'paid', status: 'accepted' })
